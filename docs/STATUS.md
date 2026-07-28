@@ -58,6 +58,8 @@
 - Код опубликован: https://github.com/Shadowru/perimeter (публичный, лицензия MIT; вендореные компоненты — свои лицензии).
 - Лендинг: https://shadowru.github.io/perimeter/ (`docs/index.html`, GitHub Pages из /docs; без внешних ассетов).
 - Нюанс: publish-токен без scope `workflow`, поэтому CI-workflow лежит в `tools/ci/github-workflow-ci.yml` — для включения GitHub Actions скопировать в `.github/workflows/ci.yml` и запушить токеном со scope workflow.
+- Прод-раскатка лендинга (RU prod 104.171.139.52, по /etc/agents-shared.md): код в `/opt/perimeter` (деплой = git push → git pull на проде), статика из `docs/` через file_server в общем Caddy. Домены: https://perimeter.extra.moscow/ (живой, сертификат выпущен) и **впериметре.рф** (`xn--b1agaanysjdt.xn--p1ai`, основной; site-блок + www-редирект добавлены, ждёт A-записи → 104.171.139.52 у регистратора).
+- Лендинг v2 (редизайн 2026-07-28): тёмный «машинный зал», панели-фейсплейты, сигнатура — «пульт контура» со статус-LED; канонический URL — впериметре.рф.
 
 ## Сверх этапов
 
