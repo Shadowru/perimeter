@@ -51,6 +51,8 @@ bash tools/ci/netns_test.sh        # прогон без интернета (net
 
 ## Лицензии
 
-Ядро — проприетарное. Вендорено: colibri (Apache-2.0), PyYAML (MIT); веса GLM-5.2 — MIT (`zai-org`). Полный реестр — `docs/deps.md`.
+Код «Периметра» — **MIT** (свободное и коммерческое использование). Вендорено: colibri (Apache-2.0), PyYAML (MIT); веса GLM-5.2 — MIT (`zai-org`). Полный реестр — `docs/deps.md`.
+
+Лендинг проекта: `docs/index.html` (GitHub Pages).
 
 [colibri]: https://github.com/JustVugg/colibri

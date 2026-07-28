@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Периметр — локальный AI-работник для 1С. Ничего не покидает ваш контур</title>
+<meta name="description" content="Агент по данным 1С с инференсом GLM-5.2 полностью внутри вашего контура. Без облаков, без внешних API. Открытый код.">
+<style>
+  :root {
+    --paper: #FAFAF7;
+    --grid: #E7E9E3;
+    --ink: #1C2530;
+    --ink-soft: #4A5563;
+    --steel: #1F4E79;
+    --steel-soft: #D8E3EE;
+    --signal: #B3372E;
+    --stamp: #2E6B4F;
+    --mono: "Consolas", "Menlo", "DejaVu Sans Mono", "Courier New", monospace;
+    --serif: Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--paper);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+    line-height: 1.55;
+  }
+  .sheet { max-width: 1060px; margin: 0 auto; padding: 0 20px; }
+
+  /* --- шапка --- */
+  header {
+    border-bottom: 2px solid var(--ink);
+    background: var(--paper);
+  }
+  .header-in {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 14px 0; gap: 16px; flex-wrap: wrap;
+  }
+  .brand { font-family: var(--mono); font-size: 1rem; letter-spacing: .18em; font-weight: 700; }
+  .brand .code { color: var(--steel); font-weight: 400; letter-spacing: .05em; }
+  nav a {
+    font-family: var(--mono); font-size: .8rem; color: var(--ink-soft);
+    text-decoration: none; margin-left: 18px;
+  }
+  nav a:hover, nav a:focus-visible { color: var(--steel); text-decoration: underline; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--steel); outline-offset: 3px; }
+
+  /* --- герой --- */
+  .hero { padding: 64px 0 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+  .eyebrow {
+    font-family: var(--mono); font-size: .75rem; letter-spacing: .14em;
+    color: var(--steel); text-transform: uppercase; margin-bottom: 18px;
+  }
+  h1 {
+    font-family: var(--serif); font-weight: 400; font-size: clamp(2rem, 4.6vw, 3.1rem);
+    line-height: 1.14; margin-bottom: 20px;
+  }
+  h1 em { font-style: normal; border-bottom: 3px solid var(--signal); }
+  .hero p.lead { font-size: 1.06rem; color: var(--ink-soft); max-width: 44ch; margin-bottom: 28px; }
+  .cta-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .btn {
+    display: inline-block; font-family: var(--mono); font-size: .9rem;
+    padding: 12px 22px; text-decoration: none; border: 2px solid var(--ink);
+  }
+  .btn-primary { background: var(--ink); color: var(--paper); }
+  .btn-primary:hover { background: var(--steel); border-color: var(--steel); }
+  .btn-ghost { color: var(--ink); background: transparent; }
+  .btn-ghost:hover { border-color: var(--steel); color: var(--steel); }
+
+  /* --- схема контура (сигнатура) --- */
+  .contour { width: 100%; height: auto; }
+  .contour .ring { stroke-dasharray: 10 7; animation: crawl 24s linear infinite; }
+  @keyframes crawl { to { stroke-dashoffset: -340; } }
+  @media (prefers-reduced-motion: reduce) {
+    .contour .ring { animation: none; }
+    html { scroll-behavior: auto; }
+  }
+  .contour text { font-family: var(--mono); }
+
+  /* --- разделы-формуляр --- */
+  section { padding: 52px 0; border-top: 1px solid var(--ink); }
+  .sec-label {
+    font-family: var(--mono); font-size: .78rem; letter-spacing: .12em;
+    color: var(--steel); margin-bottom: 8px;
+  }
+  h2 { font-family: var(--serif); font-weight: 400; font-size: 1.7rem; margin-bottom: 26px; }
+
+  .cols3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .cell { border: 1px solid var(--ink); background: var(--paper); padding: 18px; }
+  .cell h3 { font-size: 1rem; margin-bottom: 8px; }
+  .cell p { font-size: .92rem; color: var(--ink-soft); }
+  .cell .num { font-family: var(--mono); color: var(--signal); font-size: .78rem; display: block; margin-bottom: 10px; }
+
+  /* --- сценарии-диалоги --- */
+  .dialog { border: 1px solid var(--ink); background: var(--paper); padding: 18px; font-size: .9rem; }
+  .dialog .q { font-weight: 600; margin-bottom: 10px; }
+  .dialog .q::before { content: "› "; color: var(--steel); font-family: var(--mono); }
+  .dialog .a { color: var(--ink-soft); white-space: pre-line; }
+  .dialog .doc { font-family: var(--mono); font-size: .82rem; color: var(--steel); }
+
+  /* --- порядок ввода (раскатка) --- */
+  .stage { display: grid; grid-template-columns: 84px 1fr; gap: 18px; padding: 20px 0; border-bottom: 1px dashed var(--ink-soft); }
+  .stage:last-child { border-bottom: none; }
+  .stage-num {
+    font-family: var(--mono); color: var(--paper); background: var(--steel);
+    width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;
+    font-size: 1.05rem;
+  }
+  .stage h3 { font-size: 1.05rem; margin-bottom: 6px; }
+  .stage h3 .dur { font-family: var(--mono); font-size: .75rem; color: var(--stamp); margin-left: 10px; }
+  .stage p { font-size: .93rem; color: var(--ink-soft); max-width: 72ch; }
+  .stage ul { font-size: .93rem; color: var(--ink-soft); margin: 8px 0 0 18px; }
+  .stage li { margin-bottom: 4px; }
+
+  /* --- таблицы-формуляр --- */
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; background: var(--paper); }
+  th, td { border: 1px solid var(--ink); padding: 9px 12px; text-align: left; vertical-align: top; }
+  th { font-family: var(--mono); font-size: .78rem; letter-spacing: .08em; background: var(--steel-soft); }
+  td.mono, .mono { font-family: var(--mono); font-size: .84rem; }
+  .footnote { font-size: .8rem; color: var(--ink-soft); margin-top: 10px; max-width: 78ch; }
+  .stamp {
+    display: inline-block; font-family: var(--mono); font-size: .72rem; letter-spacing: .1em;
+    color: var(--stamp); border: 1.5px solid var(--stamp); padding: 3px 8px; transform: rotate(-1.2deg);
+  }
+  .prohibit { color: var(--signal); font-weight: 600; }
+
+  /* --- код --- */
+  pre {
+    font-family: var(--mono); font-size: .84rem; background: var(--ink); color: #E8EDF2;
+    padding: 18px; overflow-x: auto; line-height: 1.7;
+  }
+  pre .c { color: #8FA3B8; }
+
+  footer { border-top: 2px solid var(--ink); padding: 26px 0 40px; font-size: .84rem; color: var(--ink-soft); }
+  footer .mono { color: var(--ink-soft); }
+
+  @media (max-width: 820px) {
+    .hero { grid-template-columns: 1fr; gap: 32px; padding-top: 40px; }
+    .cols3 { grid-template-columns: 1fr; }
+    .stage { grid-template-columns: 64px 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="sheet header-in">
+    <div class="brand">ПЕРИМЕТР <span class="code">/ изделие ПРМ‑01</span></div>
+    <nav>
+      <a href="#scenarios">Сценарии</a><a href="#deploy">Внедрение</a><a href="#security">Безопасность</a><a href="https://github.com/Shadowru/perimeter">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="sheet hero">
+    <div>
+      <div class="eyebrow">Локальный AI‑работник для 1С:Предприятие 8.3</div>
+      <h1>Данные 1С <em>не покидают</em> ваш контур. Никогда.</h1>
+      <p class="lead">«Периметр» отвечает на вопросы по вашей базе 1С, делает сверки и готовит черновики документов. Модель на 744 млрд параметров работает с локального диска — в вашей серверной, без единого запроса в интернет.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://github.com/Shadowru/perimeter">Открытый код на GitHub</a>
+        <a class="btn btn-ghost" href="#deploy">Как внедряется</a>
+      </div>
+    </div>
+    <figure aria-label="Схема: агент, модель и 1С внутри замкнутого контура; связь с интернетом перечёркнута">
+      <svg class="contour" viewBox="0 0 460 340" role="img">
+        <!-- внешний мир -->
+        <text x="392" y="52" font-size="12" fill="#4A5563">Интернет</text>
+        <circle cx="404" cy="88" r="26" fill="none" stroke="#B3372E" stroke-width="2.5"/>
+        <line x1="386" y1="70" x2="422" y2="106" stroke="#B3372E" stroke-width="2.5"/>
+        <line x1="345" y1="120" x2="298" y2="152" stroke="#B3372E" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <text x="298" y="132" font-size="10" fill="#B3372E">запрещено · правило №0</text>
+        <!-- контур -->
+        <rect class="ring" x="18" y="60" width="270" height="252" fill="none" stroke="#1F4E79" stroke-width="2"/>
+        <text x="22" y="50" font-size="11" fill="#1F4E79">контур заказчика</text>
+        <!-- узлы -->
+        <rect x="44" y="90" width="92" height="46" fill="#FAFAF7" stroke="#1C2530"/>
+        <text x="58" y="110" font-size="11" fill="#1C2530">1С 8.3</text>
+        <text x="58" y="124" font-size="9" fill="#4A5563">OData</text>
+        <rect x="172" y="90" width="92" height="46" fill="#FAFAF7" stroke="#1C2530"/>
+        <text x="186" y="110" font-size="11" fill="#1C2530">Агент</text>
+        <text x="186" y="124" font-size="9" fill="#4A5563">черновики</text>
+        <rect x="108" y="216" width="112" height="58" fill="#FAFAF7" stroke="#1C2530"/>
+        <text x="122" y="238" font-size="11" fill="#1C2530">GLM‑5.2</text>
+        <text x="122" y="252" font-size="9" fill="#4A5563">744B · с диска</text>
+        <text x="122" y="264" font-size="9" fill="#4A5563">NVMe · без GPU</text>
+        <!-- связи -->
+        <line x1="136" y1="113" x2="172" y2="113" stroke="#1F4E79" stroke-width="1.5"/>
+        <line x1="164" y1="216" x2="205" y2="136" stroke="#1F4E79" stroke-width="1.5"/>
+        <!-- аудит -->
+        <text x="44" y="300" font-size="10" fill="#2E6B4F">▤ append‑only аудит каждого действия</text>
+      </svg>
+    </figure>
+  </div>
+
+  <section id="why">
+    <div class="sheet">
+      <div class="sec-label">РАЗДЕЛ 1 · НАЗНАЧЕНИЕ</div>
+      <h2>Почему не облачные модели</h2>
+      <div class="cols3">
+        <div class="cell">
+          <span class="num">1.1</span>
+          <h3>Данные 1С — это всё</h3>
+          <p>Контрагенты, обороты, зарплаты, персональные данные. Отправка их во внешний API — риск по 152‑ФЗ и утечка коммерческой тайны в один запрос.</p>
+        </div>
+        <div class="cell">
+          <span class="num">1.2</span>
+          <h3>ИБ скажет «нет»</h3>
+          <p>И будет права. «Периметр» проектировался от обратного: served‑локально — не режим, а единственный режим. Внешних вызовов нет ни в коде, ни в зависимостях.</p>
+        </div>
+        <div class="cell">
+          <span class="num">1.3</span>
+          <h3>Частная модель — уже реальность</h3>
+          <p>Открытые веса GLM‑5.2 (лицензия MIT) и движок colibri позволяют держать модель уровня фронтира на своём железе — от 16 ГБ RAM и одного NVMe.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="scenarios">
+    <div class="sheet">
+      <div class="sec-label">РАЗДЕЛ 2 · СЦЕНАРИИ РАБОТЫ</div>
+      <h2>Что спрашивают у «Периметра»</h2>
+      <div class="cols3">
+        <div class="dialog">
+          <div class="q">Найди непроведённые реализации за июль по «Ромашке»</div>
+          <div class="a">Непроведённые реализации ООО «Ромашка» за июль:
+<span class="doc">№РТ‑0002 от 10.07.2026 — 45 000,50 ₽</span>
+<span class="doc">№РТ‑0003 от 18.07.2026 — 78 000,00 ₽</span></div>
+        </div>
+        <div class="dialog">
+          <div class="q">Что мы отгрузили «Ромашке», но не получили оплату?</div>
+          <div class="a">Отгружено 219 000,00 ₽, оплачено 120 000,00 ₽.
+Не оплачена <span class="doc">№РТ‑0005 от 25.06.2026 — 99 000,00 ₽</span>.</div>
+        </div>
+        <div class="dialog">
+          <div class="q">Подготовь счёт на основании прошлого заказа</div>
+          <div class="a">Создан <b>черновик</b> счёта на 99 000,00 ₽ по образцу <span class="doc">№СЧ‑0101 от 20.06.2026</span>.
+Проведение — за вами: агент не проводит документы.</div>
+        </div>
+      </div>
+      <p class="footnote">Каждый ответ ссылается на конкретные документы — номер и дата. Ничего «из головы модели»: только данные, полученные инструментами из вашей базы.</p>
+    </div>
+  </section>
+
+  <section id="deploy">
+    <div class="sheet">
+      <div class="sec-label">РАЗДЕЛ 3 · ПОРЯДОК ВВОДА В ЭКСПЛУАТАЦИЮ</div>
+      <h2>Раскатка в контуре заказчика</h2>
+
+      <div class="stage">
+        <div class="stage-num">3.1</div>
+        <div>
+          <h3>Обследование и пилот <span class="dur">1–2 недели</span></h3>
+          <p>Выделяется сервер внутри контура (от 16 ГБ RAM, ~380 ГБ NVMe; GPU не обязателен). Администратор 1С публикует тестовую базу на веб‑сервере со стандартным интерфейсом OData — это штатная операция платформы 8.3, <b>доработки конфигурации не требуются</b>. Прогоняем три эталонных сценария на ваших данных.</p>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="stage-num">3.2</div>
+        <div>
+          <h3>Офлайн‑установка <span class="dur">1 день</span></h3>
+          <p>Дистрибутив полностью автономен: все зависимости вендорены в репозиторий, pip и интернет при установке не нужны. Веса модели конвертируются из официального источника один раз (единственный шаг, требующий сети — выполняется на отдельной машине и переносится носителем, если контур закрыт полностью).</p>
+          <ul>
+            <li>сборка движка: <span class="mono">make -C vendor/colibri/c portable</span> — один C‑файл, gcc, без загрузок;</li>
+            <li>в <span class="mono">config/perimeter.yaml</span> перечисляются разрешённые хосты — только ваши серверы 1С;</li>
+            <li>пароль пользователя ИБ — в системном keyring или переменной окружения, в конфиге его нет.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="stage-num">3.3</div>
+        <div>
+          <h3>Подключение баз <span class="dur">1–3 дня</span></h3>
+          <p>Поддерживаются типовые «Бухгалтерия 3.0», «Управление торговлей 11», «ЗУП 3.1». Имена объектов метаданных не зашиты в код — они лежат в настраиваемых файлах соответствия, и при первом подключении «Периметр» сам сверяет их с <span class="mono">$metadata</span> вашей базы и показывает расхождения до начала работы.</p>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="stage-num">3.4</div>
+        <div>
+          <h3>Приёмка службой ИБ <span class="dur">по вашему регламенту</span></h3>
+          <p>Мы не просим верить на слово — воздушный зазор проверяется:</p>
+          <ul>
+            <li>статический скан всего кода на внешние URL и IP — входит в комплект;</li>
+            <li>демонстрационный прогон всех сценариев в сетевом пространстве <b>без интернета</b> (netns) — всё работает;</li>
+            <li>рантайм‑страж блокирует любое соединение вне списка разрешённых хостов и пишет попытку в журнал;</li>
+            <li>append‑only журнал каждого действия агента — готовый артефакт для вашего SIEM.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="stage-num">3.5</div>
+        <div>
+          <h3>Эксплуатация <span class="dur">постоянно</span></h3>
+          <p>Пользователи работают через локальный веб‑интерфейс. Создание документов — только черновики и только после явного подтверждения человеком; проведение остаётся в 1С. Обновления — офлайн‑пакетами по вашему графику, автообновлений нет по определению.</p>
+          <p style="margin-top:10px"><span class="stamp">ИЗДЕЛИЕ АВТОНОМНО · ТЕЛЕМЕТРИЯ ОТСУТСТВУЕТ</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="security">
+    <div class="sheet">
+      <div class="sec-label">РАЗДЕЛ 4 · ПОКАЗАТЕЛИ ЗАЩИТЫ</div>
+      <h2>Формуляр безопасности</h2>
+      <table>
+        <tr><th style="width:34%">Требование</th><th>Исполнение</th></tr>
+        <tr>
+          <td>Исходящие соединения</td>
+          <td><span class="prohibit">Запрещены</span>, кроме localhost и серверов 1С из конфигурации. Контроль тройной: статический скан в CI, тестовый прогон без сети, рантайм‑страж на уровне сокетов.</td>
+        </tr>
+        <tr>
+          <td>Изменение данных в 1С</td>
+          <td>Агент создаёт <b>только черновики</b> и только после подтверждения человека. Метода «провести документ» в коде не существует.</td>
+        </tr>
+        <tr>
+          <td>Журналирование</td>
+          <td class="mono">append‑only JSONL: запрос → вызовы инструментов → подтверждения/отказы → ответ. Файл дозаписывается на уровне ОС, API перезаписи нет.</td>
+        </tr>
+        <tr>
+          <td>Секреты</td>
+          <td>Пароли 1С — системный keyring или переменные окружения. В файлах конфигурации — только плейсхолдеры.</td>
+        </tr>
+        <tr>
+          <td>Зависимости</td>
+          <td>Runtime‑зависимостей pip — ноль. Вендорены и проаудированы: движок colibri (Apache‑2.0), PyYAML (MIT). Реестр — <span class="mono">docs/deps.md</span>.</td>
+        </tr>
+      </table>
+    </div>
+  </section>
+
+  <section id="hw">
+    <div class="sheet">
+      <div class="sec-label">РАЗДЕЛ 5 · ТРЕБОВАНИЯ К ЖЕЛЕЗУ</div>
+      <h2>Честные цифры</h2>
+      <table>
+        <tr><th>Железо</th><th>Скорость генерации*</th></tr>
+        <tr><td>6× RTX 5090, 251 ГБ RAM</td><td>5,8–6,8 ток/с</td></tr>
+        <tr><td>Серверный CPU, 430 ГБ RAM (без GPU)</td><td>1,0 ток/с</td></tr>
+        <tr><td>Рабочая станция, 128 ГБ RAM</td><td>≈ 2 ток/с</td></tr>
+        <tr><td>Минимум: 16 ГБ RAM + NVMe 380 ГБ</td><td>от 0,1 ток/с (холодный старт)</td></tr>
+      </table>
+      <p class="footnote">* Замеры движка colibri (upstream, v1.1.1) на модели GLM‑5.2 744B int4. Это не маркетинговые «до», а измеренные значения; на пилоте мы снимаем цифры на вашем железе включённым в комплект скриптом и фиксируем их в акте. Модель 744B на своём сервере — это медленнее облака: «Периметр» проектирован под это (компактные промпты, тёплый кэш), и честнее сказать об этом здесь, чем на пилоте.</p>
+    </div>
+  </section>
+
+  <section id="opensource">
+    <div class="sheet">
+      <div class="sec-label">РАЗДЕЛ 6 · КОМПЛЕКТ ПОСТАВКИ</div>
+      <h2>Код открыт и бесплатен</h2>
+      <p style="max-width:70ch; color:var(--ink-soft); margin-bottom:18px">Весь код «Периметра» — под лицензией MIT: используйте, изучайте, дорабатывайте, в том числе коммерчески. Ваша служба ИБ может прочитать каждую строку, которая окажется в контуре, — мы считаем это обязательным свойством продукта такого класса.</p>
+<pre><span class="c"># в контуре, без интернета после получения дистрибутива:</span>
+git clone https://github.com/Shadowru/perimeter
+make -C perimeter/vendor/colibri/c portable
+python3 perimeter/run_perimeter.py
+<span class="c"># → http://127.0.0.1:8091 — локальный интерфейс</span></pre>
+      <div class="cta-row" style="margin-top:22px">
+        <a class="btn btn-primary" href="https://github.com/Shadowru/perimeter">github.com/Shadowru/perimeter</a>
+        <a class="btn btn-ghost" href="https://github.com/Shadowru/perimeter/blob/main/docs/research.md">Техническое обоснование</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="sheet">
+    <span class="mono">ПЕРИМЕТР / ПРМ‑01</span> · агент — MIT · движок colibri — Apache‑2.0 · веса GLM‑5.2 — MIT (zai‑org) ·
+    целевые конфигурации: БП 3.0, УТ 11, ЗУП 3.1 · Внешних шрифтов, счётчиков и аналитики на этой странице нет — как и в продукте.
+  </div>
+</footer>
+
+</body>
+</html>

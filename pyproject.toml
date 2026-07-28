@@ -7,7 +7,7 @@ name = "perimeter"
 version = "0.1.0"
 description = "Perimeter: air-gapped local AI worker with 1C integration (local inference only)"
 requires-python = ">=3.12"
-license = { text = "Proprietary" }
+license = { text = "MIT" }
 # Runtime dependencies are intentionally EMPTY: everything is either stdlib
 # or vendored under vendor/ (see docs/deps.md). Rule #0: no code that can
 # reach outside localhost / hosts listed in config/perimeter.yaml.
