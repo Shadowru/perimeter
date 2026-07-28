@@ -1,0 +1,28 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  airgap-static-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static air-gap scan (rule 0)
+        run: python3 tools/ci/airgap_scan.py
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest
+      - name: Unit tests
+        run: python3 -m pytest tests/unit
+      - name: Full test run inside no-internet netns (rule 0)
+        run: bash tools/ci/netns_test.sh
+
+# NOTE: файл лежит в tools/ci/, а не в .github/workflows/, потому что publish-токен
+# не имеет scope "workflow". Чтобы включить CI на GitHub: скопируйте его в
+# .github/workflows/ci.yml и запушьте с токеном, имеющим scope workflow.
