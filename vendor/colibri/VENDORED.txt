@@ -1,0 +1,10 @@
+Vendored from https://github.com/JustVugg/colibri
+commit: 1b8b62ee75e33685508c26d10424460f857cd85d (v1.1.1)
+date vendored: 2026-07-28
+license: Apache-2.0 (see LICENSE)
+
+Excluded from vendoring (network-touching setup tools and heavy assets):
+  c/download_fp8.py, c/tools/download_glm52.py, c/tools/fetch_benchmarks.py,
+  c/tools/repair_mtp_int8.py, web/, site/, assets/, docker/, desktop/, docs/media/, flake.*
+
+Local modifications: none yet. Any change to vendored files must be listed here (Apache-2.0 requires marking modified files).

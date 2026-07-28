@@ -33,6 +33,7 @@ class InferenceConfig:
     port: int = 8090
     backend: str = "colibri"
     model_path: str = ""
+    model_id: str = "glm-5.2"
     ci_model_path: str = ""
 
     @property

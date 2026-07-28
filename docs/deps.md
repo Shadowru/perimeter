@@ -20,6 +20,9 @@
 | Пакет | Лицензия | Назначение |
 |---|---|---|
 | pytest ≥8 | MIT | тесты |
+| torch (cpu) | BSD-3 | только генерация тестовой фикстуры glm_tiny (`vendor/colibri/c/tools/make_glm_oracle.py`); фикстура закоммичена — в CI torch не нужен |
+| transformers ≥5.11 | Apache-2.0 | то же (эталонный forward для оракула) |
+| safetensors | Apache-2.0 | то же |
 
 ## Отклонённые
 

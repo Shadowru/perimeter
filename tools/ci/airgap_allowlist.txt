@@ -6,3 +6,18 @@
 bridge-1c/|http://schemas.microsoft.com
 bridge-1c/|http://docs.oasis-open.org
 bridge-1c/|http://www.w3.org
+
+# colibri: строка CORS-origin десктоп-оболочки Tauri (*.localhost — loopback), не исходящий вызов.
+vendor/colibri/c/openai_server.py|tauri.localhost
+
+# colibri: конвертер весов FP8->int4 — SETUP-ONLY инструмент, скачивает шарды с HF по
+# требованию администратора при установке. В рантайм-пути продукта не участвует
+# (см. vendor/colibri/VENDORED.txt; сетевые download-скрипты из вендоринга исключены,
+# конвертер оставлен ради официальной цепочки происхождения весов zai-org).
+vendor/colibri/c/tools/convert_fp8_to_int4.py|huggingface.co
+
+# colibri: dev-утилита ручной проверки tool-calling, шаблон URL localhost-сервера.
+vendor/colibri/c/tools/try_tool_calling.py|http://host
+
+# colibri: метаданные [project.urls] в pyproject — ссылки на upstream, не код.
+vendor/colibri/pyproject.toml|https://github.com
