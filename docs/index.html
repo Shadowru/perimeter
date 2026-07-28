@@ -2,10 +2,12 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14181D">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>Периметр — локальный AI-работник для 1С. Данные не покидают контур</title>
 <meta name="description" content="Нейросеть для 1С без облака: агент отвечает по базе, делает сверки и готовит черновики документов. Модель GLM-5.2 работает с локального диска, без внешних API. Открытый код (MIT).">
-<meta name="keywords" content="нейросеть для 1С, локальная LLM, ИИ без облака, air-gap, GLM-5.2, ассистент 1С, 152-ФЗ">
+<meta name="keywords" content="нейросеть для 1С, локальная LLM, ИИ без облака, air-gap, GLM-5.2, ассистент 1С, 152-ФЗ, управленческая отчётность 1С, дебиторская задолженность отчёт">
 <link rel="canonical" href="https://впериметре.рф/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231C222A'/%3E%3Crect x='4' y='4' width='24' height='24' fill='none' stroke='%23303945' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%2346C97E'/%3E%3C/svg%3E">
 <meta property="og:type" content="website">
@@ -56,6 +58,8 @@
      "acceptedAnswer": {"@type": "Answer", "text": "Нет, GPU не обязателен. Минимальные требования: 16 ГБ RAM и около 380 ГБ на NVMe-диске. Скорость генерации зависит от железа: от 0,1 ток/с на минимальной конфигурации до 5,8–6,8 ток/с на сервере с шестью GPU (замеры движка colibri, upstream)."}},
     {"@type": "Question", "name": "Как это соотносится со 152-ФЗ и требованиями ИБ?",
      "acceptedAnswer": {"@type": "Answer", "text": "Архитектурно данные, включая персональные, не передаются за пределы инфраструктуры компании — это снимает главный риск использования облачных LLM. Все действия агента пишутся в append-only журнал, изменение данных в 1С возможно только черновиками и после подтверждения человека. Оценку соответствия конкретным требованиям делает ваша служба ИБ; воздушный зазор проверяется включённым в комплект прогоном без интернета."}},
+    {"@type": "Question", "name": "Можно ли построить управленческую отчётность простым запросом?",
+     "acceptedAnswer": {"@type": "Answer", "text": "Да. Агент собирает управленческие сводки из первичных документов базы 1С: отгрузки и оплаты за период, дебиторская задолженность по контрагентам, сверки. Каждая цифра сопровождается ссылками на документы (номер и дата), из которых она получена, — отчёт проверяем. Это ответы на управленческие вопросы здесь и сейчас, а не замена BI-системы; подключение регистров учёта под сложные отчёты — предмет внедрения."}},
     {"@type": "Question", "name": "Сколько стоит «Периметр»?",
      "acceptedAnswer": {"@type": "Answer", "text": "Код открыт и бесплатен (лицензия MIT), веса модели GLM-5.2 также открыты (MIT). Затраты компании — собственное железо и работы по внедрению."}}
   ]
@@ -74,19 +78,30 @@
     --alarm: #D65A4A;
     --amber: #DFA43C;
     --link: #7FB3E3;
-    --mono: "Consolas", "Menlo", "DejaVu Sans Mono", "Courier New", monospace;
+    --mono: ui-monospace, "SF Mono", "Menlo", "Consolas", "DejaVu Sans Mono", monospace;
     --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color-scheme: dark;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
   body {
     font-family: var(--sans);
     background: var(--bg);
     background-image: linear-gradient(180deg, rgba(255,255,255,.022) 0 1px, transparent 1px 4px);
     color: var(--text);
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
   }
-  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+  ::selection { background: rgba(127,179,227,.28); }
+  .wrap {
+    max-width: 1040px; margin: 0 auto;
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+  }
   a { color: var(--link); }
   a:focus-visible, button:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; }
 
@@ -95,7 +110,7 @@
   .header-in { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; gap: 14px; flex-wrap: wrap; }
   .brand { font-family: var(--mono); letter-spacing: .22em; font-weight: 700; font-size: .95rem; }
   .brand small { color: var(--dim); letter-spacing: .08em; font-weight: 400; }
-  nav a { font-family: var(--mono); font-size: .78rem; color: var(--dim); text-decoration: none; margin-left: 18px; }
+  nav a { font-family: var(--mono); font-size: .78rem; color: var(--dim); text-decoration: none; margin-left: 10px; padding: 10px 6px; display: inline-block; }
   nav a:hover { color: var(--text); }
 
   /* --- герой --- */
@@ -202,9 +217,30 @@
   @media (max-width: 860px) {
     .lamps { grid-template-columns: 1fr 1fr; }
     .lamp { border-bottom: 1px solid var(--line); }
+    .lamp:nth-child(even) { border-right: none; }
     .cols3, .grid2 { grid-template-columns: 1fr; }
     .step { grid-template-columns: 1fr; }
     .step-tag { border-right: none; border-bottom: 1px dashed var(--line); padding: 12px 18px; }
+    .step-tag .t { display: inline; margin-left: 10px; }
+  }
+
+  /* iPhone: плотнее, кнопки во всю ширину, крупные тач-мишени */
+  @media (max-width: 480px) {
+    .hero { padding-top: 40px; }
+    .lead { font-size: .98rem; }
+    .cta-row { gap: 10px; }
+    .cta-row .btn { width: 100%; text-align: center; padding: 15px 20px; }
+    .panel-head { padding: 11px 18px; }
+    .panel-body, .step-body { padding: 18px; }
+    h2 { font-size: 1.18rem; }
+    .lamp { padding: 14px 18px; }
+    .lamp .st { font-size: .76rem; }
+    .console-head { padding: 9px 18px; letter-spacing: .12em; }
+    .term { font-size: .76rem; }
+    .term-body { padding: 12px 13px; }
+    table, td, th { font-size: .8rem; }
+    th, td { padding: 8px 10px; }
+    footer { padding-bottom: max(42px, env(safe-area-inset-bottom)); }
   }
 </style>
 </head>
@@ -301,10 +337,42 @@
     </div>
   </section>
 
+  <section id="reports">
+    <div class="wrap">
+      <div class="panel">
+        <div class="panel-head"><h2>Управленческая отчётность — простым запросом</h2><span class="no-label">ПАНЕЛЬ 3 · ОТЧЁТНОСТЬ</span></div>
+        <div class="panel-body">
+          <p style="max-width:74ch; color:var(--dim); margin-bottom:18px">Не нужно настраивать формы отчётов и ждать закрытия периода. Задайте вопрос — агент соберёт цифры из первичных документов вашей базы и покажет, <b style="color:var(--text)">из каких документов получена каждая цифра</b>.</p>
+          <div class="grid2">
+            <div class="term">
+              <div class="term-bar">СЕАНС 4 · СВОДКА ЗА ПЕРИОД</div>
+              <div class="term-body"><span class="p">›</span> <span class="q">сводка за июль: отгрузки, оплаты, дебиторка</span>
+
+Июль 2026:
+ отгружено      135 000,00 ₽  (2 док.: <span class="doc">№РТ‑0001</span>, <span class="doc">№РТ‑0004</span>)
+ получено оплат 135 000,00 ₽  (2 док.: <span class="doc">№ПС‑0001</span>, <span class="doc">№ПС‑0002</span>)
+ дебиторка на 31.07 — 99 000,00 ₽
+ (не оплачена <span class="doc">№РТ‑0005 от 25.06.2026</span>, ООО «Ромашка»)</div>
+            </div>
+            <div class="term">
+              <div class="term-bar">СЕАНС 5 · ДЕБИТОРСКАЯ ЗАДОЛЖЕННОСТЬ</div>
+              <div class="term-body"><span class="p">›</span> <span class="q">кто нам должен и сколько?</span>
+
+ООО «Ромашка» — 99 000,00 ₽
+ (отгружено по <span class="doc">№РТ‑0005 от 25.06.2026</span>, оплата не поступала)
+Остальные контрагенты — без задолженности.</div>
+            </div>
+          </div>
+          <p class="footnote">Отчёты собираются из первичных документов (реализации, поступления, оплаты) через стандартный OData — поэтому каждая строка проверяема: спросите «откуда цифра?» и получите список документов. Это ответы на управленческие вопросы здесь и сейчас, а не замена BI‑системы; подключение регистров учёта под сложные отчёты — предмет внедрения.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="deploy">
     <div class="wrap">
       <div class="panel">
-        <div class="panel-head"><h2>Раскатка в контуре заказчика</h2><span class="no-label">ПАНЕЛЬ 3 · ПОРЯДОК ВВОДА В ЭКСПЛУАТАЦИЮ</span></div>
+        <div class="panel-head"><h2>Раскатка в контуре заказчика</h2><span class="no-label">ПАНЕЛЬ 4 · ПОРЯДОК ВВОДА В ЭКСПЛУАТАЦИЮ</span></div>
         <div>
           <div class="step">
             <div class="step-tag">ШАГ 01 <span class="t">1–2 недели</span></div>
@@ -361,7 +429,7 @@
   <section id="security">
     <div class="wrap">
       <div class="panel">
-        <div class="panel-head"><h2>Формуляр безопасности</h2><span class="no-label">ПАНЕЛЬ 4 · ПОКАЗАТЕЛИ ЗАЩИТЫ</span></div>
+        <div class="panel-head"><h2>Формуляр безопасности</h2><span class="no-label">ПАНЕЛЬ 5 · ПОКАЗАТЕЛИ ЗАЩИТЫ</span></div>
         <div class="panel-body">
           <table>
             <tr><th style="width:32%">Требование</th><th>Исполнение</th></tr>
@@ -394,7 +462,7 @@
   <section id="hw">
     <div class="wrap">
       <div class="panel">
-        <div class="panel-head"><h2>Честные цифры</h2><span class="no-label">ПАНЕЛЬ 5 · ТРЕБОВАНИЯ К ЖЕЛЕЗУ</span></div>
+        <div class="panel-head"><h2>Честные цифры</h2><span class="no-label">ПАНЕЛЬ 6 · ТРЕБОВАНИЯ К ЖЕЛЕЗУ</span></div>
         <div class="panel-body">
           <table>
             <tr><th>Железо</th><th>Скорость генерации*</th></tr>
@@ -412,7 +480,7 @@
   <section id="faq">
     <div class="wrap">
       <div class="panel">
-        <div class="panel-head"><h2>Вопросы и ответы</h2><span class="no-label">ПАНЕЛЬ 6 · FAQ</span></div>
+        <div class="panel-head"><h2>Вопросы и ответы</h2><span class="no-label">ПАНЕЛЬ 7 · FAQ</span></div>
         <div>
           <div class="step">
             <div class="step-tag">Q1</div>
@@ -445,6 +513,13 @@
           <div class="step">
             <div class="step-tag">Q5</div>
             <div class="step-body">
+              <h3>Можно ли построить управленческую отчётность простым запросом?</h3>
+              <p>Да: сводки по отгрузкам и оплатам, дебиторка по контрагентам, сверки — агент собирает их из первичных документов, и каждая цифра ссылается на документы, из которых получена (см. <a href="#reports">Панель 3</a>). Это не замена BI: сложные отчёты по регистрам учёта — предмет внедрения.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-tag">Q6</div>
+            <div class="step-body">
               <h3>Сколько это стоит?</h3>
               <p>Код открыт и бесплатен (MIT), веса GLM‑5.2 тоже открыты (MIT). Затраты компании — собственное железо и работы по внедрению.</p>
             </div>
@@ -457,7 +532,7 @@
   <section id="opensource">
     <div class="wrap">
       <div class="panel">
-        <div class="panel-head"><h2>Код открыт и бесплатен</h2><span class="no-label">ПАНЕЛЬ 7 · КОМПЛЕКТ ПОСТАВКИ</span></div>
+        <div class="panel-head"><h2>Код открыт и бесплатен</h2><span class="no-label">ПАНЕЛЬ 8 · КОМПЛЕКТ ПОСТАВКИ</span></div>
         <div class="panel-body">
           <p style="max-width:72ch; color:var(--dim); margin-bottom:18px">Весь код «Периметра» — под лицензией MIT: используйте, изучайте, дорабатывайте, в том числе коммерчески. Ваша служба ИБ может прочитать каждую строку, которая окажется в контуре, — мы считаем это обязательным свойством продукта такого класса.</p>
 <pre class="code"><span class="c"># в контуре, без интернета после получения дистрибутива:</span>
