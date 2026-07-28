@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ui.title}}</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, sans-serif; max-width: 760px; margin: 0 auto; padding: 1rem; }
+  h1 { font-size: 1.1rem; }
+  #log { border: 1px solid #8884; border-radius: 8px; padding: .75rem; min-height: 50vh;
+         white-space: pre-wrap; overflow-y: auto; }
+  .u { font-weight: 600; margin-top: .5rem; }
+  .a { margin: .25rem 0 .75rem; }
+  form { display: flex; gap: .5rem; margin-top: .75rem; flex-wrap: wrap; }
+  input[type=text] { flex: 1; padding: .5rem; min-width: 200px; }
+  label { font-size: .85rem; align-self: center; }
+</style>
+</head>
+<body>
+<h1>{{ui.title}}</h1>
+<div id="log"></div>
+<form id="f">
+  <input type="text" id="msg" placeholder="{{ui.placeholder}}" autocomplete="off">
+  <label><input type="checkbox" id="approve"> разрешить создание черновика</label>
+  <button>{{ui.send}}</button>
+</form>
+<script>
+const log = document.getElementById("log");
+document.getElementById("f").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById("msg").value.trim();
+  if (!msg) return;
+  document.getElementById("msg").value = "";
+  log.insertAdjacentHTML("beforeend", `<div class="u"></div><div class="a">{{ui.working}}</div>`);
+  log.children[log.children.length - 2].textContent = "Вы: " + msg;
+  const out = log.lastElementChild;
+  const resp = await fetch("/api/chat", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({message: msg, approve_writes: document.getElementById("approve").checked}),
+  });
+  const reader = resp.body.getReader();
+  const dec = new TextDecoder();
+  let acc = "", buf = "";
+  while (true) {
+    const {done, value} = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, {stream: true});
+    let idx;
+    while ((idx = buf.indexOf("\n\n")) >= 0) {
+      const line = buf.slice(0, idx).trim();
+      buf = buf.slice(idx + 2);
+      if (!line.startsWith("data:")) continue;
+      const ev = JSON.parse(line.slice(5));
+      if (ev.delta) { acc += ev.delta; out.textContent = acc; }
+      if (ev.done !== undefined) out.textContent = ev.done;
+      if (ev.error) out.textContent = "Ошибка: " + ev.error;
+      log.scrollTop = log.scrollHeight;
+    }
+  }
+});
+</script>
+</body>
+</html>

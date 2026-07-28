@@ -13,26 +13,14 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
+
+from perimeter_core.toolspec import ToolSpec
 
 from .mapping import ConfigurationMapping
 from .odata import ODataClient, f_and, f_date_range, f_eq_bool, f_eq_guid, f_eq_str
 
 DOC_TYPES = ("sale", "purchase", "incoming_payment", "customer_invoice")
-
-
-@dataclass
-class ToolSpec:
-    name: str
-    description: str
-    parameters: dict[str, Any]
-    func: Callable[..., str]
-    requires_approval: bool = False
-
-    def openai_schema(self) -> dict[str, Any]:
-        return {"type": "function", "function": {
-            "name": self.name, "description": self.description, "parameters": self.parameters}}
 
 
 def _fmt_money(v: Any) -> str:

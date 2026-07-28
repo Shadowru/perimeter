@@ -81,10 +81,13 @@ class Agent:
     max_iterations: int = 12
     context_budget_chars: int = 24000   # ~ бюджет CTX 4096 токенов
     keep_recent: int = 8                # последних сообщений не сокращаем
+    extra_system: str = ""              # напр., каталог навыков
     messages: list[Message] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.system_prompt = load_system_prompt(self.locale)
+        if self.extra_system:
+            self.system_prompt += "\n\n" + self.extra_system
         self._tools_by_name = {s.name: s for s in self.tool_specs}
 
     # --- история → модель (единственный шов; здесь же компактизация) -----
