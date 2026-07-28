@@ -1,0 +1,18 @@
+{
+  "agent.greeting": "Hello! I am Perimeter, your local 1C data assistant. How can I help?",
+  "agent.confirm_required": "This action modifies data in 1C and requires your confirmation: {action}",
+  "agent.action_denied": "Action denied by the user.",
+  "agent.turn_limit": "Agent step limit reached ({limit}). Refine the task or continue with a new command.",
+  "error.config_missing": "Configuration file not found: {path}",
+  "error.host_not_allowed": "Network connection to \"{host}\" is forbidden: the host is not listed in config/perimeter.yaml (rule #0 — air gap).",
+  "error.bridge_host_not_allowed": "1C host \"{host}\" from bridge_1c.base_url is not in allowed_hosts.",
+  "error.inference_unavailable": "Local inference server is unreachable at {url}. Make sure it is running.",
+  "error.model_bad_json": "The model returned invalid JSON, attempt {attempt} of {max}.",
+  "audit.tool_call": "Tool call",
+  "audit.confirm_granted": "Confirmation granted",
+  "audit.confirm_denied": "Confirmation denied",
+  "ui.title": "Perimeter — local AI worker",
+  "ui.placeholder": "E.g.: find all unposted sales invoices for July for counterparty…",
+  "ui.send": "Send",
+  "ui.working": "Working…"
+}

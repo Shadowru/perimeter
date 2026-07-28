@@ -1,0 +1,18 @@
+{
+  "agent.greeting": "Здравствуйте! Я — «Периметр», ваш локальный ассистент по данным 1С. Чем помочь?",
+  "agent.confirm_required": "Это действие изменяет данные в 1С и требует вашего подтверждения: {action}",
+  "agent.action_denied": "Действие отклонено пользователем.",
+  "agent.turn_limit": "Достигнут лимит шагов агента ({limit}). Уточните задачу или продолжите новой командой.",
+  "error.config_missing": "Не найден файл конфигурации: {path}",
+  "error.host_not_allowed": "Сетевое соединение с «{host}» запрещено: хост отсутствует в config/perimeter.yaml (правило №0 — воздушный зазор).",
+  "error.bridge_host_not_allowed": "Хост 1С «{host}» из bridge_1c.base_url не входит в allowed_hosts.",
+  "error.inference_unavailable": "Локальный inference-сервер недоступен по адресу {url}. Убедитесь, что он запущен.",
+  "error.model_bad_json": "Модель вернула некорректный JSON, попытка {attempt} из {max}.",
+  "audit.tool_call": "Вызов инструмента",
+  "audit.confirm_granted": "Подтверждение получено",
+  "audit.confirm_denied": "Подтверждение отклонено",
+  "ui.title": "Периметр — локальный AI-работник",
+  "ui.placeholder": "Например: найди все непроведённые реализации за июль по контрагенту…",
+  "ui.send": "Отправить",
+  "ui.working": "Работаю…"
+}

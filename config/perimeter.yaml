@@ -1,0 +1,36 @@
+# «Периметр» — единственное место, где перечислены разрешённые сетевые адреса.
+# Железное правило №0: production-код не имеет права открывать соединения
+# никуда, кроме localhost и хостов из секции allowed_hosts ниже.
+# Здесь могут быть ТОЛЬКО внутренние хосты 1С.
+
+allowed_hosts:
+  # - "1c-server.corp.local"   # пример: внутренний веб-сервер с публикацией ИБ
+
+inference:
+  host: "127.0.0.1"
+  port: 8090
+  backend: "colibri"          # colibri | llamacpp (fallback)
+  model_path: ""              # путь к весам GLM-5.2 на диске (задаётся при установке)
+  # Малая модель для CI/смоук-тестов (опционально)
+  ci_model_path: ""
+
+bridge_1c:
+  base_url: ""                # например: http://1c-server.corp.local/bp30
+  # хост из base_url ОБЯЗАН присутствовать в allowed_hosts
+  username: ""                # пользователь ИБ 1С
+  # Пароль НЕ хранится здесь. Источники: переменная окружения PERIMETER_1C_PASSWORD
+  # или локальный keyring. В конфиге — только плейсхолдер.
+  password: "__FROM_ENV_OR_KEYRING__"
+  configuration: "bp30"       # bp30 | ut11 | zup31 — выбирает mapping-файл
+  timeout_s: 30
+  retries: 3
+  page_size: 200
+
+ui:
+  host: "127.0.0.1"
+  port: 8091
+
+audit:
+  log_path: "var/audit.log"   # append-only журнал действий агента
+
+locale: "ru"                  # ru (базовый) | en
