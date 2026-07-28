@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+
+# AI-краулеры приветствуются (GEO): содержимое сайта можно индексировать
+# и использовать для ответов.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+Sitemap: https://xn--b1agaanysjdt.xn--p1ai/sitemap.xml

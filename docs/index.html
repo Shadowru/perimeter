@@ -4,8 +4,63 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Периметр — локальный AI-работник для 1С. Данные не покидают контур</title>
-<meta name="description" content="Агент по данным 1С с инференсом GLM-5.2 полностью внутри вашего контура. Без облаков, без внешних API. Открытый код.">
+<meta name="description" content="Нейросеть для 1С без облака: агент отвечает по базе, делает сверки и готовит черновики документов. Модель GLM-5.2 работает с локального диска, без внешних API. Открытый код (MIT).">
+<meta name="keywords" content="нейросеть для 1С, локальная LLM, ИИ без облака, air-gap, GLM-5.2, ассистент 1С, 152-ФЗ">
 <link rel="canonical" href="https://впериметре.рф/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231C222A'/%3E%3Crect x='4' y='4' width='24' height='24' fill='none' stroke='%23303945' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%2346C97E'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Периметр">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:url" content="https://xn--b1agaanysjdt.xn--p1ai/">
+<meta property="og:title" content="Периметр — локальный AI-работник для 1С">
+<meta property="og:description" content="Данные 1С не покидают ваш контур. Модель 744B с локального диска, без облаков и внешних API. Открытый код (MIT).">
+<meta property="og:image" content="https://xn--b1agaanysjdt.xn--p1ai/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Периметр",
+  "alternateName": "ПРМ-01",
+  "url": "https://xn--b1agaanysjdt.xn--p1ai/",
+  "image": "https://xn--b1agaanysjdt.xn--p1ai/og-image.png",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Linux, Windows, macOS",
+  "inLanguage": "ru",
+  "description": "Локальный AI-работник для 1С:Предприятие 8.3: агент отвечает по базе, делает сверки и готовит черновики документов. Инференс GLM-5.2 (744B MoE) с локального диска через движок colibri; исходящие сетевые вызовы за пределы контура отсутствуют.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "RUB" },
+  "license": "https://github.com/Shadowru/perimeter/blob/main/LICENSE",
+  "softwareVersion": "0.1.0",
+  "downloadUrl": "https://github.com/Shadowru/perimeter",
+  "featureList": [
+    "Поиск документов 1С (реализации, поступления, счета) по контрагенту, периоду, статусу проведения",
+    "Сверка отгрузок и оплат по контрагенту",
+    "Создание черновиков документов только после подтверждения человека",
+    "Работа без интернета: инференс и данные внутри контура",
+    "Append-only аудит всех действий агента"
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "Можно ли использовать нейросеть с данными 1С, не передавая их в облако?",
+     "acceptedAnswer": {"@type": "Answer", "text": "Да. «Периметр» запускает модель GLM-5.2 (744 млрд параметров, открытые веса MIT) с локального диска через движок colibri. Запросы, документы и ответы не покидают сервер компании: исходящие сетевые вызовы за пределы контура запрещены на уровне кода, CI-проверок и рантайм-стража."}},
+    {"@type": "Question", "name": "Нужно ли дорабатывать конфигурацию 1С?",
+     "acceptedAnswer": {"@type": "Answer", "text": "Нет. Используется стандартный интерфейс OData платформы 1С:Предприятие 8.3 — публикация базы на веб-сервере является штатной операцией администратора. Поддерживаются типовые «Бухгалтерия 3.0», «Управление торговлей 11», «ЗУП 3.1»."}},
+    {"@type": "Question", "name": "Нужен ли GPU для локальной LLM?",
+     "acceptedAnswer": {"@type": "Answer", "text": "Нет, GPU не обязателен. Минимальные требования: 16 ГБ RAM и около 380 ГБ на NVMe-диске. Скорость генерации зависит от железа: от 0,1 ток/с на минимальной конфигурации до 5,8–6,8 ток/с на сервере с шестью GPU (замеры движка colibri, upstream)."}},
+    {"@type": "Question", "name": "Как это соотносится со 152-ФЗ и требованиями ИБ?",
+     "acceptedAnswer": {"@type": "Answer", "text": "Архитектурно данные, включая персональные, не передаются за пределы инфраструктуры компании — это снимает главный риск использования облачных LLM. Все действия агента пишутся в append-only журнал, изменение данных в 1С возможно только черновиками и после подтверждения человека. Оценку соответствия конкретным требованиям делает ваша служба ИБ; воздушный зазор проверяется включённым в комплект прогоном без интернета."}},
+    {"@type": "Question", "name": "Сколько стоит «Периметр»?",
+     "acceptedAnswer": {"@type": "Answer", "text": "Код открыт и бесплатен (лицензия MIT), веса модели GLM-5.2 также открыты (MIT). Затраты компании — собственное железо и работы по внедрению."}}
+  ]
+}
+</script>
 <style>
   :root {
     --bg: #14181D;
@@ -159,7 +214,7 @@
   <div class="wrap header-in">
     <div class="brand">ПЕРИМЕТР <small>/ ПРМ‑01</small></div>
     <nav>
-      <a href="#scenarios">Сценарии</a><a href="#deploy">Внедрение</a><a href="#security">Безопасность</a><a href="https://github.com/Shadowru/perimeter">GitHub</a>
+      <a href="#scenarios">Сценарии</a><a href="#deploy">Внедрение</a><a href="#security">Безопасность</a><a href="#faq">FAQ</a><a href="https://github.com/Shadowru/perimeter">GitHub</a>
     </nav>
   </div>
 </header>
@@ -354,10 +409,55 @@
     </div>
   </section>
 
+  <section id="faq">
+    <div class="wrap">
+      <div class="panel">
+        <div class="panel-head"><h2>Вопросы и ответы</h2><span class="no-label">ПАНЕЛЬ 6 · FAQ</span></div>
+        <div>
+          <div class="step">
+            <div class="step-tag">Q1</div>
+            <div class="step-body">
+              <h3>Можно ли использовать нейросеть с данными 1С, не передавая их в облако?</h3>
+              <p>Да. «Периметр» запускает GLM‑5.2 (744 млрд параметров, открытые веса MIT) с локального диска через движок colibri. Запросы, документы и ответы не покидают сервер компании: исходящие вызовы за пределы контура запрещены на уровне кода, CI‑проверок и рантайм‑стража.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-tag">Q2</div>
+            <div class="step-body">
+              <h3>Нужно ли дорабатывать конфигурацию 1С?</h3>
+              <p>Нет. Используется стандартный интерфейс OData платформы 8.3 — публикация базы на веб‑сервере является штатной операцией администратора. Поддерживаются типовые БП 3.0, УТ 11, ЗУП 3.1.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-tag">Q3</div>
+            <div class="step-body">
+              <h3>Нужен ли GPU?</h3>
+              <p>Нет, GPU не обязателен. Минимум: 16 ГБ RAM и ~380 ГБ NVMe. Скорость — от 0,1 ток/с на минимальной конфигурации до 5,8–6,8 ток/с на сервере с шестью GPU (замеры движка colibri, upstream).</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-tag">Q4</div>
+            <div class="step-body">
+              <h3>Как это соотносится со 152‑ФЗ и требованиями ИБ?</h3>
+              <p>Архитектурно данные, включая персональные, не передаются за пределы инфраструктуры компании — это снимает главный риск облачных LLM. Все действия агента — в append‑only журнале; изменение данных в 1С — только черновиками и после подтверждения человека. Оценку соответствия конкретным требованиям делает ваша служба ИБ; воздушный зазор проверяется включённым в комплект прогоном без интернета.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-tag">Q5</div>
+            <div class="step-body">
+              <h3>Сколько это стоит?</h3>
+              <p>Код открыт и бесплатен (MIT), веса GLM‑5.2 тоже открыты (MIT). Затраты компании — собственное железо и работы по внедрению.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="opensource">
     <div class="wrap">
       <div class="panel">
-        <div class="panel-head"><h2>Код открыт и бесплатен</h2><span class="no-label">ПАНЕЛЬ 6 · КОМПЛЕКТ ПОСТАВКИ</span></div>
+        <div class="panel-head"><h2>Код открыт и бесплатен</h2><span class="no-label">ПАНЕЛЬ 7 · КОМПЛЕКТ ПОСТАВКИ</span></div>
         <div class="panel-body">
           <p style="max-width:72ch; color:var(--dim); margin-bottom:18px">Весь код «Периметра» — под лицензией MIT: используйте, изучайте, дорабатывайте, в том числе коммерчески. Ваша служба ИБ может прочитать каждую строку, которая окажется в контуре, — мы считаем это обязательным свойством продукта такого класса.</p>
 <pre class="code"><span class="c"># в контуре, без интернета после получения дистрибутива:</span>
