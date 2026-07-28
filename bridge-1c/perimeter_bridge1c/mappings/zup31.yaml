@@ -1,0 +1,19 @@
+# Маппинг для «Зарплата и управление персоналом 3.1».
+# ВНИМАНИЕ: персональные данные (152-ФЗ) — поля ограничены минимумом,
+# маскирование на уровне инструментов агента обязательно.
+# TODO(verify): весь файл — черновик, сверить с $metadata живой ЗУП 3.1.
+
+configuration: zup31
+display_name: "Зарплата и управление персоналом 3.1"
+
+entities:
+  employee:
+    entity_set: Catalog_Сотрудники
+    fields:
+      name: Description
+
+  organization:
+    entity_set: Catalog_Организации
+    fields:
+      name: Description
+      inn: ИНН            # TODO(verify)

@@ -1,0 +1,33 @@
+# Маппинг для «Управление торговлей 11». Состав объектов отличается от БП 3.0.
+# TODO(verify): весь файл — черновик, сверить с $metadata живой УТ 11 (документы
+# реализации/заказов в УТ называются иначе: РеализацияТоваровУслуг есть,
+# счёт на оплату отсутствует как отдельный документ — используется ЗаказКлиента).
+
+configuration: ut11
+display_name: "Управление торговлей 11"
+
+entities:
+  counterparty:
+    entity_set: Catalog_Контрагенты
+    fields:
+      name: Description
+      code: Code
+      inn: ИНН            # TODO(verify)
+
+  nomenclature:
+    entity_set: Catalog_Номенклатура
+    fields:
+      name: Description
+      code: Code
+
+  sale:
+    entity_set: Document_РеализацияТоваровУслуг
+    fields:
+      counterparty: Контрагент_Key   # TODO(verify)
+      total: СуммаДокумента          # TODO(verify)
+
+  customer_order:
+    entity_set: Document_ЗаказКлиента
+    fields:
+      counterparty: Контрагент_Key   # TODO(verify)
+      total: СуммаДокумента          # TODO(verify)

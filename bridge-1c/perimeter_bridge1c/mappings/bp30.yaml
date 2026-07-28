@@ -1,0 +1,51 @@
+# Маппинг сущностей OData для «Бухгалтерия предприятия 3.0».
+# Правило проекта: имена метаданных 1С НЕ хардкодятся в коде — только здесь.
+# Ref_Key/Number/Date/Posted/DeletionMark/Code/Description — стандартные
+# платформенные атрибуты (безопасно). Остальные имена полей — из типовой
+# БП 3.0; помеченное TODO(verify) обязательно сверить с $metadata живой базы
+# перед вводом в эксплуатацию (клиент делает это автоматически при подключении).
+
+configuration: bp30
+display_name: "Бухгалтерия предприятия 3.0"
+
+entities:
+  counterparty:
+    entity_set: Catalog_Контрагенты
+    fields:
+      name: Description
+      code: Code
+      inn: ИНН            # TODO(verify): имя реквизита ИНН в $metadata конкретной базы
+      kpp: КПП            # TODO(verify)
+
+  nomenclature:
+    entity_set: Catalog_Номенклатура
+    fields:
+      name: Description
+      code: Code
+
+  sale:                    # Реализация (акт, накладная)
+    entity_set: Document_РеализацияТоваровУслуг
+    fields:
+      counterparty: Контрагент_Key   # TODO(verify)
+      total: СуммаДокумента          # TODO(verify)
+      comment: Комментарий           # TODO(verify)
+    rows: Товары                     # табличная часть; TODO(verify)
+
+  purchase:                # Поступление (акт, накладная)
+    entity_set: Document_ПоступлениеТоваровУслуг
+    fields:
+      counterparty: Контрагент_Key   # TODO(verify)
+      total: СуммаДокумента          # TODO(verify)
+
+  incoming_payment:        # Поступление на расчётный счёт
+    entity_set: Document_ПоступлениеНаРасчетныйСчет
+    fields:
+      counterparty: Контрагент_Key   # TODO(verify): в БП 3.0 может быть Плательщик/Контрагент
+      total: СуммаДокумента          # TODO(verify)
+
+  customer_invoice:        # Счёт на оплату покупателю
+    entity_set: Document_СчетНаОплатуПокупателю
+    fields:
+      counterparty: Контрагент_Key   # TODO(verify)
+      total: СуммаДокумента          # TODO(verify)
+    rows: Товары                     # TODO(verify)
