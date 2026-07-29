@@ -79,6 +79,10 @@ class Agent:
     confirm: ConfirmCallback         # (tool_name, args) -> bool; спрашивает человека
     locale: str = "ru"
     max_iterations: int = 12
+    # Потолок на один ответ модели. Без него локальная модель на медленном
+    # железе может генерировать до предела сервера: при 0,07 ток/с это часы
+    # молчания вместо ответа (измерено на стенде 2026-07-29).
+    max_tokens_per_call: int = 512
     context_budget_chars: int = 24000   # ~ бюджет CTX 4096 токенов
     keep_recent: int = 8                # последних сообщений не сокращаем
     extra_system: str = ""              # напр., каталог навыков
@@ -167,11 +171,13 @@ class Agent:
                     on_delta: DeltaCallback | None) -> tuple[str, list[dict[str, Any]]]:
         outbound = self._outbound_messages()
         if on_delta is None:
-            result = self.client.chat(outbound, tools=schemas)
+            result = self.client.chat(outbound, tools=schemas,
+                                      max_tokens=self.max_tokens_per_call)
             return result.content, list(result.tool_calls)
         text_parts: list[str] = []
         tool_calls: list[dict[str, Any]] = []
-        for chunk in self.client.chat_stream(outbound, tools=schemas):
+        for chunk in self.client.chat_stream(outbound, tools=schemas,
+                                             max_tokens=self.max_tokens_per_call):
             if chunk.content:
                 text_parts.append(chunk.content)
                 on_delta(chunk.content)

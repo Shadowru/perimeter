@@ -173,26 +173,29 @@ class Bridge1CTools:
     # --- спецификации для агента -----------------------------------------
 
     def specs(self) -> list[ToolSpec]:
-        date_props = {
-            "date_from": {"type": "string", "description": "ISO, напр. 2026-07-01T00:00:00"},
-            "date_to": {"type": "string", "description": "ISO, напр. 2026-07-31T23:59:59"},
-        }
+        """Схемы инструментов.
+
+        Каждый токен схемы оплачивается временем prefill на каждом ходе
+        агента: на стенде 2026-07-29 это ~9 с/токен, а схемы составляли
+        две трети промпта. Поэтому описания предельно короткие, а формат
+        дат вынесен в системный промпт (он в контексте всё равно есть).
+        """
+        dates = {"date_from": {"type": "string"}, "date_to": {"type": "string"}}
         return [
             ToolSpec(
                 "get_counterparty",
-                "Найти контрагента по названию или ИНН; вернёт key для других инструментов.",
-                {"type": "object",
-                 "properties": {"query": {"type": "string", "description": "часть названия или ИНН"}},
+                "Контрагент по названию/ИНН -> key.",
+                {"type": "object", "properties": {"query": {"type": "string"}},
                  "required": ["query"]},
                 lambda **kw: self.get_counterparty(**kw),
             ),
             ToolSpec(
                 "find_document",
-                "Найти документы 1С по типу, контрагенту, датам, признаку проведения.",
+                "Документы по типу, контрагенту, периоду, проведению.",
                 {"type": "object", "properties": {
                     "doc_type": {"type": "string", "enum": list(DOC_TYPES)},
                     "counterparty_key": {"type": "string"},
-                    **date_props,
+                    **dates,
                     "posted": {"type": "boolean"},
                     "number": {"type": "string"},
                     "limit": {"type": "integer"},
@@ -201,21 +204,21 @@ class Bridge1CTools:
             ),
             ToolSpec(
                 "ledger_report",
-                "Сверка по контрагенту: отгрузки против оплат, сальдо.",
+                "Сверка: отгрузки против оплат, сальдо.",
                 {"type": "object", "properties": {
-                    "counterparty_key": {"type": "string"}, **date_props,
+                    "counterparty_key": {"type": "string"}, **dates,
                 }, "required": ["counterparty_key"]},
                 lambda **kw: self.ledger_report(**kw),
             ),
             ToolSpec(
                 "create_draft_document",
-                "Создать ЧЕРНОВИК документа (не проводится). Требует подтверждения человека.",
+                "ЧЕРНОВИК документа (не проводится, нужно подтверждение).",
                 {"type": "object", "properties": {
                     "doc_type": {"type": "string", "enum": ["customer_invoice", "sale"]},
                     "counterparty_key": {"type": "string"},
                     "total": {"type": "number"},
                     "comment": {"type": "string"},
-                    "based_on_key": {"type": "string", "description": "key документа-основания"},
+                    "based_on_key": {"type": "string"},
                 }, "required": ["doc_type", "counterparty_key"]},
                 lambda **kw: self.create_draft_document(**kw),
                 requires_approval=True,
