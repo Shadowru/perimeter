@@ -159,6 +159,40 @@ def test_scenario_3_denied(tmp_path):
 # --- Живая модель (ручной прогон, полная GLM-5.2 или llama.cpp) -----------
 
 @pytest.mark.skipif(not LIVE_LLM_URL, reason="задайте PERIMETER_E2E_LLM_URL для живого прогона")
+def test_live_minimal_tool_loop(tmp_path):
+    """Урезанный цикл: один инструмент, короткий промпт.
+
+    Полный сценарий (4 схемы инструментов, ~760 токенов промпта) на машине
+    с 32 ГБ RAM не проходит: prefill не укладывается в час, см.
+    docs/hardware.md. Этот тест доказывает, что связка «живая модель →
+    вызов инструмента → данные 1С → ответ» работает, при промпте, который
+    такому железу по силам. На рекомендуемых 128 ГБ должен проходить
+    полный сценарий ниже.
+    """
+    with Fake1CServer() as srv:
+        mapping = load_mapping("bp30")
+        tools = Bridge1CTools(
+            ODataClient(srv.base_url, "robot", "test", mapping=mapping), mapping)
+        only_counterparty = [s for s in tools.specs() if s.name == "get_counterparty"]
+        agent = Agent(
+            client=InferenceClient(LIVE_LLM_URL, model="glm-5.2", timeout_s=7200),
+            tool_specs=only_counterparty,
+            audit=AuditLog(tmp_path / "audit.log"),
+            confirm=lambda n, a: False,
+            max_iterations=3,
+            max_tokens_per_call=96,
+        )
+        agent.system_prompt = (
+            "Ты — ассистент по 1С. Используй инструмент get_counterparty, "
+            "чтобы найти контрагента. Отвечай кратко по-русски."
+        )
+        result = agent.run("Найди контрагента Ромашка")
+        tool_msgs = [m for m in agent.messages if m["role"] == "tool"]
+        assert tool_msgs, f"модель не вызвала инструмент; ответ: {result.text[:200]}"
+        assert "Ромашка" in tool_msgs[0]["content"]
+
+
+@pytest.mark.skipif(not LIVE_LLM_URL, reason="задайте PERIMETER_E2E_LLM_URL для живого прогона")
 def test_live_model_scenario_1(tmp_path):
     with Fake1CServer() as srv:
         agent = build_agent(tmp_path, srv, LIVE_LLM_URL)
