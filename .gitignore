@@ -5,3 +5,7 @@ __pycache__/
 .pytest_cache/
 models/
 *.gguf
+
+# Рантайм-состояние движка (кэш KV и статистика экспертов) — не версионируем
+.coli_kv*
+.coli_usage
