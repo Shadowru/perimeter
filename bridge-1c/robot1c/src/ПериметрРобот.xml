@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.16">
+	<ExternalDataProcessor uuid="6c1e0b3a-1111-4d2f-9b7c-8e5a2f0d1234">
+		<InternalInfo>
+			<xr:GeneratedType xmlns:xr="http://v8.1c.ru/8.3/xcf/readable" name="ExternalDataProcessorObject.ПериметрРобот" category="Object">
+				<xr:TypeId>7ac6b0a1-2222-4c3d-8e1f-9a0b1c2d3e4f</xr:TypeId>
+				<xr:ValueId>8bd7c1b2-3333-4d4e-9f2a-0b1c2d3e4f50</xr:ValueId>
+			</xr:GeneratedType>
+		</InternalInfo>
+		<Properties>
+			<Name>ПериметрРобот</Name>
+			<Synonym>
+				<v8:item><v8:lang>ru</v8:lang><v8:content>Периметр: робот</v8:content></v8:item>
+			</Synonym>
+			<Comment/>
+			<DefaultForm/>
+			<AuxiliaryForm/>
+		</Properties>
+		<ChildObjects/>
+	</ExternalDataProcessor>
+</MetaDataObject>
