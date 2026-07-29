@@ -63,7 +63,10 @@ def run_once(client: InferenceClient, messages, max_tokens: int) -> dict:
     n_content = 0
     usage = None
     for chunk in client.chat_stream(messages, max_tokens=max_tokens, temperature=0.0):
-        if ttft is None and (chunk.content or chunk.reasoning):
+        # Только content: сервер каждые 10 с шлёт keepalive-точку в
+        # reasoning_content, чтобы клиент не отвалился на длинном prefill.
+        # Считать её первым токеном — значит получить красивые, но ложные 10 с.
+        if ttft is None and chunk.content:
             ttft = time.monotonic() - t0
         n_content += len(chunk.content)
         if chunk.usage:
@@ -105,7 +108,7 @@ def main() -> int:
         print(f"| Метрика | Значение |\n|---|---|")
         print(f"| Модель на диске | {disk_gb:.1f} ГБ |")
         print(f"| Загрузка до READY | {load_s:.0f} с |")
-        print(f"| TTFT холодный | {cold['ttft_s']} с |")
+        print(f"| TTFT холодный (до первого токена ответа) | {cold['ttft_s']} с |")
         print(f"| TTFT тёплый | {warm['ttft_s']} с |")
         print(f"| Декодирование | {warm['tok_s'] or cold['tok_s']} tok/s |")
         print(f"| Пиковый RSS (сервер+движок) | {peak_gb:.1f} ГБ |")
