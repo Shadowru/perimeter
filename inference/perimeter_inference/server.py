@@ -30,7 +30,10 @@ class InferenceServerError(Exception):
 class InferenceServer:
     def __init__(self, cfg: InferenceConfig, model_path: str | None = None):
         self.cfg = cfg
-        self.model_path = model_path or cfg.model_path
+        raw_path = model_path or cfg.model_path
+        # Сервер запускается с cwd движка, поэтому относительный путь к весам
+        # там не разрешится — приводим к абсолютному от текущего каталога.
+        self.model_path = str(Path(raw_path).resolve()) if raw_path else ""
         self.proc: subprocess.Popen[bytes] | None = None
 
     def _colibri_cmd(self) -> list[str]:

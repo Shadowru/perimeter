@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import resource
 import sys
 import time
 from pathlib import Path
@@ -26,6 +25,36 @@ from perimeter_inference.client import InferenceClient  # noqa: E402
 from perimeter_inference.server import InferenceServer  # noqa: E402
 
 PROMPT_SHORT = [{"role": "user", "content": "Перечисли три формы бухгалтерской отчётности."}]
+
+
+def _descendants(pid: int) -> list[int]:
+    out: list[int] = []
+    try:
+        for task in Path(f"/proc/{pid}/task").iterdir():
+            out += [int(c) for c in (task / "children").read_text().split()]
+    except OSError:
+        return out
+    for child in list(out):
+        out += _descendants(child)
+    return out
+
+
+def peak_rss_gb(pid: int) -> float:
+    """Пиковый RSS процесса и всех потомков (VmHWM из /proc, Linux).
+
+    Читается пока процессы живы: getrusage(RUSAGE_CHILDREN) учитывает
+    только завершённых потомков и на работающем сервере даёт ноль.
+    """
+    total_kb = 0
+    for p in [pid, *_descendants(pid)]:
+        try:
+            for line in Path(f"/proc/{p}/status").read_text().splitlines():
+                if line.startswith("VmHWM:"):
+                    total_kb += int(line.split()[1])
+                    break
+        except OSError:
+            continue
+    return total_kb / 1e6
 
 
 def run_once(client: InferenceClient, messages, max_tokens: int) -> dict:
@@ -70,15 +99,16 @@ def main() -> int:
     try:
         cold = run_once(client, PROMPT_SHORT, args.max_tokens)
         warm = run_once(client, PROMPT_SHORT, args.max_tokens)
-        peak_rss_gb = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss / 1e6
+        # Пока сервер жив — иначе /proc уже не прочитать.
+        peak_gb = peak_rss_gb(srv.proc.pid) if srv.proc else 0.0
         print("\n### Результаты замера\n")
         print(f"| Метрика | Значение |\n|---|---|")
-        print(f"| Модель на диске | {disk_gb:.0f} ГБ |")
+        print(f"| Модель на диске | {disk_gb:.1f} ГБ |")
         print(f"| Загрузка до READY | {load_s:.0f} с |")
         print(f"| TTFT холодный | {cold['ttft_s']} с |")
         print(f"| TTFT тёплый | {warm['ttft_s']} с |")
         print(f"| Декодирование | {warm['tok_s'] or cold['tok_s']} tok/s |")
-        print(f"| Пиковый RSS (сервер+движок) | {peak_rss_gb:.1f} ГБ |")
+        print(f"| Пиковый RSS (сервер+движок) | {peak_gb:.1f} ГБ |")
         print(f"\nСырые данные: cold={json.dumps(cold)} warm={json.dumps(warm)}")
     finally:
         srv.stop()
