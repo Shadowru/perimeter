@@ -17,10 +17,20 @@ from typing import Any
 
 from perimeter_core.toolspec import ToolSpec
 
+from .backend import (KIND_BOOL, KIND_DATETIME, KIND_GUID, OP_CONTAINS, OP_EQ,
+                      OP_GE, OP_LE, Backend, Cond, Query)
 from .mapping import ConfigurationMapping
-from .odata import ODataClient, f_and, f_date_range, f_eq_bool, f_eq_guid, f_eq_str
 
 DOC_TYPES = ("sale", "purchase", "incoming_payment", "customer_invoice")
+
+
+def _date_conditions(date_from: str | None, date_to: str | None) -> list[Cond]:
+    conds = []
+    if date_from:
+        conds.append(Cond("Date", OP_GE, date_from, KIND_DATETIME))
+    if date_to:
+        conds.append(Cond("Date", OP_LE, date_to, KIND_DATETIME))
+    return conds
 
 
 def _fmt_money(v: Any) -> str:
@@ -35,7 +45,7 @@ def _fmt_date(iso: str) -> str:
 
 
 class Bridge1CTools:
-    def __init__(self, client: ODataClient, mapping: ConfigurationMapping):
+    def __init__(self, client: Backend, mapping: ConfigurationMapping):
         self.client = client
         self.mapping = mapping
 
@@ -44,17 +54,20 @@ class Bridge1CTools:
     def get_counterparty(self, query: str) -> str:
         ent = self.mapping.entity("counterparty")
         name_f = ent.field_1c("name")
-        rows = list(self.client.query(
-            ent.entity_set,
-            filter_=f"substringof('{query.lower()}', {name_f})",
+        rows = list(self.client.run(Query(
+            entity_set=ent.entity_set,
+            conditions=[Cond(name_f, OP_CONTAINS, query.lower())],
             select=["Ref_Key", "Code", name_f] + [f for f in (ent.fields.get("inn"),) if f],
             top=10,
-        ))
+        )))
         if not rows and query.strip().isdigit():
             inn_f = ent.fields.get("inn")
             if inn_f:
-                rows = list(self.client.query(
-                    ent.entity_set, filter_=f_eq_str(inn_f, query.strip()), top=10))
+                rows = list(self.client.run(Query(
+                    entity_set=ent.entity_set,
+                    conditions=[Cond(inn_f, OP_EQ, query.strip())],
+                    top=10,
+                )))
         if not rows:
             return f"Контрагент по запросу «{query}» не найден."
         inn_f = ent.fields.get("inn")
@@ -74,21 +87,21 @@ class Bridge1CTools:
         ent = self.mapping.entity(doc_type)
         cp_f = ent.field_1c("counterparty")
         total_f = ent.field_1c("total")
-        parts: list[str] = []
+        conds: list[Cond] = []
         if counterparty_key:
-            parts.append(f_eq_guid(cp_f, counterparty_key))
-        parts += f_date_range("Date", date_from, date_to)
+            conds.append(Cond(cp_f, OP_EQ, counterparty_key, KIND_GUID))
+        conds += _date_conditions(date_from, date_to)
         if posted is not None:
-            parts.append(f_eq_bool("Posted", posted))
+            conds.append(Cond("Posted", OP_EQ, posted, KIND_BOOL))
         if number:
-            parts.append(f_eq_str("Number", number))
-        rows = list(self.client.query(
-            ent.entity_set,
-            filter_=f_and(parts) or None,
+            conds.append(Cond("Number", OP_EQ, number))
+        rows = list(self.client.run(Query(
+            entity_set=ent.entity_set,
+            conditions=conds,
             select=["Ref_Key", "Number", "Date", "Posted", cp_f, total_f],
             order_by="Date",
             top=limit,
-        ))
+        )))
         if not rows:
             return "Документы не найдены."
         lines = [
@@ -113,11 +126,12 @@ class Bridge1CTools:
             ent = self.mapping.entity(logical)
             cp_f = ent.field_1c("counterparty")
             total_f = ent.field_1c("total")
-            parts = [f_eq_guid(cp_f, counterparty_key), f_eq_bool("Posted", True)]
-            parts += f_date_range("Date", date_from, date_to)
-            rows = list(self.client.query(
-                ent.entity_set, filter_=f_and(parts),
-                select=["Number", "Date", total_f], order_by="Date"))
+            conds = [Cond(cp_f, OP_EQ, counterparty_key, KIND_GUID),
+                     Cond("Posted", OP_EQ, True, KIND_BOOL)]
+            conds += _date_conditions(date_from, date_to)
+            rows = list(self.client.run(Query(
+                entity_set=ent.entity_set, conditions=conds,
+                select=["Number", "Date", total_f], order_by="Date")))
             subtotal = sum(float(r.get(total_f) or 0) for r in rows)
             totals[logical] = subtotal
             out.append(f"{title} ({len(rows)}): " + "; ".join(

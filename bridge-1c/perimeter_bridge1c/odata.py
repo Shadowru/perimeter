@@ -21,6 +21,8 @@ import urllib.parse
 import urllib.request
 from typing import Any, Iterator
 
+from .backend import (KIND_BOOL, KIND_DATETIME, KIND_GUID, KIND_NUMBER, OP_CONTAINS,
+                      OP_EQ, OP_GE, OP_LE, Cond, Query)
 from .mapping import ConfigurationMapping, EntityMapping
 
 
@@ -108,6 +110,16 @@ class ODataClient:
             if remaining is not None:
                 remaining -= len(rows)
 
+    def run(self, query: Query) -> Iterator[dict[str, Any]]:
+        """Реализация Backend: структурный запрос → $filter."""
+        return self.query(
+            query.entity_set,
+            filter_=render_filter(query.conditions) or None,
+            select=query.select,
+            order_by=query.order_by,
+            top=query.top,
+        )
+
     def get(self, entity_set: str, ref_key: str, select: list[str] | None = None) -> dict[str, Any]:
         params: dict[str, str] = {"$format": "json"}
         if select:
@@ -174,3 +186,26 @@ def f_date_range(field: str, date_from: str | None, date_to: str | None) -> list
 
 def f_and(parts: list[str]) -> str:
     return " and ".join(p for p in parts if p)
+
+
+def render_cond(c: Cond) -> str:
+    """Одно структурное условие → фрагмент $filter."""
+    if c.op == OP_CONTAINS:
+        return f"substringof('{str(c.value).replace(chr(39), chr(39) * 2)}', {c.field})"
+    if c.op not in (OP_EQ, OP_GE, OP_LE):
+        raise ODataError(f"неподдерживаемая операция отбора: {c.op}")
+    if c.kind == KIND_GUID:
+        literal = f"guid'{c.value}'"
+    elif c.kind == KIND_DATETIME:
+        literal = f"datetime'{c.value}'"
+    elif c.kind == KIND_BOOL:
+        literal = "true" if c.value else "false"
+    elif c.kind == KIND_NUMBER:
+        literal = str(c.value)
+    else:
+        literal = "'" + str(c.value).replace("'", "''") + "'"
+    return f"{c.field} {c.op} {literal}"
+
+
+def render_filter(conditions: list[Cond]) -> str:
+    return f_and([render_cond(c) for c in conditions])

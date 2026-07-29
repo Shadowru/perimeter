@@ -7,6 +7,7 @@ PERIMETER_1C_PASSWORD или локальный keyring (secret-tool). Вали�
 
 from __future__ import annotations
 
+import ipaddress
 import os
 import subprocess
 from dataclasses import dataclass, field
@@ -78,6 +79,39 @@ class Bridge1CConfig:
 
 
 @dataclass
+class RobotConfig:
+    """Обратное подключение: шлюз, который опрашивает обработка внутри 1С.
+
+    Слушать разрешено только loopback или адрес внутренней сети — робот
+    подключается из локальной сети заказчика, наружу шлюз не выставляется.
+    """
+    enabled: bool = False
+    host: str = "127.0.0.1"
+    port: int = 8092
+    token: str = ""            # общий секрет; пустой — только для loopback
+    timeout_s: int = 120       # сколько ждём ответа робота на одно задание
+
+    def validate(self) -> None:
+        if not self.enabled:
+            return
+        if self.host in LOOPBACK_NAMES:
+            return
+        try:
+            addr = ipaddress.ip_address(self.host)
+        except ValueError:
+            raise ConfigError(
+                f"robot.host должен быть IP-адресом внутренней сети, получено: {self.host}"
+            ) from None
+        if not (addr.is_private or addr.is_link_local):
+            raise ConfigError(
+                f"robot.host {self.host} — не адрес внутренней сети; выставлять шлюз "
+                f"в публичную сеть запрещено (правило №0)")
+        if not self.token:
+            raise ConfigError(
+                "robot.token обязателен, если шлюз слушает не loopback")
+
+
+@dataclass
 class UIConfig:
     host: str = "127.0.0.1"
     port: int = 8091
@@ -88,6 +122,7 @@ class PerimeterConfig:
     allowed_hosts: list[str] = field(default_factory=list)
     inference: InferenceConfig = field(default_factory=InferenceConfig)
     bridge_1c: Bridge1CConfig = field(default_factory=Bridge1CConfig)
+    robot: RobotConfig = field(default_factory=RobotConfig)
     ui: UIConfig = field(default_factory=UIConfig)
     audit_log_path: str = "var/audit.log"
     locale: str = "ru"
@@ -97,8 +132,11 @@ class PerimeterConfig:
             if host not in LOOPBACK_NAMES:
                 raise ConfigError(f"{section}.host обязан быть loopback, получено: {host}")
         bridge_host = self.bridge_1c.host
-        if bridge_host and bridge_host not in LOOPBACK_NAMES and bridge_host not in self.allowed_hosts:
+        # При обратном подключении base_url не используется: 1С приходит сама.
+        if (not self.robot.enabled and bridge_host and bridge_host not in LOOPBACK_NAMES
+                and bridge_host not in self.allowed_hosts):
             raise ConfigError(t("error.bridge_host_not_allowed", host=bridge_host))
+        self.robot.validate()
 
 
 def load_config(path: str | os.PathLike[str]) -> PerimeterConfig:
@@ -111,6 +149,7 @@ def load_config(path: str | os.PathLike[str]) -> PerimeterConfig:
         allowed_hosts=list(raw.get("allowed_hosts") or []),
         inference=InferenceConfig(**(raw.get("inference") or {})),
         bridge_1c=Bridge1CConfig(**(raw.get("bridge_1c") or {})),
+        robot=RobotConfig(**(raw.get("robot") or {})),
         ui=UIConfig(**(raw.get("ui") or {})),
         audit_log_path=(raw.get("audit") or {}).get("log_path", "var/audit.log"),
         locale=raw.get("locale", "ru"),

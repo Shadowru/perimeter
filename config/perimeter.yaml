@@ -26,6 +26,15 @@ bridge_1c:
   retries: 3
   page_size: 200
 
+# Обратное подключение: 1С сама опрашивает «Периметр» (публикация базы не
+# нужна, работает и на базовой версии). Подробности — bridge-1c/robot1c/README.md
+robot:
+  enabled: false
+  host: "127.0.0.1"           # только loopback или адрес внутренней сети
+  port: 8092
+  token: ""                   # обязателен, если host не loopback
+  timeout_s: 120
+
 ui:
   host: "127.0.0.1"
   port: 8091

@@ -25,6 +25,7 @@ for component in ("inference", "bridge-1c"):
 
 from perimeter_bridge1c.mapping import load_mapping  # noqa: E402
 from perimeter_bridge1c.odata import ODataClient  # noqa: E402
+from perimeter_bridge1c.robot import RobotBackend, RobotGateway  # noqa: E402
 from perimeter_bridge1c.tools import Bridge1CTools  # noqa: E402
 from perimeter_inference.client import InferenceClient  # noqa: E402
 
@@ -39,18 +40,25 @@ def build_agent(config_path: str | Path,
                      on_violation=lambda host: audit.write("network_violation", host=host))
 
     mapping = load_mapping(cfg.bridge_1c.configuration)
-    odata = ODataClient(
-        cfg.bridge_1c.base_url, cfg.bridge_1c.username,
-        cfg.bridge_1c.resolve_password(),
-        timeout_s=cfg.bridge_1c.timeout_s, retries=cfg.bridge_1c.retries,
-        page_size=cfg.bridge_1c.page_size, mapping=mapping,
-    )
-    problems = odata.validate_mapping()
+    if cfg.robot.enabled:
+        # Обратное подключение: ждём, пока 1С придёт сама.
+        gateway = RobotGateway(cfg.robot.host, cfg.robot.port, cfg.robot.token)
+        gateway.start()
+        backend = RobotBackend(gateway, mapping=mapping, timeout_s=cfg.robot.timeout_s)
+        audit.write("robot_gateway_started", url=gateway.base_url)
+    else:
+        backend = ODataClient(
+            cfg.bridge_1c.base_url, cfg.bridge_1c.username,
+            cfg.bridge_1c.resolve_password(),
+            timeout_s=cfg.bridge_1c.timeout_s, retries=cfg.bridge_1c.retries,
+            page_size=cfg.bridge_1c.page_size, mapping=mapping,
+        )
+    problems = backend.validate_mapping()
     if problems:
         audit.write("mapping_problems", problems=problems)
 
     skills = load_skills()
-    tool_specs = Bridge1CTools(odata, mapping).specs() + [make_load_skill_tool(skills)]
+    tool_specs = Bridge1CTools(backend, mapping).specs() + [make_load_skill_tool(skills)]
 
     agent = Agent(
         client=InferenceClient(cfg.inference.base_url, model=cfg.inference.model_id),
