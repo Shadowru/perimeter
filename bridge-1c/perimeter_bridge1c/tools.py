@@ -28,6 +28,37 @@ DOC_TYPES = ("sale", "purchase", "incoming_payment", "customer_invoice")
 MAX_ROWS = 200
 
 
+DOC_TYPE_NAMES = {
+    "sale": "реализации",
+    "purchase": "поступления товаров и услуг",
+    "incoming_payment": "поступления на расчётный счёт",
+    "customer_invoice": "счета покупателям",
+}
+
+
+def _selection_label(doc_type: str, date_from: str | None, date_to: str | None,
+                     posted: bool | None, number: str | None) -> str:
+    """Строка условий выборки — она идёт первой в выводе.
+
+    Модель регулярно теряла период: «за июль» уходило в инструмент без дат,
+    и выборка молча шла за всё время. Ни правило в промпте, ни описание
+    параметра этого не исправили (замеры 2026-07-30). Поэтому выборка сама
+    сообщает, за что она построена: расхождение с вопросом становится видно.
+    """
+    parts = [DOC_TYPE_NAMES.get(doc_type, doc_type)]
+    if date_from or date_to:
+        parts.append(f"с {(date_from or '...')[:10]} по {(date_to or '...')[:10]}")
+    else:
+        parts.append("за всё время (период не задан)")
+    if posted is True:
+        parts.append("только проведённые")
+    elif posted is False:
+        parts.append("только непроведённые")
+    if number:
+        parts.append(f"номер {number}")
+    return "Выборка: " + ", ".join(parts) + "."
+
+
 def _sane_limit(limit: int | None) -> int:
     try:
         value = int(limit)
@@ -153,14 +184,15 @@ class Bridge1CTools:
             order_by="Date",
             top=limit,
         )))
+        head = _selection_label(doc_type, date_from, date_to, posted, number)
         if not rows:
-            return "Документы не найдены."
+            return f"{head}\nДокументы не найдены."
         lines = [
             f"№{r['Number']} от {_fmt_date(r['Date'])} | {_fmt_money(r.get(total_f))} руб. | "
             f"{'проведён' if r.get('Posted') else 'НЕ проведён'} | key={r['Ref_Key']}"
             for r in rows
         ]
-        return "\n".join(lines)
+        return "\n".join([head, *lines])
 
     def ledger_report(self, counterparty_key: str,
                       date_from: str | None = None, date_to: str | None = None) -> str:
@@ -225,9 +257,15 @@ class Bridge1CTools:
         if comment is not None and ent.fields.get("comment"):
             payload[ent.field_1c("comment")] = comment
         created = self.client.create_draft(ent.entity_set, payload)
-        return (f"Создан ЧЕРНОВИК (не проведён): №{created.get('Number', '?')} "
-                f"от {_fmt_date(created.get('Date', ''))} | key={created['Ref_Key']}. "
-                f"Проведение — только вручную человеком в 1С.")
+        when = _fmt_date(created.get("Date", ""))
+        amount = created.get(ent.field_1c("total"))
+        parts = [f"Создан ЧЕРНОВИК (не проведён): №{created.get('Number', '?')}"]
+        parts.append(f"от {when}" if when else "дату присвоит 1С")
+        if amount is not None:
+            parts.append(f"на {_fmt_money(amount)} руб.")
+        parts.append(f"key={created['Ref_Key']}")
+        return (" | ".join(parts)
+                + ". Проведение — только вручную человеком в 1С.")
 
     # --- спецификации для агента -----------------------------------------
 

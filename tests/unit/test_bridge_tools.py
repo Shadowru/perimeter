@@ -182,3 +182,38 @@ def test_doc_type_descriptions_distinguish_goods_from_money():
         spec = next(s for s in make_tools(srv).specs() if s.name == "find_document")
         assert "поступление товаров" in spec.description
         assert "приход денег" in spec.description
+
+
+# --- выборка называет свои условия ----------------------------------------
+# Модель теряла период («за июль» уходило без дат), и ни промпт, ни описание
+# параметра этого не исправили. Тогда пусть об этом говорит сам результат.
+
+def test_selection_states_that_no_period_was_given():
+    with Fake1CServer() as srv:
+        out = make_tools(srv).find_document("sale", posted=False)
+        assert out.startswith("Выборка: реализации, за всё время (период не задан)")
+        assert "только непроведённые" in out.splitlines()[0]
+
+
+def test_selection_states_the_period_it_used():
+    with Fake1CServer() as srv:
+        out = make_tools(srv).find_document(
+            "sale", date_from="2026-07-01T00:00:00", date_to="2026-07-31T23:59:59")
+        assert "с 2026-07-01 по 2026-07-31" in out.splitlines()[0]
+
+
+def test_empty_result_still_says_what_was_searched():
+    """«Ничего не найдено» без условий — бесполезный ответ."""
+    with Fake1CServer() as srv:
+        out = make_tools(srv).find_document("sale", number="НЕТ-ТАКОГО")
+        assert "Выборка:" in out and "номер НЕТ-ТАКОГО" in out
+        assert "Документы не найдены" in out
+
+
+def test_draft_reports_its_amount():
+    """Без суммы в ответе инструмента фразу «счёт на 50 000» нечем подтвердить."""
+    with Fake1CServer() as srv:
+        out = make_tools(srv).create_draft_document(
+            "customer_invoice", GUID_ROMASHKA, total=50000)
+        assert "50 000.00" in out and "ЧЕРНОВИК" in out
+        assert "от  |" not in out      # пустой даты быть не должно
