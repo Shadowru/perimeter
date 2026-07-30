@@ -151,3 +151,15 @@ def test_audit_append_only(tmp_path):
     events = [json.loads(line)["event"] for line in lines]
     assert events == ["tool_call", "assistant_message"]
     assert all("ts" in json.loads(line) for line in lines)
+
+
+def test_agent_uses_low_temperature(tmp_path):
+    """Выбор инструмента должен быть воспроизводимым, а не творческим."""
+    script = [Scripted(content="готово")]
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, script)
+        agent.run("привет")
+        assert llm.requests[0]["temperature"] <= 0.2, (
+            f"агент вызвал модель с температурой {llm.requests[0]['temperature']} — "
+            "выбор инструмента станет случайным")
+        llm.__exit__()

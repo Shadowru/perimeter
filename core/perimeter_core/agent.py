@@ -84,6 +84,11 @@ class Agent:
     # часа на один ход. Вызов инструмента укладывается в ~80 токенов, деловой
     # ответ — в ~150, так что 192 хватает, а лишние рассуждения отсекаются.
     max_tokens_per_call: int = 192
+    # Выбор инструмента должен быть воспроизводимым. При температуре по
+    # умолчанию (0.6) модель на одном и том же вопросе то вызывает
+    # abc_analysis, то ищет контрагента «клиенты» (замер на стенде 16 ГБ,
+    # 2026-07-30). Для деловых отчётов разброс недопустим.
+    temperature: float = 0.1
     context_budget_chars: int = 24000   # ~ бюджет CTX 4096 токенов
     keep_recent: int = 8                # последних сообщений не сокращаем
     extra_system: str = ""              # напр., каталог навыков
@@ -173,12 +178,14 @@ class Agent:
         outbound = self._outbound_messages()
         if on_delta is None:
             result = self.client.chat(outbound, tools=schemas,
-                                      max_tokens=self.max_tokens_per_call)
+                                      max_tokens=self.max_tokens_per_call,
+                                      temperature=self.temperature)
             return result.content, list(result.tool_calls)
         text_parts: list[str] = []
         tool_calls: list[dict[str, Any]] = []
         for chunk in self.client.chat_stream(outbound, tools=schemas,
-                                             max_tokens=self.max_tokens_per_call):
+                                             max_tokens=self.max_tokens_per_call,
+                                             temperature=self.temperature):
             if chunk.content:
                 text_parts.append(chunk.content)
                 on_delta(chunk.content)
