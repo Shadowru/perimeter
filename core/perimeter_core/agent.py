@@ -47,6 +47,34 @@ def load_system_prompt(locale: str = "ru") -> str:
     return path.read_text(encoding="utf-8").strip()
 
 
+def merge_tool_call_deltas(acc: dict[int, dict[str, Any]],
+                           deltas: list[dict[str, Any]]) -> None:
+    """Склейка потоковых фрагментов вызова инструмента.
+
+    В потоке вызов приходит по частям: сперва имя, затем аргументы кусками,
+    каждый — со своим `index`. Складывать фрагменты списком нельзя: получится
+    несколько «вызовов» с обрывками аргументов и без поля `type`, и сервер
+    отвергнет такую историю («Missing tool call type»). Найдено в живом
+    интерфейсе 2026-07-30: неструйный путь (и все тесты) работал, а
+    единственный путь, которым пользуется человек, — нет.
+    """
+    for delta in deltas:
+        index = delta.get("index", 0)
+        slot = acc.setdefault(index, {
+            "id": "", "type": "function",
+            "function": {"name": "", "arguments": ""},
+        })
+        if delta.get("id"):
+            slot["id"] = delta["id"]
+        if delta.get("type"):
+            slot["type"] = delta["type"]
+        fn = delta.get("function") or {}
+        if fn.get("name"):
+            slot["function"]["name"] = fn["name"]
+        if fn.get("arguments"):
+            slot["function"]["arguments"] += fn["arguments"]
+
+
 def salvage_tool_calls(text: str, known_tools: set[str]) -> list[dict[str, Any]]:
     """Достаёт tool-вызовы из текста, если бэкенд не распарсил их сам
     (например, llama.cpp-fallback не знает маркеры GLM)."""
@@ -202,7 +230,7 @@ class Agent:
                                       temperature=self.temperature)
             return result.content, list(result.tool_calls)
         text_parts: list[str] = []
-        tool_calls: list[dict[str, Any]] = []
+        partial: dict[int, dict[str, Any]] = {}
         for chunk in self.client.chat_stream(outbound, tools=schemas,
                                              max_tokens=self.max_tokens_per_call,
                                              temperature=self.temperature):
@@ -210,7 +238,13 @@ class Agent:
                 text_parts.append(chunk.content)
                 on_delta(chunk.content)
             if chunk.tool_calls:
-                tool_calls.extend(chunk.tool_calls)
+                merge_tool_call_deltas(partial, chunk.tool_calls)
+        tool_calls = []
+        for i, call in sorted(partial.items()):
+            call.setdefault("type", "function")
+            if not call.get("id"):
+                call["id"] = f"call_{i}"
+            tool_calls.append(call)
         return "".join(text_parts), tool_calls
 
     # --- исполнение инструментов -----------------------------------------

@@ -177,3 +177,35 @@ def test_warmup_sends_full_prompt_and_tools(tmp_path):
         assert len(req["tools"]) == len(agent.tool_specs)
         assert agent.messages == []  # история не засоряется
         llm.__exit__()
+
+
+def test_streaming_tool_call_deltas_are_merged():
+    """Потоковый вызов приходит кусками: имя, затем аргументы по частям."""
+    from perimeter_core.agent import merge_tool_call_deltas
+    acc = {}
+    merge_tool_call_deltas(acc, [{"index": 0, "id": "c1", "type": "function",
+                                  "function": {"name": "find_document", "arguments": ""}}])
+    merge_tool_call_deltas(acc, [{"index": 0, "function": {"arguments": '{"doc_'}}])
+    merge_tool_call_deltas(acc, [{"index": 0, "function": {"arguments": 'type":"sale"}'}}])
+    assert len(acc) == 1, "фрагменты склеены в один вызов, а не размножены"
+    call = acc[0]
+    assert call["type"] == "function"          # без type сервер отвергает историю
+    assert call["function"]["name"] == "find_document"
+    assert json.loads(call["function"]["arguments"]) == {"doc_type": "sale"}
+
+
+def test_streaming_path_produces_valid_tool_calls(tmp_path):
+    """Сквозная проверка потокового пути — им пользуется веб-интерфейс."""
+    script = [
+        Scripted(tool_calls=[{"name": "get_counterparty", "arguments": {"query": "ромашка"}}]),
+        Scripted(content="Найден: ООО «Ромашка»."),
+    ]
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, script)
+        agent.run("найди ромашку", on_delta=lambda d: None)   # потоковый режим
+        sent_back = [m for m in llm.requests[1]["messages"] if m.get("tool_calls")]
+        assert sent_back, "история без вызовов инструментов"
+        for call in sent_back[0]["tool_calls"]:
+            assert call.get("type") == "function" and call.get("id")
+            json.loads(call["function"]["arguments"])   # аргументы — валидный JSON
+        llm.__exit__()
