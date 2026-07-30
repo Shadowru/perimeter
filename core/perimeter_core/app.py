@@ -23,6 +23,7 @@ for component in ("inference", "bridge-1c"):
     if p not in sys.path:
         sys.path.insert(0, p)
 
+from perimeter_bridge1c.analytics import AnalyticsTools  # noqa: E402
 from perimeter_bridge1c.mapping import load_mapping  # noqa: E402
 from perimeter_bridge1c.odata import ODataClient  # noqa: E402
 from perimeter_bridge1c.robot import RobotBackend, RobotGateway  # noqa: E402
@@ -58,7 +59,9 @@ def build_agent(config_path: str | Path,
         audit.write("mapping_problems", problems=problems)
 
     skills = load_skills()
-    tool_specs = Bridge1CTools(backend, mapping).specs() + [make_load_skill_tool(skills)]
+    tool_specs = (Bridge1CTools(backend, mapping).specs()
+                  + AnalyticsTools(backend, mapping).specs()
+                  + [make_load_skill_tool(skills)])
 
     agent = Agent(
         client=InferenceClient(cfg.inference.base_url, model=cfg.inference.model_id),

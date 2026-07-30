@@ -24,6 +24,11 @@ GUID_ROMASHKA = "11111111-1111-1111-1111-111111111111"
 GUID_VASILEK = "22222222-2222-2222-2222-222222222222"
 GUID_TEHNO = "33333333-3333-3333-3333-333333333333"
 
+NOM_LAPTOP = "aaaaaaaa-0000-0000-0000-000000000001"
+NOM_MONITOR = "aaaaaaaa-0000-0000-0000-000000000002"
+NOM_CHAIR = "aaaaaaaa-0000-0000-0000-000000000003"
+NOM_SERVICE = "aaaaaaaa-0000-0000-0000-000000000004"
+
 
 def default_dataset() -> dict[str, list[dict[str, Any]]]:
     def doc(n: str, date: str, cp: str, total: float, posted: bool) -> dict[str, Any]:
@@ -31,6 +36,24 @@ def default_dataset() -> dict[str, list[dict[str, Any]]]:
             "Ref_Key": str(uuid.uuid5(uuid.NAMESPACE_URL, n + date)),
             "Number": n, "Date": date, "Posted": posted, "DeletionMark": False,
             "Контрагент_Key": cp, "СуммаДокумента": total, "Комментарий": "",
+        }
+
+    def rows(document: dict[str, Any],
+             lines: list[tuple[str, float, float]]) -> dict[str, Any]:
+        """Табличная часть «Товары» — в OData она приходит вложенным массивом."""
+        document["Товары"] = [
+            {"LineNumber": str(i + 1), "Номенклатура_Key": nom,
+             "Количество": qty, "Сумма": amount, "Цена": round(amount / qty, 2)}
+            for i, (nom, qty, amount) in enumerate(lines)
+        ]
+        return document
+
+    def reg(period: str, nom: str, cp: str,
+            revenue: float, cost: float) -> dict[str, Any]:
+        return {
+            "Period": period, "Recorder": "", "LineNumber": "1",
+            "Номенклатура_Key": nom, "Контрагент_Key": cp,
+            "Выручка": revenue, "Себестоимость": cost,
         }
 
     return {
@@ -43,15 +66,34 @@ def default_dataset() -> dict[str, list[dict[str, Any]]]:
              "ИНН": "5047112233", "КПП": "504701001", "DeletionMark": False},
         ],
         "Catalog_Номенклатура": [
-            {"Ref_Key": str(uuid.uuid5(uuid.NAMESPACE_URL, "nom1")), "Code": "Н-0001",
-             "Description": "Услуги консультационные", "DeletionMark": False},
+            {"Ref_Key": NOM_LAPTOP, "Code": "Н-0001", "Description": "Ноутбук ProBook 14",
+             "Производитель": "Гамма", "DeletionMark": False},
+            {"Ref_Key": NOM_MONITOR, "Code": "Н-0002", "Description": "Монитор 27\"",
+             "Производитель": "Гамма", "DeletionMark": False},
+            {"Ref_Key": NOM_CHAIR, "Code": "Н-0003", "Description": "Кресло офисное",
+             "Производитель": "Дельта", "DeletionMark": False},
+            {"Ref_Key": NOM_SERVICE, "Code": "Н-0004", "Description": "Услуги консультационные",
+             "Производитель": "", "DeletionMark": False},
         ],
         "Document_РеализацияТоваровУслуг": [
-            doc("РТ-0001", "2026-07-03T10:00:00", GUID_ROMASHKA, 120000.00, True),
-            doc("РТ-0002", "2026-07-10T15:30:00", GUID_ROMASHKA, 45000.50, False),
-            doc("РТ-0003", "2026-07-18T09:00:00", GUID_ROMASHKA, 78000.00, False),
-            doc("РТ-0004", "2026-07-21T12:00:00", GUID_VASILEK, 15000.00, True),
-            doc("РТ-0005", "2026-06-25T11:00:00", GUID_ROMASHKA, 99000.00, True),
+            rows(doc("РТ-0001", "2026-07-03T10:00:00", GUID_ROMASHKA, 120000.00, True),
+                 [(NOM_LAPTOP, 2, 90000.00), (NOM_MONITOR, 2, 30000.00)]),
+            rows(doc("РТ-0002", "2026-07-10T15:30:00", GUID_ROMASHKA, 45000.50, False),
+                 [(NOM_CHAIR, 3, 45000.50)]),
+            rows(doc("РТ-0003", "2026-07-18T09:00:00", GUID_ROMASHKA, 78000.00, False),
+                 [(NOM_LAPTOP, 1, 45000.00), (NOM_SERVICE, 1, 33000.00)]),
+            rows(doc("РТ-0004", "2026-07-21T12:00:00", GUID_VASILEK, 15000.00, True),
+                 [(NOM_MONITOR, 1, 15000.00)]),
+            rows(doc("РТ-0005", "2026-06-25T11:00:00", GUID_ROMASHKA, 99000.00, True),
+                 [(NOM_LAPTOP, 2, 99000.00)]),
+        ],
+        # Регистр выручки и себестоимости продаж: только проведённые документы.
+        # TODO(verify): имя регистра и реквизитов различается по конфигурациям.
+        "AccumulationRegister_ВыручкаИСебестоимостьПродаж": [
+            reg("2026-07-03T10:00:00", NOM_LAPTOP, GUID_ROMASHKA, 90000.00, 61000.00),
+            reg("2026-07-03T10:00:00", NOM_MONITOR, GUID_ROMASHKA, 30000.00, 21000.00),
+            reg("2026-07-21T12:00:00", NOM_MONITOR, GUID_VASILEK, 15000.00, 10500.00),
+            reg("2026-06-25T11:00:00", NOM_LAPTOP, GUID_ROMASHKA, 99000.00, 67000.00),
         ],
         "Document_ПоступлениеТоваровУслуг": [
             doc("ПТ-0001", "2026-07-05T10:00:00", GUID_TEHNO, 300000.00, True),

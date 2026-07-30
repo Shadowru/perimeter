@@ -22,6 +22,18 @@ entities:
     fields:
       name: Description
       code: Code
+      brand: Производитель   # TODO(verify): в типовой БП 3.0 бренд обычно хранят
+                             # в реквизите «Производитель» или в доп. реквизите;
+                             # уточнить на базе заказчика и поправить здесь
+
+  sales_register:          # Регистр выручки и себестоимости продаж
+    entity_set: AccumulationRegister_ВыручкаИСебестоимостьПродаж
+    fields:
+      counterparty: Контрагент_Key   # TODO(verify)
+      nomenclature: Номенклатура_Key # TODO(verify)
+      revenue: Выручка               # TODO(verify)
+      cost: Себестоимость            # TODO(verify)
+      period: Period
 
   sale:                    # Реализация (акт, накладная)
     entity_set: Document_РеализацияТоваровУслуг
