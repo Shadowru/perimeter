@@ -3,8 +3,14 @@ commit: e1a1abb78
 date vendored: 2026-07-30
 license: MIT (see LICENSE)
 
-Исключено при вендоринге (не нужно для сборки llama-server):
-  models/, docs/, examples/, tests/, media/, *.gguf, build/
+Исключено при вендоринге (не нужно продукту):
+  docs/, examples/, tests/, media/, *.gguf, build/, .github/, .devops/, ci/,
+  scripts/, gguf-py/, conversion/, convert_*.py, tools/ui/ (веб-интерфейс),
+  tools/tts/ (синтез речи), tools/server/tests, tools/server/public
+
+ВАЖНО: сборка обязательно с -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF,
+иначе сервер требует ui.h из вырезанного веб-интерфейса. Флаг PREBUILT_UI
+по умолчанию ON и тянет ассеты из интернета — для нас это неприемлемо.
 
 Локальные изменения:
 1. tools/CMakeLists.txt — закомментированы add_subdirectory(ui) и (tts):

@@ -49,7 +49,8 @@ LLAMA="$HERE/vendor/llama.cpp"
 [ -d "$LLAMA" ] || { echo "ОШИБКА: нет vendor/llama.cpp"; exit 1; }
 cmake -S "$LLAMA" -B "$LLAMA/build" \
       -DCMAKE_BUILD_TYPE=Release -DLLAMA_CURL=OFF \
-      -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF > /dev/null
+      -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF \
+      -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF > /dev/null
 cmake --build "$LLAMA/build" --target llama-server -j"$(nproc)" > /dev/null
 echo "    собран: $LLAMA/build/bin/llama-server"
 
