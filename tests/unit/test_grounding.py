@@ -200,3 +200,19 @@ def test_nested_quotes_do_not_hide_a_distortion():
                           ['АО "ТехноСервис" | ИНН 5047112233 | key=b'])
     assert res.unverified_names == ['АО "Технʼyервис"']
     assert res.name_corrections['АО "Технʼyервис"'] == 'АО "ТехноСервис"'
+
+
+def test_substitution_reads_naturally():
+    """Подстановка не должна оставлять «АО «АО "X"»» или «"X"»."""
+    from perimeter_core.grounding import apply_name_corrections
+    src = ['АО "ТехноСервис" | ИНН 5047112233 | key=b']
+    cases = {
+        '100 000.00 руб. (АО «ТехнSERVICER»)': '100 000.00 руб. (АО "ТехноСервис")',
+        'Контрагент «ТехнSERVICER» должен 100.00 руб.':
+            'Контрагент АО "ТехноСервис" должен 100.00 руб.',
+        'Долг «АО "ТехнSERVICER"» — 100.00 руб.': 'Долг АО "ТехноСервис" — 100.00 руб.',
+    }
+    for before, after in cases.items():
+        text, fixes = apply_name_corrections(before, check_grounding(before, src))
+        assert text == after, text
+        assert fixes

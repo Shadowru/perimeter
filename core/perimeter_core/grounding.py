@@ -230,10 +230,33 @@ def apply_name_corrections(answer: str, result: GroundingResult) -> tuple[str, l
     """
     fixed: list[str] = []
     for wrong, right in result.name_corrections.items():
-        if wrong in answer:
-            answer = answer.replace(wrong, right)
-            fixed.append(f"«{wrong}» -> «{right}»")
+        start = answer.find(wrong)
+        if start < 0:
+            continue
+        end = start + len(wrong)
+        # Заменяем вместе с кавычками, иначе получится «"ТехноСервис"»:
+        # написание из данных приходит со своими кавычками.
+        if start and answer[start - 1] in "«\"" and end < len(answer) and answer[end] in "»\"":
+            start -= 1
+            end += 1
+        answer = answer[:start] + _fit(answer[:start], right) + answer[end:]
+        fixed.append(f"«{wrong}» -> «{right}»")
     return answer, fixed
+
+
+def _fit(prefix: str, replacement: str) -> str:
+    """Убирает форму собственности, если она уже стоит перед подстановкой.
+
+    Модель пишет «АО «ТехнSERVICER»», а из данных подставляется
+    «АО "ТехноСервис"» — получилось бы «АО «АО "ТехноСервис"»».
+    """
+    m = _LEGAL_FORM_RE.match(replacement)
+    if not m:
+        return replacement
+    tail = _PUNCT_RE.sub(" ", prefix[-8:]).strip().lower()
+    if tail.endswith(m.group(1).lower()):
+        return replacement[m.end():].lstrip()
+    return replacement
 
 
 NAME_FIX_NOTE = (
