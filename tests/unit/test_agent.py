@@ -357,3 +357,54 @@ def test_invented_amount_is_never_silently_replaced(tmp_path):
         assert "не подтверждается" in result.text  # но предупредили
         assert not result.grounded
         llm.__exit__()
+
+
+def test_rewrite_step_does_not_offer_tools(tmp_path):
+    """Переписывание — это правка текста, а не новый сбор данных.
+
+    Живой прогон 2026-07-30: с инструментами на этом шаге модель вызывала
+    тот же отчёт ещё четыре раза и упиралась в бюджет вместо исправления.
+    """
+    script = [
+        Scripted(tool_calls=[{"name": "get_counterparty", "arguments": {"query": "ромашка"}}]),
+        Scripted(content="Клиенты: «Ромашка, ООО» и «ООО Вектор»."),
+        Scripted(content="Контрагент один: «Ромашка, ООО»."),
+    ]
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, script)
+        result = agent.run("Кто наши клиенты?")
+        assert result.grounded and "Вектор" not in result.text
+        assert llm.requests[-1].get("tools") in (None, [])   # правка шла без инструментов
+        assert sum(1 for m in agent.messages if m["role"] == "tool") == 1
+        llm.__exit__()
+
+
+def test_backend_failure_does_not_lose_the_data(tmp_path):
+    """Сбой модели после успешного обращения к 1С не должен терять отчёт.
+
+    Живой прогон 2026-07-30: llama.cpp вернул 500 на исковерканном моделью
+    названии, и корректно полученная кредиторка пропала вместе с ответом.
+    """
+    script = [Scripted(tool_calls=[{"name": "get_counterparty",
+                                    "arguments": {"query": "ромашка"}}])]
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, script)   # скрипт кончится -> 500
+        result = agent.run("Найди Ромашку")
+        assert result.model_failed
+        assert GUID_ROMASHKA in result.text or "Ромашка" in result.text
+        assert "не смогла сформулировать" in result.text
+        events = [json.loads(line)["event"]
+                  for line in (tmp_path / "audit.log").read_text().splitlines()]
+        assert "model_error" in events
+        llm.__exit__()
+
+
+def test_backend_failure_without_data_still_raises(tmp_path):
+    """Если данных нет вовсе, молчать об ошибке нельзя."""
+    import pytest
+    from perimeter_inference.client import InferenceError
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, [])
+        with pytest.raises(InferenceError):
+            agent.run("Привет")
+        llm.__exit__()

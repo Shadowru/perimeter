@@ -100,6 +100,7 @@ class AgentResult:
     steps: int
     stopped_by_limit: bool = False
     grounded: bool = True   # False -> в ответе есть неподтверждённые данные
+    model_failed: bool = False  # True -> ответ собран из данных в обход модели
 
 
 @dataclass
@@ -218,6 +219,7 @@ class Agent:
         schemas = [s.openai_schema() for s in self.tool_specs]
         corrected = False
         forced_answer = False
+        rewriting = False
 
         for step in range(1, self.max_iterations + 1):
             # Исчерпав бюджет инструментов, забираем их из запроса: модели
@@ -228,13 +230,35 @@ class Agent:
             # инструменты подряд и ответа так и не дала).
             calls_made = sum(1 for m in self.messages[turn_start:]
                              if m.get("role") == "tool")
-            offered = schemas if calls_made < self.max_tool_calls_per_turn else None
+            # На переписывании инструменты не нужны: данные уже собраны,
+            # просят исправить текст. Оставишь их — модель вызывает тот же
+            # отчёт заново (живой прогон 2026-07-30: четыре лишних вызова
+            # payables_aging и упор в бюджет вместо исправления названия).
+            offered = (None if rewriting or calls_made >= self.max_tool_calls_per_turn
+                       else schemas)
             if offered is None and not forced_answer:
                 forced_answer = True
                 self.audit.write("tool_budget_reached", calls=calls_made)
             budget = (self.max_answer_tokens if calls_made
                       else self.max_tokens_per_call)
-            text, tool_calls = self._call_model(offered, on_delta, max_tokens=budget)
+            try:
+                text, tool_calls = self._call_model(offered, on_delta, max_tokens=budget)
+            except Exception as e:  # noqa: BLE001 — сбой бэкенда не должен стоить хода
+                # Данные из 1С уже получены и они верны; терять их из-за того,
+                # что модель не смогла сформулировать ответ, незачем. Живой
+                # прогон 2026-07-30: llama.cpp вернул 500 на исковерканном
+                # моделью названии, и весь отчёт пропал вместе с ответом.
+                collected = self._turn_tool_outputs(turn_start)
+                self.audit.write("model_error", error=str(e)[:300],
+                                 tool_results=len(collected))
+                if not collected:
+                    raise
+                fallback = t("agent.model_failed_with_data",
+                             error=str(e)[:120], data=collected[-1])
+                self.messages.append({"role": "assistant", "content": fallback})
+                if on_delta:
+                    on_delta("\n\n" + fallback)
+                return AgentResult(text=fallback, steps=step, model_failed=True)
             if offered is None and tool_calls:
                 # Инструментов не предлагали, а модель всё равно их запросила.
                 # Не исполняем: бюджет на то и бюджет.
@@ -263,6 +287,7 @@ class Agent:
                         "role": "user",
                         "content": CORRECTION_PROMPT.format(details=grounding.describe()),
                     })
+                    rewriting = True
                     if on_delta:
                         on_delta("\n\n[сверяю с данными 1С…]\n\n")
                     continue
