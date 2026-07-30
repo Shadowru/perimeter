@@ -21,6 +21,7 @@ from perimeter_core import REPO_ROOT
 from perimeter_core.config import InferenceConfig
 
 COLIBRI_DIR = REPO_ROOT / "vendor" / "colibri" / "c"
+LLAMACPP_DIR = REPO_ROOT / "vendor" / "llama.cpp"
 
 
 class InferenceServerError(Exception):
@@ -49,12 +50,22 @@ class InferenceServer:
         ]
 
     def _llamacpp_cmd(self) -> list[str]:
-        # fallback: локально установленный llama.cpp (llama-server в PATH)
+        """Вендореный llama.cpp — основной бэкенд для рекомендуемых моделей."""
+        binary = LLAMACPP_DIR / "build" / "bin" / "llama-server"
+        if not binary.exists():
+            raise InferenceServerError(
+                f"llama-server не собран: {binary}. Запустите tools/install.sh")
         return [
-            "llama-server",
+            str(binary),
+            "--model", self.model_path,
             "--host", self.cfg.host,
             "--port", str(self.cfg.port),
-            "-m", self.model_path,
+            "--alias", self.cfg.model_id,
+            "--ctx-size", str(self.cfg.ctx_size),
+            "--threads", str(self.cfg.threads or os.cpu_count() or 4),
+            # --jinja: без него сервер не применяет шаблон чата модели и
+            # не отдаёт tool-вызовы в формате OpenAI.
+            "--jinja",
         ]
 
     def start(self, wait_ready_s: float = 600.0) -> None:

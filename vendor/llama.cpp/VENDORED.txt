@@ -1,0 +1,13 @@
+Vendored from https://github.com/ggml-org/llama.cpp
+commit: e1a1abb78
+date vendored: 2026-07-30
+license: MIT (see LICENSE)
+
+Исключено при вендоринге (не нужно для сборки llama-server):
+  models/, docs/, examples/, tests/, media/, *.gguf, build/
+
+Локальных изменений нет. Любая правка вендореных файлов должна быть
+описана здесь (того же требует и лицензия MIT — сохранять уведомление).
+
+Зачем: движок для рекомендуемых моделей (GigaChat 3.1, Qwen3-30B-A3B).
+В рантайме сети не требует; сборка — из этих исходников, без загрузок.

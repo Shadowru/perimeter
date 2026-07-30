@@ -32,9 +32,11 @@ class ConfigError(Exception):
 class InferenceConfig:
     host: str = "127.0.0.1"
     port: int = 8090
-    backend: str = "colibri"
+    backend: str = "llamacpp"   # llamacpp (рекомендуется) | colibri (GLM-5.2)
     model_path: str = ""
-    model_id: str = "glm-5.2"
+    model_id: str = "gigachat"
+    ctx_size: int = 8192
+    threads: int = 0            # 0 = по числу ядер
     ci_model_path: str = ""
 
     @property

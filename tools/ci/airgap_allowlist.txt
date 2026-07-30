@@ -21,3 +21,23 @@ vendor/colibri/c/tools/try_tool_calling.py|http://host
 
 # colibri: метаданные [project.urls] в pyproject — ссылки на upstream, не код.
 vendor/colibri/pyproject.toml|https://github.com
+
+# llama.cpp: ссылки в комментариях исходников (issue/PR/статьи) и в тексте
+# сообщений об ошибках. Это документация в коде, а не сетевые вызовы.
+# Проверено вручную 2026-07-30: все 29 находок — комментарии либо строки
+# диагностики. Сборка идёт с LLAMA_CURL=OFF, то есть код загрузки моделей
+# в бинарь не попадает; сам llama-server исходящих соединений не открывает.
+vendor/llama.cpp/|https://github.com
+vendor/llama.cpp/|https://miniaud.io
+vendor/llama.cpp/|http://www.sndio.org
+vendor/llama.cpp/|https://webaudio.github.io
+vendor/llama.cpp/|https://wiki.archlinux.org
+vendor/llama.cpp/|https://www.
+vendor/llama.cpp/|https://hydrogenaud.io
+vendor/llama.cpp/|http://www.opensource.org
+
+# llama.cpp: сторонние однофайловые библиотеки (miniaudio, stb_image,
+# subprocess) — ссылки в шапках и комментариях на документацию вендоров.
+# Проверено вручную 2026-07-30: сетевого кода в собираемом llama-server нет.
+vendor/llama.cpp/vendor/|http
+vendor/llama.cpp/tools/mtmd/|http
