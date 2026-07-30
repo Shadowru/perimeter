@@ -9,9 +9,13 @@ allowed_hosts:
 inference:
   host: "127.0.0.1"
   port: 8090
-  backend: "colibri"          # colibri | llamacpp (fallback)
-  model_path: ""              # путь к весам GLM-5.2 на диске (задаётся при установке)
-  # Малая модель для CI/смоук-тестов (опционально)
+  # llamacpp — рекомендуемый бэкенд (GigaChat 3.1 / Qwen3);
+  # colibri — для GLM-5.2 на машинах от 128 ГБ.
+  backend: "llamacpp"
+  model_path: ""              # заполняется скриптом tools/install.sh
+  model_id: "gigachat"        # имя модели в API (алиас llama-server)
+  ctx_size: 8192
+  threads: 0                  # 0 = по числу ядер
   ci_model_path: ""
 
 bridge_1c:

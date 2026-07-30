@@ -73,7 +73,10 @@ cfg = f"{root}/config/perimeter.yaml"
 s = open(cfg, encoding="utf-8").read()
 s = re.sub(r'(?m)^(\s*backend:).*$', r'\1 "llamacpp"', s)
 s = re.sub(r'(?m)^(\s*model_path:).*$', f'\\1 "{model_path}"', s)
-s = re.sub(r'(?m)^(\s*model_id:).*$', f'\\1 "{model_id}"', s)
+if re.search(r'(?m)^\s*model_id:', s):
+    s = re.sub(r'(?m)^(\s*model_id:).*$', f'\\1 "{model_id}"', s)
+else:  # ключа нет в шаблоне — добавляем после model_path
+    s = re.sub(r'(?m)^(\s*model_path:.*)$', f'\\1\n  model_id: "{model_id}"', s)
 open(cfg, "w", encoding="utf-8").write(s)
 print(f"    прописано в config/perimeter.yaml: {model_id}")
 PY
