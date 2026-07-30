@@ -117,6 +117,7 @@ class Agent:
     # abc_analysis, то ищет контрагента «клиенты» (замер на стенде 16 ГБ,
     # 2026-07-30). Для деловых отчётов разброс недопустим.
     temperature: float = 0.1
+    today: str | None = None            # ISO-дата; None = системная дата
     context_budget_chars: int = 24000   # ~ бюджет CTX 4096 токенов
     keep_recent: int = 8                # последних сообщений не сокращаем
     extra_system: str = ""              # напр., каталог навыков
@@ -124,6 +125,11 @@ class Agent:
 
     def __post_init__(self) -> None:
         self.system_prompt = load_system_prompt(self.locale)
+        # Без сегодняшней даты модель считает «за эту неделю» наугад
+        # (живое демо 2026-07-30: выдала произвольный диапазон).
+        from datetime import date
+        today = self.today or date.today().isoformat()
+        self.system_prompt += f"\n\nСегодня {today}. От этой даты считай «сегодня», «эта неделя», «этот месяц», «этот год»."
         if self.extra_system:
             self.system_prompt += "\n\n" + self.extra_system
         self._tools_by_name = {s.name: s for s in self.tool_specs}

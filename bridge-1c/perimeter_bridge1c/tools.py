@@ -100,6 +100,30 @@ class Bridge1CTools:
         ]
         return "\n".join(lines)
 
+    def list_counterparties(self, limit: int = 20) -> str:
+        """Список контрагентов из базы.
+
+        Без этого инструмента модель на вопрос «список контрагентов»
+        выдумывает названия — проверено на живом демо 2026-07-30.
+        """
+        ent = self.mapping.entity("counterparty")
+        name_f = ent.field_1c("name")
+        inn_f = ent.fields.get("inn")
+        select = ["Ref_Key", name_f] + ([inn_f] if inn_f else [])
+        rows = list(self.client.run(Query(entity_set=ent.entity_set,
+                                          select=select, order_by=name_f,
+                                          top=limit + 1)))
+        if not rows:
+            return "В справочнике контрагентов нет записей."
+        shown = rows[:limit]
+        lines = [f"{r.get(name_f, '?')}"
+                 + (f" | ИНН {r.get(inn_f)}" if inn_f and r.get(inn_f) else "")
+                 + f" | key={r['Ref_Key']}"
+                 for r in shown]
+        head = f"Контрагенты ({len(shown)}"
+        head += " из большего числа, показаны первые):" if len(rows) > limit else "):"
+        return head + "\n" + "\n".join(lines)
+
     def find_document(self, doc_type: str, counterparty_key: str | None = None,
                       date_from: str | None = None, date_to: str | None = None,
                       posted: bool | None = None, number: str | None = None,
@@ -210,6 +234,12 @@ class Bridge1CTools:
                 {"type": "object", "properties": {"query": {"type": "string"}},
                  "required": ["query"]},
                 lambda **kw: self.get_counterparty(**kw),
+            ),
+            ToolSpec(
+                "list_counterparties",
+                "Список контрагентов из базы (когда конкретное имя неизвестно).",
+                {"type": "object", "properties": {"limit": {"type": "integer"}}},
+                lambda **kw: self.list_counterparties(**kw),
             ),
             ToolSpec(
                 "find_document",

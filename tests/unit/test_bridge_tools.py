@@ -80,7 +80,8 @@ def test_specs_and_execute():
         tools = make_tools(srv)
         specs = tools.specs()
         assert [s.name for s in specs] == [
-            "get_counterparty", "find_document", "ledger_report", "create_draft_document"]
+            "get_counterparty", "list_counterparties", "find_document",
+            "ledger_report", "create_draft_document"]
         draft = next(s for s in specs if s.name == "create_draft_document")
         assert draft.requires_approval
         out, spec = execute_tool(specs, "get_counterparty", json.dumps({"query": "василёк"}))
@@ -117,3 +118,19 @@ def test_counterparty_search_with_quotes_and_legal_form():
         for written_as in ('ООО «Ромашка»', 'ООО "Ромашка"', "  РОМАШКА  ", "ромашка"):
             out = tools.get_counterparty(written_as)
             assert "Ромашка" in out, f"не найдено при написании {written_as!r}: {out}"
+
+
+def test_list_counterparties_returns_real_records():
+    """Без этого инструмента модель выдумывает контрагентов (живое демо)."""
+    with Fake1CServer() as srv:
+        out = make_tools(srv).list_counterparties()
+        assert "Ромашка" in out and "Василёк" in out and "ТехноСервис" in out
+        assert "7701234567" in out          # ИНН на месте
+        assert out.count("key=") == 3       # ровно три записи базы
+
+
+def test_list_counterparties_marks_truncation():
+    with Fake1CServer() as srv:
+        out = make_tools(srv).list_counterparties(limit=2)
+        assert "показаны первые" in out
+        assert out.count("key=") == 2

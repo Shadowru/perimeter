@@ -209,3 +209,19 @@ def test_streaming_path_produces_valid_tool_calls(tmp_path):
             assert call.get("type") == "function" and call.get("id")
             json.loads(call["function"]["arguments"])   # аргументы — валидный JSON
         llm.__exit__()
+
+
+def test_system_prompt_states_today(tmp_path):
+    """Без даты «за эту неделю» модель считает наугад (живое демо)."""
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, [], today="2026-07-30")
+        assert "Сегодня 2026-07-30" in agent.system_prompt
+        assert "эта неделя" in agent.system_prompt
+        llm.__exit__()
+
+
+def test_system_prompt_forbids_showing_keys(tmp_path):
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, [])
+        assert "НИКОГДА не показывай пользователю" in agent.system_prompt
+        llm.__exit__()
