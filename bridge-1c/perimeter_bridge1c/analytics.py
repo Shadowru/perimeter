@@ -36,6 +36,17 @@ def _date_conds(field: str, date_from: str | None, date_to: str | None) -> list[
     return conds
 
 
+def _period_label(date_from: str | None, date_to: str | None) -> str:
+    """Явная подпись периода в выводе.
+
+    Живой прогон 2026-07-30: без неё модель выдумывала период («за 2025 год»)
+    и неверно пересказывала, к каким документам относятся суммы.
+    """
+    if not date_from and not date_to:
+        return "за всё время"
+    return f"с {(date_from or '...')[:10]} по {(date_to or '...')[:10]}"
+
+
 def _abc_group(share_before: float) -> str:
     """Группа позиции по накопленной доле ПЕРЕД ней.
 
@@ -92,7 +103,8 @@ class AnalyticsTools:
         conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", date_from, date_to)
         docs = list(self.client.run(Query(entity_set=ent.entity_set, conditions=conds)))
         if not docs:
-            return "За период нет проведённых реализаций."
+            return (f"Проведённых реализаций {_period_label(date_from, date_to)} нет. "
+                    "Если период не нужен — не указывайте даты, отчёт построится за всё время.")
 
         totals: dict[str, float] = defaultdict(float)
         if dimension == "counterparty":
@@ -123,7 +135,8 @@ class AnalyticsTools:
 
         head = ("ABC-анализ по выручке, "
                 + ("контрагенты" if dimension == "counterparty" else "номенклатура")
-                + f" ({len(ordered)} позиций, выручка {_fmt(grand)} руб.):")
+                + f", {_period_label(date_from, date_to)} "
+                + f"({len(ordered)} позиций, выручка {_fmt(grand)} руб.):")
         tail = ("Группы: " + ", ".join(f"{g} — {counts[g]}" for g in ("A", "B", "C") if counts[g])
                 + ". Расчёт по проведённым реализациям.")
         return "\n".join([head, *out, tail])
@@ -147,7 +160,8 @@ class AnalyticsTools:
         conds = _date_conds(period_f, date_from, date_to)
         rows = list(self.client.run(Query(entity_set=ent.entity_set, conditions=conds)))
         if not rows:
-            return "За период нет данных о продажах в регистре."
+            return (f"Данных о продажах {_period_label(date_from, date_to)} нет. "
+                    "Без указания дат отчёт строится за всё время.")
 
         brands = self._brands()
         agg: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0])
@@ -169,7 +183,8 @@ class AnalyticsTools:
         out.append(f"ИТОГО | выручка {_fmt(tr)} | себестоимость {_fmt(tc)} | "
                    f"маржа {_fmt(total_margin)} "
                    f"({total_margin / tr * 100 if tr else 0:.1f}%)")
-        return "Себестоимость и маржа по брендам:\n" + "\n".join(out)
+        return (f"Себестоимость и маржа по брендам, {_period_label(date_from, date_to)}:\n"
+                + "\n".join(out))
 
     # --- старение дебиторской задолженности --------------------------------
 
@@ -193,6 +208,7 @@ class AnalyticsTools:
         as_of_dt = datetime.fromisoformat(as_of) if as_of else datetime(2026, 7, 31)
         buckets = ("0-30", "31-60", "61-90", "90+")
         by_cp: dict[str, dict[str, float]] = defaultdict(lambda: dict.fromkeys(buckets, 0.0))
+        docs_by_cp: dict[str, list[str]] = defaultdict(list)
 
         # Гасим оплаты старыми отгрузками (FIFO) — как это делает бухгалтер.
         for cp in {s.get(cp_s, "") for s in sales}:
@@ -209,6 +225,11 @@ class AnalyticsTools:
                 bucket = ("0-30" if days <= 30 else "31-60" if days <= 60
                           else "61-90" if days <= 90 else "90+")
                 by_cp[cp][bucket] += unpaid
+                # Конкретный документ: без него модель домысливает, к каким
+                # отгрузкам относится долг (живой прогон 2026-07-30).
+                docs_by_cp[cp].append(
+                    f"№{d.get('Number')} от {str(d.get('Date'))[:10]} — "
+                    f"{_fmt(unpaid)} руб., {days} дн.")
 
         if not by_cp:
             return "Просроченной дебиторской задолженности нет — всё оплачено."
@@ -222,6 +243,8 @@ class AnalyticsTools:
                 totals[b] += row[b]
             out.append(f"{names.get(cp, '?')} | " + " | ".join(_fmt(row[b]) for b in buckets)
                        + f" | {_fmt(sum(row.values()))}")
+            for line in docs_by_cp[cp]:
+                out.append(f"    {line}")
         out.append("ИТОГО | " + " | ".join(_fmt(totals[b]) for b in buckets)
                    + f" | {_fmt(sum(totals.values()))}")
         out.append(f"Расчёт на {as_of_dt.date()}, оплаты разнесены по FIFO.")
