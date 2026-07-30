@@ -3,7 +3,8 @@ __pycache__/
 .venv/
 *.egg-info/
 .pytest_cache/
-models/
+/models/          # наши веса; якорь важен: без него правило вырезало
+                  # исходники vendor/llama.cpp/tools/mtmd/models
 *.gguf
 
 # Рантайм-состояние движка (кэш KV и статистика экспертов) — не версионируем
