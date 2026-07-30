@@ -31,11 +31,15 @@ NOM_SERVICE = "aaaaaaaa-0000-0000-0000-000000000004"
 
 
 def default_dataset() -> dict[str, list[dict[str, Any]]]:
-    def doc(n: str, date: str, cp: str, total: float, posted: bool) -> dict[str, Any]:
+    def doc(n: str, date: str, cp: str, total: float, posted: bool,
+            vat_rate: float = 0.20) -> dict[str, Any]:
+        # СуммаДокумента в БП 3.0 — сумма С НДС; НДС выделяется из неё.
+        vat = round(total - total / (1 + vat_rate), 2) if vat_rate else 0.0
         return {
             "Ref_Key": str(uuid.uuid5(uuid.NAMESPACE_URL, n + date)),
             "Number": n, "Date": date, "Posted": posted, "DeletionMark": False,
             "Контрагент_Key": cp, "СуммаДокумента": total, "Комментарий": "",
+            "СуммаВключаетНДС": True, "СуммаНДС": vat,
         }
 
     def rows(document: dict[str, Any],
@@ -43,7 +47,8 @@ def default_dataset() -> dict[str, list[dict[str, Any]]]:
         """Табличная часть «Товары» — в OData она приходит вложенным массивом."""
         document["Товары"] = [
             {"LineNumber": str(i + 1), "Номенклатура_Key": nom,
-             "Количество": qty, "Сумма": amount, "Цена": round(amount / qty, 2)}
+             "Количество": qty, "Сумма": amount, "Цена": round(amount / qty, 2),
+             "СуммаНДС": round(amount - amount / 1.20, 2)}
             for i, (nom, qty, amount) in enumerate(lines)
         ]
         return document
@@ -99,6 +104,11 @@ def default_dataset() -> dict[str, list[dict[str, Any]]]:
             reg("2026-07-21T12:00:00", NOM_MONITOR, GUID_VASILEK, 15000.00, 10500.00),
             reg("2026-06-25T11:00:00", NOM_LAPTOP, GUID_ROMASHKA, 99000.00, 67000.00),
         ],
+        # Возврат от покупателя: Василёк вернул монитор из июльской отгрузки.
+        "Document_ВозвратТоваровОтПокупателя": [
+            rows(doc("ВЗ-0001", "2026-07-25T10:00:00", GUID_VASILEK, 6000.00, True),
+                 [(NOM_MONITOR, 1, 6000.00)]),
+        ],
         "Document_ПоступлениеТоваровУслуг": [
             doc("ПТ-0001", "2026-07-05T10:00:00", GUID_TEHNO, 300000.00, True),
             # Старый неоплаченный приход — чтобы в кредиторке была корзина «90+».
@@ -107,6 +117,8 @@ def default_dataset() -> dict[str, list[dict[str, Any]]]:
         "Document_ПоступлениеНаРасчетныйСчет": [
             doc("ПС-0001", "2026-07-07T10:00:00", GUID_ROMASHKA, 120000.00, True),
             doc("ПС-0002", "2026-07-22T10:00:00", GUID_VASILEK, 15000.00, True),
+            # Предоплата от контрагента, которому мы ещё ничего не отгружали.
+            doc("ПС-0003", "2026-07-28T10:00:00", GUID_TEHNO, 20000.00, True),
         ],
         "Document_СчетНаОплатуПокупателю": [
             doc("СЧ-0101", "2026-06-20T10:00:00", GUID_ROMASHKA, 99000.00, True),

@@ -262,7 +262,13 @@ class Bridge1CTools:
                 {"type": "object", "properties": {
                     "doc_type": {"type": "string", "enum": list(DOC_TYPES)},
                     "counterparty_key": {"type": "string"},
-                    **dates,
+                    # Правило про период есть в системном промпте, но именно
+                    # здесь модель его теряла и после правки промпта: «за июль»
+                    # уходило без дат, и выборка шла за всё время.
+                    "date_from": {"type": "string",
+                                  "description": "начало периода, ISO; назван месяц — заполни"},
+                    "date_to": {"type": "string",
+                                "description": "конец периода, ISO; назван месяц — заполни"},
                     "posted": {"type": "boolean"},
                     "number": {"type": "string"},
                     "limit": {"type": "integer"},

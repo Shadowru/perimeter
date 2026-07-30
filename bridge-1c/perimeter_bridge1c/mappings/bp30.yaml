@@ -39,9 +39,20 @@ entities:
     entity_set: Document_РеализацияТоваровУслуг
     fields:
       counterparty: Контрагент_Key   # TODO(verify)
-      total: СуммаДокумента          # TODO(verify)
+      total: СуммаДокумента          # TODO(verify): в БП 3.0 это сумма С НДС
+      vat: СуммаНДС                  # TODO(verify): выделенный НДС документа.
+                                     # Если реквизита нет — уберите строку, и
+                                     # отчёты честно напишут «суммы с НДС».
       comment: Комментарий           # TODO(verify)
     rows: Товары                     # табличная часть; TODO(verify)
+
+  sales_return:            # Возврат товаров от покупателя
+    entity_set: Document_ВозвратТоваровОтПокупателя
+    fields:
+      counterparty: Контрагент_Key   # TODO(verify)
+      total: СуммаДокумента          # TODO(verify)
+      vat: СуммаНДС                  # TODO(verify)
+    rows: Товары                     # TODO(verify)
 
   purchase:                # Поступление (акт, накладная)
     entity_set: Document_ПоступлениеТоваровУслуг

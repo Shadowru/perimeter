@@ -48,6 +48,39 @@ def _period_label(date_from: str | None, date_to: str | None) -> str:
     return f"с {(date_from or '...')[:10]} по {(date_to or '...')[:10]}"
 
 
+def _net_revenue(doc: dict, ent) -> float:
+    """Выручка по документу БЕЗ НДС.
+
+    В БП 3.0 `СуммаДокумента` — это сумма С НДС: контрагент должен именно
+    её. Но управленческая выручка считается без НДС, иначе она завышена на
+    ставку налога, а маржа — вдвойне, потому что себестоимость идёт без НДС.
+    Поэтому долги мы считаем по полной сумме, а выручку — за вычетом налога.
+
+    Если реквизит НДС в маппинге не описан (его имя различается по базам),
+    вычитать нечего — возвращаем полную сумму, а отчёт об этом пишет.
+    """
+    total = float(doc.get(ent.field_1c("total")) or 0)
+    vat_f = ent.fields.get("vat")
+    if not vat_f:
+        return total
+    return total - float(doc.get(vat_f) or 0)
+
+
+def _line_net(line: dict) -> float:
+    """Строка табличной части без НДС (СуммаНДС может отсутствовать)."""
+    return float(line.get("Сумма") or 0) - float(line.get("СуммаНДС") or 0)
+
+
+def _vat_known(ent) -> bool:
+    return bool(ent.fields.get("vat"))
+
+
+def _vat_note(ent) -> str:
+    return ("Выручка без НДС." if _vat_known(ent)
+            else "ВНИМАНИЕ: реквизит НДС не описан в маппинге, суммы приведены "
+                 "С НДС — управленческая выручка будет завышена на ставку налога.")
+
+
 def _report(text: str, title: str):
     """Оборачивает готовый отчёт: человеку — таблица, модели — выжимка.
 
@@ -110,6 +143,33 @@ class AnalyticsTools:
                                      select=["Ref_Key", name_f, brand_f]))
         return {r["Ref_Key"]: (r.get(brand_f) or "без бренда") for r in rows}
 
+    def _returns(self, date_from: str | None, date_to: str | None) -> list[dict]:
+        """Проведённые возвраты от покупателей за период.
+
+        Возврат уменьшает и выручку, и долг покупателя. Без него отчёт
+        завышает продажи на сумму товара, который вернулся на склад.
+        Если возвраты не описаны в маппинге конкретной конфигурации —
+        считаем, что их нет, и отчёт об этом предупреждает.
+        """
+        try:
+            ent = self.mapping.entity("sales_return")
+        except Exception:
+            return []
+        conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", date_from, date_to)
+        return list(self.client.run(Query(entity_set=ent.entity_set, conditions=conds)))
+
+    def _has_returns(self) -> bool:
+        try:
+            self.mapping.entity("sales_return")
+            return True
+        except Exception:
+            return False
+
+    def _returns_note(self) -> str:
+        return ("Реализации за вычетом возвратов." if self._has_returns()
+                else "Возвраты от покупателей в маппинге не описаны и в расчёт "
+                     "не вошли — выручка может быть завышена.")
+
     # --- ABC-анализ --------------------------------------------------------
 
     def abc_analysis(self, dimension: str = "counterparty",
@@ -130,18 +190,27 @@ class AnalyticsTools:
             return (f"Проведённых реализаций {_period_label(date_from, date_to)} нет. "
                     "Если период не нужен — не указывайте даты, отчёт построится за всё время.")
 
+        returns = self._returns(date_from, date_to)
+        ret_ent = self.mapping.entity("sales_return") if self._has_returns() else None
+
         totals: dict[str, float] = defaultdict(float)
         if dimension == "counterparty":
             for d in docs:
-                totals[d.get(cp_f, "")] += float(d.get(total_f) or 0)
+                totals[d.get(cp_f, "")] += _net_revenue(d, ent)
+            for r in returns:
+                totals[r.get(ret_ent.field_1c("counterparty"), "")] -= _net_revenue(r, ret_ent)
             names = self._names("counterparty", set(totals))
         else:
             if not rows_field:
                 return "Товарный состав документов не описан в маппинге (rows)."
             for d in docs:
                 for line in d.get(rows_field) or []:
-                    totals[line.get("Номенклатура_Key", "")] += float(line.get("Сумма") or 0)
+                    totals[line.get("Номенклатура_Key", "")] += _line_net(line)
+            for r in returns:
+                for line in r.get(ret_ent.rows) or []:
+                    totals[line.get("Номенклатура_Key", "")] -= _line_net(line)
             names = self._names("nomenclature", set(totals))
+        totals = {k: v for k, v in totals.items() if abs(v) > 0.005}
 
         grand = sum(totals.values())
         if grand <= 0:
@@ -162,7 +231,8 @@ class AnalyticsTools:
                 + f", {_period_label(date_from, date_to)} "
                 + f"({len(ordered)} позиций, выручка {_fmt(grand)} руб.):")
         tail = ("Группы: " + ", ".join(f"{g} — {counts[g]}" for g in ("A", "B", "C") if counts[g])
-                + ". Расчёт по проведённым реализациям.")
+                + ". Источник: проведённые реализации. "
+                + _vat_note(ent) + " " + self._returns_note())
         return _report("\n".join([head, *out, tail]), "ABC-анализ")
 
     # --- себестоимость и рентабельность по брендам -------------------------
@@ -236,14 +306,27 @@ class AnalyticsTools:
         paid: dict[str, float] = defaultdict(float)
         for p in pays:
             paid[p.get(cp_p, "")] += float(p.get(total_p) or 0)
+        # Возврат гасит долг так же, как оплата: товар вернулся, платить не за
+        # что. Без этого мы требуем денег за то, что уже приняли обратно.
+        returns_used = False
+        if debt_entity == "sale" and self._has_returns():
+            ret = self.mapping.entity("sales_return")
+            for r in self._returns(None, None):
+                paid[r.get(ret.field_1c("counterparty"), "")] += float(
+                    r.get(ret.field_1c("total")) or 0)
+            returns_used = True
 
         as_of_dt = datetime.fromisoformat(as_of) if as_of else datetime.now()
         buckets = ("0-30", "31-60", "61-90", "90+")
         by_cp: dict[str, dict[str, float]] = defaultdict(lambda: dict.fromkeys(buckets, 0.0))
         docs_by_cp: dict[str, list[str]] = defaultdict(list)
+        advances: dict[str, float] = {}
 
         # Гасим оплаты старыми документами (FIFO) — как это делает бухгалтер.
-        for cp in {d.get(cp_d, "") for d in docs_all}:
+        # Идём по объединению: контрагент, который заплатил, но которому мы
+        # ничего не отгружали, — это чистая предоплата, и она должна быть
+        # видна. Раньше такой плательщик не попадал в отчёт вообще.
+        for cp in {d.get(cp_d, "") for d in docs_all} | set(paid):
             docs = sorted((d for d in docs_all if d.get(cp_d) == cp),
                           key=lambda d: d.get("Date", ""))
             rest = paid.get(cp, 0.0)
@@ -264,11 +347,15 @@ class AnalyticsTools:
                     f"№{d.get('Number')} от {str(d.get('Date'))[:10]} — "
                     f"не оплачено {_fmt(unpaid)} руб., возраст {days} дн. "
                     f"с даты документа")
+            if rest > 0.005:
+                # Денег пришло больше, чем отгружено: это аванс. Раньше остаток
+                # молча отбрасывался, и аванс не был виден нигде.
+                advances[cp] = rest
 
-        if not by_cp:
+        if not by_cp and not advances:
             return empty_text
 
-        names = self._names("counterparty", set(by_cp))
+        names = self._names("counterparty", set(by_cp) | set(advances))
         out = [f"{title} (дней с даты документа):",
                "контрагент | 0-30 | 31-60 | 61-90 | свыше 90 | итого"]
         totals = dict.fromkeys(buckets, 0.0)
@@ -281,6 +368,11 @@ class AnalyticsTools:
                 out.append(f"    {line}")
         out.append("ИТОГО | " + " | ".join(_fmt(totals[b]) for b in buckets)
                    + f" | {_fmt(sum(totals.values()))}")
+        for cp, amount in sorted(advances.items(), key=lambda kv: -kv[1]):
+            out.append(f"АВАНС | {names.get(cp, '?')} | {_fmt(amount)} — "
+                       f"оплачено больше, чем отгружено; это не долг нам")
+        if returns_used:
+            out.append("Возвраты от покупателей уменьшают долг наравне с оплатой.")
         out.append(f"Расчёт на {as_of_dt.date()}, оплаты разнесены по FIFO. "
                    "Возраст считается от даты документа; сроки оплаты по договорам "
                    "в данных отсутствуют, поэтому слово «просрочено» здесь неприменимо.")
@@ -413,6 +505,17 @@ class AnalyticsTools:
 
     # --- отчёт о прибылях и убытках (ОПиУ) ----------------------------------
 
+    def _doc_revenue(self, date_from: str | None, date_to: str | None) -> float:
+        """Выручка по документам без НДС — для сверки с регистром."""
+        ent = self.mapping.entity("sale")
+        conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", date_from, date_to)
+        docs = self.client.run(Query(entity_set=ent.entity_set, conditions=conds))
+        total = sum(_net_revenue(d, ent) for d in docs)
+        if self._has_returns():
+            ret = self.mapping.entity("sales_return")
+            total -= sum(_net_revenue(r, ret) for r in self._returns(date_from, date_to))
+        return total
+
     def pnl_report(self, date_from: str | None = None,
                    date_to: str | None = None) -> str:
         """Выручка, себестоимость и валовая прибыль за период."""
@@ -448,6 +551,18 @@ class AnalyticsTools:
         gross = tr - tc
         out.append(f"ИТОГО | {_fmt(tr)} | {_fmt(tc)} | {_fmt(gross)} | "
                    f"{gross / tr * 100 if tr else 0:.1f}%")
+        # Регистр и документы — разные источники, и они законно расходятся
+        # (регистр может не покрывать услуги и незакрытые периоды). Показываем
+        # расхождение сами: иначе бухгалтер найдёт его первым и перестанет
+        # доверять обоим отчётам.
+        by_docs = self._doc_revenue(date_from, date_to)
+        gap = by_docs - tr
+        out.append(f"Источник: регистр выручки и себестоимости. "
+                   f"Выручка по документам за тот же период — {_fmt(by_docs)} руб.")
+        if abs(gap) > 0.005:
+            out.append(f"Расхождение с документами {_fmt(gap)} руб. Обычные причины: "
+                       "регистр не покрывает услуги и незакрытые периоды. "
+                       "Если расхождение непонятно — сверьте в 1С до принятия решений.")
         out.append("Это валовая прибыль. Коммерческие и управленческие расходы "
                    "(счета 26 и 44), налоги и проценты в расчёт не включены: "
                    "в подключённых данных их нет, поэтому чистая прибыль здесь "
@@ -466,11 +581,16 @@ class AnalyticsTools:
         if not docs:
             return f"Проведённых реализаций {_period_label(date_from, date_to)} нет."
 
+        ret_ent = self.mapping.entity("sales_return") if self._has_returns() else None
         by_month: dict[str, list[float]] = defaultdict(lambda: [0.0, 0])
         for d in docs:
             m = str(d.get("Date"))[:7]
-            by_month[m][0] += float(d.get(total_f) or 0)
+            by_month[m][0] += _net_revenue(d, ent)
             by_month[m][1] += 1
+        for r in self._returns(date_from, date_to):
+            # Возврат уменьшает выручку месяца, но отгрузкой не был —
+            # число отгрузок и средний чек он не меняет.
+            by_month[str(r.get("Date"))[:7]][0] -= _net_revenue(r, ret_ent)
 
         months = sorted(by_month)
         out = [f"Динамика продаж, {_period_label(date_from, date_to)}:",
@@ -485,7 +605,9 @@ class AnalyticsTools:
             out.append(f"{m} | {_fmt(rev)} | {int(cnt)} | {_fmt(rev / cnt)} | {change}")
             prev = rev
         out.append(f"ИТОГО | {_fmt(tr)} | {tn} | {_fmt(tr / tn)} | —")
-        out.append("Средний чек — выручка, делённая на число проведённых реализаций.")
+        out.append("Средний чек — выручка, делённая на число проведённых реализаций. "
+                   "Источник: проведённые реализации. " + _vat_note(ent) + " "
+                   + self._returns_note())
         return _report("\n".join(out), "Динамика продаж")
 
     # --- спецификации для агента -------------------------------------------

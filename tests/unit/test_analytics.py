@@ -18,8 +18,10 @@ def make(srv):
 def test_abc_by_counterparty():
     with Fake1CServer() as srv:
         out = str(make(srv).abc_analysis("counterparty"))
-        # Проведённые: Ромашка 120000+99000=219000, Василёк 15000 -> 93.6% / 6.4%
-        assert "Ромашка" in out and "252 000.00" in out
+        # Выручка БЕЗ НДС: Ромашка 252 000 / 1.2 = 210 000;
+        # Василёк 75 000 / 1.2 = 62 500 минус возврат 6 000 / 1.2 = 5 000.
+        assert "Ромашка" in out and "210 000.00" in out
+        assert "57 500.00" in out
         assert out.splitlines()[1].startswith("A |")   # крупнейший — группа A
         assert "Василёк" in out
 
@@ -27,8 +29,8 @@ def test_abc_by_counterparty():
 def test_abc_by_nomenclature_uses_document_lines():
     with Fake1CServer() as srv:
         out = str(make(srv).abc_analysis("nomenclature"))
-        # Ноутбук в проведённых: 90000 (РТ-0001) + 99000 (РТ-0005) = 189000
-        assert "Ноутбук" in out and "189 000.00" in out
+        # Ноутбук: (90 000 + 99 000) без НДС = 157 500
+        assert "Ноутбук" in out and "157 500.00" in out
         # Кресло только в непроведённом документе -> в расчёт не попадает
         assert "Кресло" not in out
 
@@ -36,8 +38,8 @@ def test_abc_by_nomenclature_uses_document_lines():
 def test_abc_respects_period():
     with Fake1CServer() as srv:
         out = str(make(srv).abc_analysis("counterparty", date_from="2026-07-01T00:00:00", date_to="2026-07-31T23:59:59"))
-        # июньская РТ-0005 (99000) исключена -> у Ромашки только 120000
-        assert "120 000.00" in out and "219 000.00" not in out
+        # июньская РТ-0005 исключена -> у Ромашки только 120 000 с НДС = 100 000
+        assert "100 000.00" in out and "210 000.00" not in out
 
 
 def test_profit_by_brand():
@@ -127,9 +129,9 @@ def test_cash_flow_by_month():
         out = str(make(srv).cash_flow())
         # Июнь: списание 150 000, поступлений нет
         assert "2026-06 | 0.00 | 150 000.00 | -150 000.00" in out
-        # Июль: поступило 120 000 + 15 000, списано 50 000
-        assert "2026-07 | 135 000.00 | 50 000.00 | 85 000.00" in out
-        assert "ИТОГО | 135 000.00 | 200 000.00 | -65 000.00" in out
+        # Июль: поступило 120 000 + 15 000 + аванс 20 000, списано 50 000
+        assert "2026-07 | 155 000.00 | 50 000.00 | 105 000.00" in out
+        assert "ИТОГО | 155 000.00 | 200 000.00 | -45 000.00" in out
 
 
 def test_cash_flow_states_missing_opening_balance():
@@ -169,19 +171,19 @@ def test_pnl_declares_what_is_not_included():
 def test_sales_dynamics_and_average_check():
     with Fake1CServer() as srv:
         out = str(make(srv).sales_dynamics())
-        # Май: 60 000 + 33 000 = 93 000 за 2 отгрузки -> средний чек 46 500
-        assert "2026-05 | 93 000.00 | 2 | 46 500.00" in out
-        # Июнь: одна отгрузка 99 000 -> средний чек равен сумме
-        assert "2026-06 | 99 000.00 | 1 | 99 000.00" in out
-        # Июль: 120 000 + 15 000 = 135 000 за 2 -> 67 500
-        assert "2026-07 | 135 000.00 | 2 | 67 500.00" in out
+        # Всё без НДС. Май: (60 000 + 33 000)/1.2 = 77 500 за 2 отгрузки
+        assert "2026-05 | 77 500.00 | 2 | 38 750.00" in out
+        # Июнь: 99 000/1.2 = 82 500, одна отгрузка
+        assert "2026-06 | 82 500.00 | 1 | 82 500.00" in out
+        # Июль: (120 000 + 15 000)/1.2 = 112 500 минус возврат 5 000 = 107 500
+        assert "2026-07 | 107 500.00 | 2 | 53 750.00" in out
 
 
 def test_sales_dynamics_shows_month_over_month_change():
     with Fake1CServer() as srv:
         out = str(make(srv).sales_dynamics())
         june = next(l for l in out.splitlines() if l.startswith("2026-06"))
-        assert "+6.5%" in june     # 99 000 против 93 000
+        assert "+6.5%" in june     # 82 500 против 77 500
         may = next(l for l in out.splitlines() if l.startswith("2026-05"))
         assert may.endswith("—")   # сравнивать не с чем
 
@@ -190,7 +192,7 @@ def test_sales_dynamics_excludes_unposted():
     """Непроведённые РТ-0002/РТ-0003 — не продажи."""
     with Fake1CServer() as srv:
         out = str(make(srv).sales_dynamics())
-        assert "ИТОГО | 327 000.00 | 5" in out
+        assert "ИТОГО | 267 500.00 | 5" in out
 
 
 # --- общие требования к набору инструментов -------------------------------
@@ -271,3 +273,104 @@ def test_digest_marks_the_hidden_rows_briefly():
         marker = next(l for l in digest.splitlines() if l.startswith("["))
         assert "строк показано пользователю" in marker and len(marker) < 60
         assert "140 000.00" in digest    # итог назвать можно и нужно
+
+
+# --- НДС и возвраты -------------------------------------------------------
+# «Деньги любят точность»: выручка с НДС завышена на ставку налога, а маржа
+# завышена дважды, потому что себестоимость идёт без НДС.
+
+def test_revenue_excludes_vat_but_debt_does_not():
+    """Выручка — без НДС, долг — с НДС: контрагент должен полную сумму."""
+    with Fake1CServer() as srv:
+        a = make(srv)
+        abc = str(a.abc_analysis("counterparty"))
+        assert "210 000.00" in abc          # 252 000 с НДС -> 210 000 без НДС
+        aging = str(a.receivables_aging(as_of="2026-07-31T00:00:00"))
+        assert "132 000.00" in aging        # долг остаётся полным, с НДС
+        assert "110 000.00" not in aging    # без НДС здесь было бы неверно
+
+
+def test_returns_reduce_revenue():
+    with Fake1CServer() as srv:
+        a = make(srv)
+        july = str(a.abc_analysis("counterparty",
+                                  date_from="2026-07-01T00:00:00",
+                                  date_to="2026-07-31T23:59:59"))
+        # Василёк: 15 000 с НДС = 12 500, возврат 6 000 с НДС = 5 000 -> 7 500
+        assert "7 500.00" in july
+
+
+def test_both_abc_cuts_agree_on_total():
+    """Разрезка по клиентам и по товарам обязана дать одну выручку.
+
+    Если они разойдутся, доверять нельзя ни одной: это первое, что заметит
+    бухгалтер.
+    """
+    with Fake1CServer() as srv:
+        a = make(srv)
+        by_cp = str(a.abc_analysis("counterparty"))
+        by_nom = str(a.abc_analysis("nomenclature"))
+        assert "выручка 267 500.00 руб." in by_cp
+        assert "выручка 267 500.00 руб." in by_nom
+
+
+def test_report_declares_its_basis():
+    """Отчёт обязан сказать, что в нём с НДС, а что без, и учтены ли возвраты."""
+    with Fake1CServer() as srv:
+        out = str(make(srv).abc_analysis("counterparty"))
+        assert "Выручка без НДС." in out
+        assert "за вычетом возвратов" in out
+
+
+def test_missing_vat_field_is_declared_not_hidden():
+    """Нет реквизита НДС в маппинге — отчёт предупреждает, а не молчит."""
+    mapping = load_mapping("bp30")
+    mapping.entity("sale").fields.pop("vat", None)
+    with Fake1CServer() as srv:
+        tools = AnalyticsTools(
+            ODataClient(srv.base_url, "robot", "test", mapping=mapping), mapping)
+        out = str(tools.abc_analysis("counterparty"))
+        assert "реквизит НДС не описан" in out
+        assert "252 000.00" in out      # тогда суммы честно с НДС
+
+
+def test_pnl_shows_the_gap_with_documents():
+    """Регистр и документы расходятся законно — но молчать об этом нельзя."""
+    with Fake1CServer() as srv:
+        out = str(make(srv).pnl_report())
+        assert "Источник: регистр выручки и себестоимости" in out
+        assert "Выручка по документам за тот же период — 267 500.00" in out
+        assert "Расхождение с документами 33 500.00" in out
+
+
+def test_document_based_reports_agree_with_each_other():
+    """ABC и динамика продаж считают выручку одинаково — иначе доверия нет."""
+    with Fake1CServer() as srv:
+        a = make(srv)
+        assert "выручка 267 500.00 руб." in str(a.abc_analysis("counterparty"))
+        assert "ИТОГО | 267 500.00" in str(a.sales_dynamics())
+
+
+def test_returns_reduce_the_debt():
+    """Товар вернулся — требовать за него деньги нельзя."""
+    with Fake1CServer() as srv:
+        out = str(make(srv).receivables_aging(as_of="2026-07-31T00:00:00"))
+        # Василёк: было 60 000, возврат 6 000 -> 54 000
+        assert "54 000.00" in out
+        assert "Возвраты от покупателей уменьшают долг" in out
+
+
+def test_advance_is_shown_not_swallowed():
+    """Переплата — это аванс, а не ноль. Раньше остаток молча отбрасывался."""
+    with Fake1CServer() as srv:
+        out = str(make(srv).receivables_aging(as_of="2026-07-31T00:00:00"))
+        assert "АВАНС" in out and "ТехноСервис" in out and "20 000.00" in out
+        assert "это не долг нам" in out
+
+
+def test_advance_does_not_leak_into_the_debt_total():
+    """Аванс не должен ни увеличивать, ни уменьшать сумму долга."""
+    with Fake1CServer() as srv:
+        out = str(make(srv).receivables_aging(as_of="2026-07-31T00:00:00"))
+        total = next(l for l in out.splitlines() if l.startswith("ИТОГО"))
+        assert total.endswith("186 000.00")
