@@ -32,6 +32,8 @@ from perimeter_core.audit import AuditLog
 from perimeter_inference.client import InferenceClient
 
 LIVE_LLM_URL = os.environ.get("PERIMETER_E2E_LLM_URL")
+# Имя модели у бэкенда: colibri отдаёт glm-5.2, ollama — свои теги
+LIVE_LLM_MODEL = os.environ.get("PERIMETER_E2E_LLM_MODEL", "glm-5.2")
 
 
 def build_agent(tmp_path, srv_1c, llm_url, script=None, confirm=lambda n, a: True,
@@ -40,7 +42,7 @@ def build_agent(tmp_path, srv_1c, llm_url, script=None, confirm=lambda n, a: Tru
     tools = Bridge1CTools(
         ODataClient(srv_1c.base_url, "robot", "test", mapping=mapping), mapping)
     return Agent(
-        client=InferenceClient(llm_url, model="fake" if script is not None else "glm-5.2",
+        client=InferenceClient(llm_url, model="fake" if script is not None else LIVE_LLM_MODEL,
                                timeout_s=timeout_s),
         tool_specs=tools.specs(),
         audit=AuditLog(tmp_path / "audit.log"),
@@ -177,7 +179,7 @@ def test_live_minimal_tool_loop(tmp_path):
             ODataClient(srv.base_url, "robot", "test", mapping=mapping), mapping)
         only_counterparty = [s for s in tools.specs() if s.name == "get_counterparty"]
         agent = Agent(
-            client=InferenceClient(LIVE_LLM_URL, model="glm-5.2", timeout_s=7200),
+            client=InferenceClient(LIVE_LLM_URL, model=LIVE_LLM_MODEL, timeout_s=7200),
             tool_specs=only_counterparty,
             audit=AuditLog(tmp_path / "audit.log"),
             confirm=lambda n, a: False,
