@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Замер честных цифр inference на текущем железе (Этап 3).
+"""Замер производительности inference на текущем железе (Этап 3).
 
 Запускать на целевой машине с полными весами GLM-5.2:
   python3 tools/bench_inference.py --model /nvme/glm52_i4 [--port 18092]
