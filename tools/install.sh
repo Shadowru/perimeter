@@ -66,6 +66,12 @@ fi
 echo "    модель: $(du -h "$MODEL_PATH" | cut -f1)"
 
 echo "--- 4/4: конфигурация"
+if [ ! -f "$HERE/config/perimeter.yaml" ]; then
+  cp "$HERE/config/perimeter.example.yaml" "$HERE/config/perimeter.yaml"
+  echo "    создан config/perimeter.yaml из шаблона"
+else
+  echo "    config/perimeter.yaml уже есть — правим существующий"
+fi
 python3 - "$HERE" "$MODEL_PATH" "$MODEL_ID" <<'PY'
 import re, sys
 root, model_path, model_id = sys.argv[1], sys.argv[2], sys.argv[3]

@@ -144,6 +144,11 @@ class PerimeterConfig:
 def load_config(path: str | os.PathLike[str]) -> PerimeterConfig:
     p = Path(path)
     if not p.exists():
+        example = p.parent / "perimeter.example.yaml"
+        if example.exists():
+            raise ConfigError(
+                f"{t('error.config_missing', path=str(p))}. Создайте его из шаблона: "
+                f"cp {example} {p} (или запустите tools/install.sh)")
         raise ConfigError(t("error.config_missing", path=str(p)))
     raw = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
 
