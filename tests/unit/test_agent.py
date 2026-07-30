@@ -493,3 +493,14 @@ def test_ordinary_braces_survive_cleanup():
     from perimeter_core.agent import strip_tool_call_text
     text = 'Долг 100 000 руб. {примечание: без НДС}'
     assert strip_tool_call_text(text) == text
+
+
+def test_prompt_demands_dates_when_a_period_is_named():
+    """Все три модели теряли период: «за июль» уходило без date_from/date_to.
+
+    Отчёт при этом строился за всё время и молча отвечал не на тот вопрос.
+    """
+    from perimeter_core.agent import load_system_prompt
+    prompt = load_system_prompt()
+    assert "ОБЯЗАТЕЛЬНО передай date_from и date_to" in prompt
+    assert "не придумывай" in prompt      # обратное правило осталось
