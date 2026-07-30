@@ -88,6 +88,30 @@ def _source_names(source: str) -> list[str]:
     return names
 
 
+# Начало названия, по которому опознаём искажение. Модель подменяет хвост
+# («ТехноСервис» -> «ТехнSERVICОВЕР»), но начало обычно набирает верно, а
+# посимвольное сходство латиница убивает: 0,38 при пороге 0,6.
+_PREFIX_LEN = 4
+
+
+def _closest_source_name(name: str, candidates: list[str]) -> str | None:
+    """Как это название написано в данных — или None, если непонятно.
+
+    Сначала посимвольное сходство, затем — единственный кандидат с тем же
+    началом. Требование единственности принципиально: если начало «Техн»
+    подходит и «ТехноСервис», и «Технополис», мы не угадываем, а оставляем
+    человеку предупреждение.
+    """
+    close = difflib.get_close_matches(name, candidates, n=1, cutoff=0.6)
+    if close:
+        return close[0]
+    prefix = _norm_name(name)[:_PREFIX_LEN]
+    if len(prefix) < _PREFIX_LEN:
+        return None
+    matched = [c for c in candidates if _norm_name(c).startswith(prefix)]
+    return matched[0] if len(matched) == 1 else None
+
+
 @dataclass
 class GroundingResult:
     unverified_amounts: list[str] = field(default_factory=list)
@@ -159,12 +183,34 @@ def check_grounding(answer: str, tool_outputs: list[str],
             # Модель коверкала «ТехноСервис» в «Технервис» и повторяла ошибку
             # даже после указания переписать дословно (живой прогон
             # 2026-07-30). Подсказываем правильное написание.
-            close = difflib.get_close_matches(name, _source_names(source), n=1, cutoff=0.5)
-            if close:
-                result.name_corrections[name] = close[0]
+            fix = _closest_source_name(name, _source_names(source))
+            if fix:
+                result.name_corrections[name] = fix
 
     return result
 
+
+def apply_name_corrections(answer: str, result: GroundingResult) -> tuple[str, list[str]]:
+    """Заменяет искажённые названия на написание из данных.
+
+    Применяется, только когда модель не справилась сама. Правим ТОЛЬКО
+    названия и только те, для которых в данных нашёлся однозначно похожий
+    оригинал: «ТехнSERVICОВЕР» -> «АО "ТехноСервис"». Суммы и номера
+    документов не подменяем никогда — если модель ошиблась в числе, это не
+    опечатка, и человек должен увидеть предупреждение, а не подставленную
+    нами цифру.
+    """
+    fixed: list[str] = []
+    for wrong, right in result.name_corrections.items():
+        if wrong in answer:
+            answer = answer.replace(wrong, right)
+            fixed.append(f"«{wrong}» -> «{right}»")
+    return answer, fixed
+
+
+NAME_FIX_NOTE = (
+    "\n\n(Названия исправлены по данным 1С: {fixes}.)"
+)
 
 CORRECTION_PROMPT = (
     "В твоём ответе есть данные, которых нет в результатах инструментов ({details}). "

@@ -316,3 +316,44 @@ def test_tool_budget_does_not_disturb_normal_turns(tmp_path):
         agent.run("Найди Ромашку")
         assert all(r.get("tools") for r in llm.requests)
         llm.__exit__()
+
+
+def test_distorted_name_is_repaired_from_data(tmp_path):
+    """Живой прогон: модель дважды написала «ТехнSERVIC» вместо «ТехноСервис».
+
+    Просить её переписать бесполезно — правим сами и говорим об этом вслух.
+    """
+    script = [
+        Scripted(tool_calls=[{"name": "get_counterparty", "arguments": {"query": "техно"}}]),
+        Scripted(content="Контрагент «ТехнSERVIC», ИНН 5047112233."),
+        Scripted(content="Контрагент «ТехнSERVIC», ИНН 5047112233."),
+    ]
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, script)
+        result = agent.run("Найди ТехноСервис")
+        body, _, note = result.text.partition("(Названия исправлены")
+        assert "ТехнSERVIC" not in body      # в самом ответе искажения нет
+        assert "ТехноСервис" in body
+        assert "«ТехнSERVIC» -> «АО \"ТехноСервис\"»" in note  # правка названа
+        assert result.grounded          # после правки расхождений не осталось
+        assert "не подтверждается" not in result.text
+        events = [json.loads(line)["event"]
+                  for line in (tmp_path / "audit.log").read_text().splitlines()]
+        assert "names_corrected" in events
+        llm.__exit__()
+
+
+def test_invented_amount_is_never_silently_replaced(tmp_path):
+    """Число — не опечатка: подставлять своё нельзя, только предупредить."""
+    script = [
+        Scripted(tool_calls=[{"name": "get_counterparty", "arguments": {"query": "ромашка"}}]),
+        Scripted(content="Долг «Ромашка» — 777 000.00 руб."),
+        Scripted(content="Долг «Ромашка» — 777 000.00 руб."),
+    ]
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, script)
+        result = agent.run("Сколько должна Ромашка?")
+        assert "777 000.00" in result.text        # цифру не подменили
+        assert "не подтверждается" in result.text  # но предупредили
+        assert not result.grounded
+        llm.__exit__()

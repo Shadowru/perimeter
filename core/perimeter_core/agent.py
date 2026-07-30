@@ -24,7 +24,8 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .audit import AuditLog
-from .grounding import CORRECTION_PROMPT, WARNING_SUFFIX, check_grounding
+from .grounding import (CORRECTION_PROMPT, NAME_FIX_NOTE, WARNING_SUFFIX,
+                        apply_name_corrections, check_grounding)
 from .i18n import t
 
 Message = dict[str, Any]
@@ -266,12 +267,25 @@ class Agent:
                         on_delta("\n\n[сверяю с данными 1С…]\n\n")
                     continue
                 if not grounding.ok:
-                    details = grounding.describe()
-                    self.audit.write("grounding_failed", details=details)
-                    suffix = WARNING_SUFFIX.format(details=details)
-                    text = (text or "") + suffix
+                    # Модель не исправилась сама. Искажённые названия чиним
+                    # по данным (живой прогон 2026-07-30: «ТехноСервис» она
+                    # коверкала и после прямой подсказки), остальное —
+                    # предупреждением человеку.
+                    text, fixes = apply_name_corrections(text or "", grounding)
+                    suffix = ""
+                    if fixes:
+                        suffix += NAME_FIX_NOTE.format(fixes=", ".join(fixes))
+                        self.audit.write("names_corrected", fixes=fixes)
+                        grounding = check_grounding(
+                            text, self._turn_tool_outputs(turn_start),
+                            question=user_text)
+                    if not grounding.ok:
+                        details = grounding.describe()
+                        self.audit.write("grounding_failed", details=details)
+                        suffix += WARNING_SUFFIX.format(details=details)
+                    text += suffix
                     self.messages[-1]["content"] = text
-                    if on_delta:
+                    if on_delta and suffix:
                         on_delta(suffix)
                 self.audit.write("assistant_message", text=(text or "")[:2000])
                 return AgentResult(text=text, steps=step, grounded=grounding.ok)

@@ -178,3 +178,17 @@ def test_no_suggestion_when_nothing_resembles_it():
     """Полностью выдуманный контрагент — не опечатка, подсказывать нечего."""
     res = check_grounding("Клиент «ООО Вектор».", ['ООО "Ромашка" | key=aaa'])
     assert res.unverified_names == ["ООО Вектор"] and not res.name_corrections
+
+
+def test_latin_garbled_name_is_matched_by_prefix():
+    """«ТехнSERVICОВЕР» — то, что живая модель выдала вместо «ТехноСервис»."""
+    res = check_grounding("Долг «ТехнSERVICОВЕР» — 100.00 руб.",
+                          ['АО "ТехноСервис" | ИНН 5047112233 | key=bbb'])
+    assert res.name_corrections["ТехнSERVICОВЕР"] == 'АО "ТехноСервис"'
+
+
+def test_ambiguous_prefix_is_not_guessed():
+    """Два кандидата с тем же началом — угадывать нельзя."""
+    res = check_grounding("Долг «ТехнXXX» — 100.00 руб.",
+                          ['АО "ТехноСервис" | key=b', 'ООО "Технополис" | key=c'])
+    assert res.unverified_names == ["ТехнXXX"] and not res.name_corrections
