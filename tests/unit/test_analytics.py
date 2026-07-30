@@ -374,3 +374,15 @@ def test_advance_does_not_leak_into_the_debt_total():
         out = str(make(srv).receivables_aging(as_of="2026-07-31T00:00:00"))
         total = next(l for l in out.splitlines() if l.startswith("ИТОГО"))
         assert total.endswith("186 000.00")
+
+
+def test_tool_descriptions_use_the_words_accountants_use():
+    """Замер 30.07: «производители» уходили в поиск документов, «обороты» — тоже.
+
+    Оба раза причина была в нашем словаре, а не в модели.
+    """
+    with Fake1CServer() as srv:
+        by_name = {s.name: s.description for s in make(srv).specs()}
+        assert "производител" in by_name["profit_by_brand"]
+        assert "боротов" in by_name["reconciliation_act"] or \
+               "Обороты" in by_name["reconciliation_act"]

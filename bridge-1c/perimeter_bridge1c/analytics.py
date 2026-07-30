@@ -626,7 +626,7 @@ class AnalyticsTools:
             ),
             ToolSpec(
                 "profit_by_brand",
-                "Выручка, себестоимость и маржа по брендам за период.",
+                "Выручка, себестоимость, маржа по брендам (производителям).",
                 {"type": "object", "properties": dates},
                 lambda **kw: self.profit_by_brand(**kw),
             ),
@@ -644,7 +644,7 @@ class AnalyticsTools:
             ),
             ToolSpec(
                 "reconciliation_act",
-                "Акт сверки с контрагентом: сальдо и обороты по документам.",
+                "Обороты и сальдо по контрагенту: акт сверки взаиморасчётов.",
                 {"type": "object", "properties": {
                     "counterparty_key": {"type": "string"}, **dates},
                  "required": ["counterparty_key"]},
