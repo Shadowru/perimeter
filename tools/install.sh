@@ -87,7 +87,11 @@ open(cfg, "w", encoding="utf-8").write(s)
 print(f"    прописано в config/perimeter.yaml: {model_id}")
 PY
 
+# Виртуальное окружение: продукту оно не нужно (runtime-зависимостей нет),
+# но в нём живут dev-инструменты — pytest для приёмочных прогонов у заказчика.
 python3 -m venv "$HERE/.venv" 2>/dev/null || true
+"$HERE/.venv/bin/pip" install -q pytest 2>/dev/null || \
+  echo "    (pytest не установлен — нет сети; приёмочные тесты запускать нечем)"
 echo
 echo "=== Готово. Запуск: python3 run_perimeter.py ==="
 echo "Дальше настройте доступ к 1С в config/perimeter.yaml (см. README)."
