@@ -94,3 +94,26 @@ def test_execute_bad_json_is_soft_error():
         specs = make_tools(srv).specs()
         out, spec = execute_tool(specs, "find_document", "{broken")
         assert "Ошибка" in out and spec is not None
+
+
+# --- Поиск контрагента: как его пишет живой пользователь -------------------
+
+def test_normalizes_user_written_counterparty_names():
+    """Найдено живым прогоном модели: «ООО «Ромашка»» не находилось."""
+    from perimeter_bridge1c.tools import normalize_counterparty_query as norm
+    assert norm('ООО «Ромашка»') == "ромашка"
+    assert norm('ООО "Ромашка"') == "ромашка"
+    assert norm("Ромашка") == "ромашка"
+    assert norm('АО «ТехноСервис»') == "техносервис"
+    assert norm("ИП Иванов") == "иванов"
+    assert norm('ООО «Торговый дом»') == "торговый дом"
+    # Пустой результат недопустим — возвращаем исходное
+    assert norm("ООО") == "ооо"
+
+
+def test_counterparty_search_with_quotes_and_legal_form():
+    with Fake1CServer() as srv:
+        tools = make_tools(srv)
+        for written_as in ('ООО «Ромашка»', 'ООО "Ромашка"', "  РОМАШКА  ", "ромашка"):
+            out = tools.get_counterparty(written_as)
+            assert "Ромашка" in out, f"не найдено при написании {written_as!r}: {out}"

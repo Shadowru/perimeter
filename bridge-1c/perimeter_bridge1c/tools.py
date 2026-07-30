@@ -44,6 +44,27 @@ def _fmt_date(iso: str) -> str:
     return (iso or "")[:10]
 
 
+# Организационно-правовые формы, которые пользователь пишет, а в наименовании
+# справочника они могут стоять иначе (или отсутствовать).
+_LEGAL_FORMS = ("ооо", "оао", "зао", "пао", "ао", "ип", "нко", "ано", "гуп", "муп")
+_QUOTES = "«»\"'“”„‟‘’`"
+
+
+def normalize_counterparty_query(query: str) -> str:
+    """«ООО «Ромашка»» -> «ромашка».
+
+    Живой пользователь пишет контрагента как угодно: с кавычками-ёлочками,
+    с формой собственности, в любом регистре. Поиск в 1С идёт подстрокой,
+    поэтому ищем по ядру наименования (найдено живым прогоном 2026-07-30:
+    модель спрашивала уточнение, потому что «ООО «Ромашка»» не совпало).
+    """
+    text = query.strip().lower()
+    for ch in _QUOTES:
+        text = text.replace(ch, " ")
+    words = [w for w in text.split() if w and w.strip(".") not in _LEGAL_FORMS]
+    return " ".join(words).strip() or query.strip().lower()
+
+
 class Bridge1CTools:
     def __init__(self, client: Backend, mapping: ConfigurationMapping):
         self.client = client
@@ -54,9 +75,10 @@ class Bridge1CTools:
     def get_counterparty(self, query: str) -> str:
         ent = self.mapping.entity("counterparty")
         name_f = ent.field_1c("name")
+        needle = normalize_counterparty_query(query)
         rows = list(self.client.run(Query(
             entity_set=ent.entity_set,
-            conditions=[Cond(name_f, OP_CONTAINS, query.lower())],
+            conditions=[Cond(name_f, OP_CONTAINS, needle)],
             select=["Ref_Key", "Code", name_f] + [f for f in (ent.fields.get("inn"),) if f],
             top=10,
         )))
