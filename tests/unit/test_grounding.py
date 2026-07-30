@@ -164,3 +164,17 @@ def test_stem_match_still_catches_distortion():
     """Послабление на падежи не должно пропускать искажённое название."""
     res = check_grounding("Отгрузка «ТехнSERVIC».", ['АО "ТехноСервис" | key=bbb'])
     assert res.unverified_names == ["ТехнSERVIC"]
+
+
+def test_distorted_name_gets_the_correct_spelling():
+    """Модели мало сказать «неверно» — она повторяет ошибку. Даём написание."""
+    res = check_grounding("Долг «Технервис» — 100.00 руб.",
+                          ['АО "ТехноСервис" | ИНН 7703334455 | key=bbb'])
+    assert res.name_corrections["Технервис"] == 'АО "ТехноСервис"'
+    assert 'в данных «АО "ТехноСервис"»' in res.describe()
+
+
+def test_no_suggestion_when_nothing_resembles_it():
+    """Полностью выдуманный контрагент — не опечатка, подсказывать нечего."""
+    res = check_grounding("Клиент «ООО Вектор».", ['ООО "Ромашка" | key=aaa'])
+    assert res.unverified_names == ["ООО Вектор"] and not res.name_corrections

@@ -114,6 +114,12 @@ class Agent:
     # часа на один ход. Вызов инструмента укладывается в ~80 токенов, деловой
     # ответ — в ~150, так что 192 хватает, а лишние рассуждения отсекаются.
     max_tokens_per_call: int = 192
+    # Потолок на итоговый ответ человеку. Вызов инструмента укладывается в
+    # ~80 токенов, а вот ответ по отчёту — нет: на живом прогоне 2026-07-30
+    # ответы обрывались посреди числа («Всего: 135 0»), что хуже короткого
+    # ответа. Больший потолок включается только после того, как инструменты
+    # отработали, поэтому на выбор инструмента он не влияет.
+    max_answer_tokens: int = 448
     # Сколько вызовов инструментов даём модели на один вопрос. Реальным
     # сценариям хватает трёх (найти контрагента -> найти документы -> ответ);
     # запас взят на уточнения. Всё сверх этого — почти всегда зацикливание.
@@ -225,7 +231,9 @@ class Agent:
             if offered is None and not forced_answer:
                 forced_answer = True
                 self.audit.write("tool_budget_reached", calls=calls_made)
-            text, tool_calls = self._call_model(offered, on_delta)
+            budget = (self.max_answer_tokens if calls_made
+                      else self.max_tokens_per_call)
+            text, tool_calls = self._call_model(offered, on_delta, max_tokens=budget)
             if offered is None and tool_calls:
                 # Инструментов не предлагали, а модель всё равно их запросила.
                 # Не исполняем: бюджет на то и бюджет.
@@ -277,17 +285,19 @@ class Agent:
         return AgentResult(text=limit_text, steps=self.max_iterations, stopped_by_limit=True)
 
     def _call_model(self, schemas: list[dict[str, Any]] | None,
-                    on_delta: DeltaCallback | None) -> tuple[str, list[dict[str, Any]]]:
+                    on_delta: DeltaCallback | None,
+                    max_tokens: int | None = None) -> tuple[str, list[dict[str, Any]]]:
         outbound = self._outbound_messages()
+        max_tokens = max_tokens or self.max_tokens_per_call
         if on_delta is None:
             result = self.client.chat(outbound, tools=schemas,
-                                      max_tokens=self.max_tokens_per_call,
+                                      max_tokens=max_tokens,
                                       temperature=self.temperature)
             return result.content, list(result.tool_calls)
         text_parts: list[str] = []
         partial: dict[int, dict[str, Any]] = {}
         for chunk in self.client.chat_stream(outbound, tools=schemas,
-                                             max_tokens=self.max_tokens_per_call,
+                                             max_tokens=max_tokens,
                                              temperature=self.temperature):
             if chunk.content:
                 text_parts.append(chunk.content)

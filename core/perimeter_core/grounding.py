@@ -15,6 +15,7 @@
 
 from __future__ import annotations
 
+import difflib
 import re
 from dataclasses import dataclass, field
 
@@ -72,11 +73,28 @@ def _name_present(name: str, source: str) -> bool:
     return all(w[:max(4, len(w) - 2)] in source for w in words)
 
 
+def _source_names(source: str) -> list[str]:
+    """Наименования из вывода инструментов: всё до первого разделителя.
+
+    Инструменты печатают строку вида «АО "ТехноСервис" | ИНН … | key=…»,
+    поэтому левая часть — это название. Нужно, чтобы подсказать модели
+    правильное написание вместо простого «так нельзя».
+    """
+    names = []
+    for line in source.splitlines():
+        head = line.split("|")[0].strip(" -—•\t")
+        if 2 < len(head) <= 60:
+            names.append(head)
+    return names
+
+
 @dataclass
 class GroundingResult:
     unverified_amounts: list[str] = field(default_factory=list)
     unverified_docs: list[str] = field(default_factory=list)
     unverified_names: list[str] = field(default_factory=list)
+    # искажённое название -> как оно написано в данных
+    name_corrections: dict[str, str] = field(default_factory=dict)
 
     @property
     def ok(self) -> bool:
@@ -90,7 +108,10 @@ class GroundingResult:
         if self.unverified_amounts:
             parts.append("суммы: " + ", ".join(self.unverified_amounts))
         if self.unverified_names:
-            parts.append("названия: " + ", ".join(self.unverified_names))
+            named = [f"«{n}» — в данных «{self.name_corrections[n]}»"
+                     if n in self.name_corrections else f"«{n}»"
+                     for n in self.unverified_names]
+            parts.append("названия: " + ", ".join(named))
         return "; ".join(parts)
 
 
@@ -135,6 +156,12 @@ def check_grounding(answer: str, tool_outputs: list[str],
             continue
         if not _name_present(normalized, source_names):
             result.unverified_names.append(name)
+            # Модель коверкала «ТехноСервис» в «Технервис» и повторяла ошибку
+            # даже после указания переписать дословно (живой прогон
+            # 2026-07-30). Подсказываем правильное написание.
+            close = difflib.get_close_matches(name, _source_names(source), n=1, cutoff=0.5)
+            if close:
+                result.name_corrections[name] = close[0]
 
     return result
 
