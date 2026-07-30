@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import base64
 import http.server
+import os
 import secrets
 import socketserver
 import sys
@@ -103,7 +104,9 @@ def main() -> int:
     ap.add_argument("--user", default="demo")
     args = ap.parse_args()
 
-    password = secrets.token_urlsafe(12)
+    # Пароль можно зафиксировать переменной окружения, чтобы перезапуск
+    # прокси не менял реквизиты у того, кто уже смотрит демо.
+    password = os.environ.get("PERIMETER_DEMO_PASSWORD") or secrets.token_urlsafe(12)
     handler = make_handler(f"http://127.0.0.1:{args.target}", args.user, password)
 
     class Server(socketserver.ThreadingTCPServer):
