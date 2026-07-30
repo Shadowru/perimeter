@@ -34,12 +34,14 @@ from perimeter_inference.client import InferenceClient
 LIVE_LLM_URL = os.environ.get("PERIMETER_E2E_LLM_URL")
 
 
-def build_agent(tmp_path, srv_1c, llm_url, script=None, confirm=lambda n, a: True):
+def build_agent(tmp_path, srv_1c, llm_url, script=None, confirm=lambda n, a: True,
+                timeout_s: float = 3600.0):
     mapping = load_mapping("bp30")
     tools = Bridge1CTools(
         ODataClient(srv_1c.base_url, "robot", "test", mapping=mapping), mapping)
     return Agent(
-        client=InferenceClient(llm_url, model="fake" if script is not None else "glm-5.2"),
+        client=InferenceClient(llm_url, model="fake" if script is not None else "glm-5.2",
+                               timeout_s=timeout_s),
         tool_specs=tools.specs(),
         audit=AuditLog(tmp_path / "audit.log"),
         confirm=confirm,
@@ -194,8 +196,11 @@ def test_live_minimal_tool_loop(tmp_path):
 
 @pytest.mark.skipif(not LIVE_LLM_URL, reason="задайте PERIMETER_E2E_LLM_URL для живого прогона")
 def test_live_model_scenario_1(tmp_path):
+    # Лимит ожидания поднят: на дисковом стриминге один ход агента идёт
+    # десятки минут, и таймаут клиента по умолчанию (1 ч) обрывает замер
+    # раньше, чем модель успевает ответить (замеры 2026-07-29/30).
     with Fake1CServer() as srv:
-        agent = build_agent(tmp_path, srv, LIVE_LLM_URL)
+        agent = build_agent(tmp_path, srv, LIVE_LLM_URL, timeout_s=10800)
         result = agent.run("Найди все непроведённые реализации за июль 2026 по контрагенту Ромашка")
         # Живая модель: проверяем факты, не формулировки.
         assert "РТ-0002" in result.text and "РТ-0003" in result.text
