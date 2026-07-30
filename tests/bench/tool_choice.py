@@ -74,7 +74,8 @@ CASES: list[tuple[str, str, list[str]]] = [
     ("Найди все непроведённые реализации за июль", "find_document",
      ["sale", "2026-07"]),
     ("Покажи реализации по Ромашке", "find_document", ["sale"]),
-    ("Какие поступления были в июле?", "find_document", ["2026-07"]),
+    ("Какие поступления товаров были в июле?", "find_document",
+     ["purchase", "2026-07"]),
     ("Что мы отгрузили Ромашке и не получили оплату?", "ledger_report", ["Ромашка"]),
     # --- запись (должно требовать подтверждения) ---------------------------
     ("Подготовь черновик счёта Ромашке на 50 000", "create_draft_document",
@@ -114,6 +115,7 @@ def run(llm_url: str, model: str) -> dict:
                                       for frag in want_args)
             results.append({
                 "question": question, "want": want_tool, "got": names,
+                "args": args_json[:200], "want_args": want_args,
                 "tool_ok": tool_ok, "args_ok": args_ok, "error": error,
                 "seconds": round(elapsed, 1),
                 "steps": res.steps if res else 0,
@@ -136,6 +138,7 @@ def summarize(results: list[dict]) -> dict:
         "median_seconds": round(sorted(times)[len(times) // 2], 1) if times else None,
         "max_seconds": round(max(times), 1) if times else None,
         "failures": [r for r in results if not r["args_ok"]],
+        "unverified": [r["question"] for r in results if not r["grounded"]],
     }
 
 
@@ -148,12 +151,18 @@ def main() -> int:
     print(f"  инструмент + параметры: {s['args_accuracy']}%")
     print(f"  ошибок бэкенда: {s['errors']}, ответов без подтверждения: {s['ungrounded']}")
     print(f"  время: медиана {s['median_seconds']} c, максимум {s['max_seconds']} c")
+    if s["unverified"]:
+        print("\nОтветы без подтверждения данными:")
+        for q in s["unverified"]:
+            print(f"  {q}")
     if s["failures"]:
         print("\nНе прошли:")
         for f in s["failures"]:
             got = ", ".join(f["got"]) or "—"
             mark = "инструмент" if not f["tool_ok"] else "параметры"
-            print(f"  [{mark}] {f['question']}\n      ждали {f['want']}, вызвано: {got}"
+            print(f"  [{mark}] {f['question']}")
+            print(f"      ждали {f['want']} c {f['want_args'] or '—'}; вызвано: {got}")
+            print(f"      аргументы: {f['args'] or '—'}"
                   + (f"  ОШИБКА: {f['error']}" if f["error"] else ""))
     return 0
 
