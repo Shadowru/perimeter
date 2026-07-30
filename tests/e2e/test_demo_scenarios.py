@@ -84,10 +84,10 @@ SCRIPT_2 = [
     Scripted(tool_calls=[{"name": "get_counterparty", "arguments": {"query": "ромашка"}}]),
     Scripted(tool_calls=[{"name": "ledger_report",
                           "arguments": {"counterparty_key": GUID_ROMASHKA}}]),
-    Scripted(content="По ООО «Ромашка»: отгружено 219 000.00 руб. "
-                     "(№РТ-0001 от 03.07.2026, №РТ-0005 от 25.06.2026), "
-                     "оплачено 120 000.00 руб. (№ПС-0001 от 07.07.2026). "
-                     "Не оплачено: 99 000.00 руб. — реализация №РТ-0005 от 25.06.2026."),
+    Scripted(content="По ООО «Ромашка»: отгружено 252 000.00 руб. "
+                     "(№РТ-0001 от 03.07.2026, №РТ-0005 от 25.06.2026, "
+                     "№РТ-0007 от 28.05.2026), оплачено 120 000.00 руб. "
+                     "(№ПС-0001 от 07.07.2026). Не оплачено: 132 000.00 руб."),
 ]
 
 
@@ -95,10 +95,11 @@ def test_scenario_2_reconciliation(tmp_path):
     with Fake1CServer() as srv, FakeOpenAIServer(SCRIPT_2) as llm:
         agent = build_agent(tmp_path, srv, llm.base_url, SCRIPT_2)
         result = agent.run('Сверка: что мы отгрузили ООО "Ромашка", но не получили оплату?')
-        assert "99 000.00" in result.text
+        assert "132 000.00" in result.text
+        assert result.grounded    # каждая цифра ответа есть в выгрузке из 1С
         tool_out = next(m["content"] for m in agent.messages
                         if m["role"] == "tool" and m.get("name") == "ledger_report")
-        assert "сальдо (не оплачено) 99 000.00" in tool_out
+        assert "сальдо (не оплачено) 132 000.00" in tool_out
         # Аудит содержит весь путь:
         events = [json.loads(line)["event"]
                   for line in (tmp_path / "audit.log").read_text().splitlines()]

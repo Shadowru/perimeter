@@ -49,7 +49,7 @@ def test_ledger_report_unpaid_balance():
     with Fake1CServer() as srv:
         out = make_tools(srv).ledger_report(GUID_ROMASHKA)
         # Проведённые отгрузки Ромашки: 120000 (июль) + 99000 (июнь); оплата 120000.
-        assert "сальдо (не оплачено) 99 000.00" in out
+        assert "сальдо (не оплачено) 132 000.00" in out
 
 
 def test_create_draft_is_draft_only():

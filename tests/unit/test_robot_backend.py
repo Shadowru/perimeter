@@ -48,7 +48,7 @@ def test_counterparty_search_through_robot(robot_stack):
 def test_ledger_report_through_robot(robot_stack):
     _, _, _, tools = robot_stack
     out = tools.ledger_report(GUID_ROMASHKA)
-    assert "сальдо (не оплачено) 99 000.00" in out
+    assert "сальдо (не оплачено) 132 000.00" in out
 
 
 def test_draft_is_created_unposted(robot_stack):

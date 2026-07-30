@@ -186,36 +186,44 @@ class AnalyticsTools:
         return (f"Себестоимость и маржа по брендам, {_period_label(date_from, date_to)}:\n"
                 + "\n".join(out))
 
-    # --- старение дебиторской задолженности --------------------------------
+    # --- старение задолженности (дебиторка и кредиторка) --------------------
 
-    def receivables_aging(self, as_of: str | None = None) -> str:
-        """Сколько должны и как давно: 0–30, 31–60, 61–90, свыше 90 дней."""
-        sale = self.mapping.entity("sale")
-        pay = self.mapping.entity("incoming_payment")
-        cp_s, total_s = sale.field_1c("counterparty"), sale.field_1c("total")
+    def _aging(self, debt_entity: str, payment_entity: str, as_of: str | None,
+               title: str, doc_word: str, empty_text: str) -> str:
+        """Общий расчёт старения долга.
+
+        Дебиторка и кредиторка устроены одинаково, меняются местами только
+        стороны: «реализация минус приход денег» против «поступление минус
+        расход денег». Считаем в одном месте, чтобы правило разнесения оплат
+        не разъехалось между двумя отчётами.
+        """
+        debt = self.mapping.entity(debt_entity)
+        pay = self.mapping.entity(payment_entity)
+        cp_d, total_d = debt.field_1c("counterparty"), debt.field_1c("total")
         cp_p, total_p = pay.field_1c("counterparty"), pay.field_1c("total")
 
         base = [Cond("Posted", OP_EQ, True, KIND_BOOL)]
-        sales = list(self.client.run(Query(entity_set=sale.entity_set, conditions=base)))
+        docs_all = list(self.client.run(Query(entity_set=debt.entity_set, conditions=base)))
         pays = list(self.client.run(Query(entity_set=pay.entity_set, conditions=base)))
-        if not sales:
-            return "Проведённых реализаций нет."
+        if not docs_all:
+            return f"Проведённых документов «{doc_word}» нет."
 
         paid: dict[str, float] = defaultdict(float)
         for p in pays:
             paid[p.get(cp_p, "")] += float(p.get(total_p) or 0)
 
-        as_of_dt = datetime.fromisoformat(as_of) if as_of else datetime(2026, 7, 31)
+        as_of_dt = datetime.fromisoformat(as_of) if as_of else datetime.now()
         buckets = ("0-30", "31-60", "61-90", "90+")
         by_cp: dict[str, dict[str, float]] = defaultdict(lambda: dict.fromkeys(buckets, 0.0))
         docs_by_cp: dict[str, list[str]] = defaultdict(list)
 
-        # Гасим оплаты старыми отгрузками (FIFO) — как это делает бухгалтер.
-        for cp in {s.get(cp_s, "") for s in sales}:
-            docs = sorted((s for s in sales if s.get(cp_s) == cp), key=lambda s: s.get("Date", ""))
+        # Гасим оплаты старыми документами (FIFO) — как это делает бухгалтер.
+        for cp in {d.get(cp_d, "") for d in docs_all}:
+            docs = sorted((d for d in docs_all if d.get(cp_d) == cp),
+                          key=lambda d: d.get("Date", ""))
             rest = paid.get(cp, 0.0)
             for d in docs:
-                amount = float(d.get(total_s) or 0)
+                amount = float(d.get(total_d) or 0)
                 covered = min(rest, amount)
                 rest -= covered
                 unpaid = amount - covered
@@ -229,13 +237,14 @@ class AnalyticsTools:
                 # отгрузкам относится долг (живой прогон 2026-07-30).
                 docs_by_cp[cp].append(
                     f"№{d.get('Number')} от {str(d.get('Date'))[:10]} — "
-                    f"не оплачено {_fmt(unpaid)} руб., возраст {days} дн. с даты отгрузки")
+                    f"не оплачено {_fmt(unpaid)} руб., возраст {days} дн. "
+                    f"с даты документа")
 
         if not by_cp:
-            return "Просроченной дебиторской задолженности нет — всё оплачено."
+            return empty_text
 
         names = self._names("counterparty", set(by_cp))
-        out = ["Дебиторская задолженность по срокам (дней с даты отгрузки):",
+        out = [f"{title} (дней с даты документа):",
                "контрагент | 0-30 | 31-60 | 61-90 | свыше 90 | итого"]
         totals = dict.fromkeys(buckets, 0.0)
         for cp, row in sorted(by_cp.items(), key=lambda kv: -sum(kv[1].values())):
@@ -248,8 +257,204 @@ class AnalyticsTools:
         out.append("ИТОГО | " + " | ".join(_fmt(totals[b]) for b in buckets)
                    + f" | {_fmt(sum(totals.values()))}")
         out.append(f"Расчёт на {as_of_dt.date()}, оплаты разнесены по FIFO. "
-                   "Возраст считается от даты отгрузки; сроки оплаты по договорам "
+                   "Возраст считается от даты документа; сроки оплаты по договорам "
                    "в данных отсутствуют, поэтому слово «просрочено» здесь неприменимо.")
+        return "\n".join(out)
+
+    def receivables_aging(self, as_of: str | None = None) -> str:
+        """Сколько должны нам и как давно: 0–30, 31–60, 61–90, свыше 90 дней."""
+        return self._aging(
+            "sale", "incoming_payment", as_of,
+            title="Дебиторская задолженность по срокам",
+            doc_word="реализация",
+            empty_text="Дебиторской задолженности нет — все отгрузки оплачены.")
+
+    def payables_aging(self, as_of: str | None = None) -> str:
+        """Сколько должны мы поставщикам и как давно."""
+        return self._aging(
+            "purchase", "outgoing_payment", as_of,
+            title="Кредиторская задолженность перед поставщиками по срокам",
+            doc_word="поступление товаров и услуг",
+            empty_text="Кредиторской задолженности нет — все поступления оплачены.")
+
+    # --- акт сверки взаиморасчётов -----------------------------------------
+
+    def reconciliation_act(self, counterparty_key: str,
+                           date_from: str | None = None,
+                           date_to: str | None = None) -> str:
+        """Акт сверки: сальдо на начало, обороты по документам, сальдо на конец.
+
+        Первое, что бухгалтер делает перед закрытием периода. Форма привычная:
+        отгрузки увеличивают долг контрагента, оплаты уменьшают.
+        """
+        sale = self.mapping.entity("sale")
+        pay = self.mapping.entity("incoming_payment")
+        cp_s, total_s = sale.field_1c("counterparty"), sale.field_1c("total")
+        cp_p, total_p = pay.field_1c("counterparty"), pay.field_1c("total")
+
+        base = [Cond("Posted", OP_EQ, True, KIND_BOOL),
+                Cond(cp_s, OP_EQ, counterparty_key, KIND_GUID)]
+        sales = list(self.client.run(Query(entity_set=sale.entity_set, conditions=base)))
+        pay_conds = [Cond("Posted", OP_EQ, True, KIND_BOOL),
+                     Cond(cp_p, OP_EQ, counterparty_key, KIND_GUID)]
+        pays = list(self.client.run(Query(entity_set=pay.entity_set, conditions=pay_conds)))
+
+        events = ([(str(d.get("Date")), "отгрузка", str(d.get("Number")),
+                    float(d.get(total_s) or 0), 0.0) for d in sales]
+                  + [(str(p.get("Date")), "оплата", str(p.get("Number")),
+                      0.0, float(p.get(total_p) or 0)) for p in pays])
+        if not events:
+            return ("По этому контрагенту нет проведённых отгрузок и оплат. "
+                    "Проверьте, того ли контрагента выбрали.")
+        events.sort()
+
+        names = self._names("counterparty", {counterparty_key})
+        name = names.get(counterparty_key, "?")
+
+        opening = 0.0
+        rows, debit, credit = [], 0.0, 0.0
+        for date, kind, number, sale_amt, pay_amt in events:
+            if date_from and date < date_from:
+                opening += sale_amt - pay_amt
+                continue
+            if date_to and date > date_to:
+                continue
+            debit += sale_amt
+            credit += pay_amt
+            balance = opening + debit - credit
+            amount = sale_amt or pay_amt
+            rows.append(f"{date[:10]} | {kind} №{number} | {_fmt(amount)} руб. | "
+                        f"сальдо {_fmt(balance)}")
+
+        closing = opening + debit - credit
+        out = [f"Акт сверки с {name}, {_period_label(date_from, date_to)}:",
+               f"Сальдо на начало периода: {_fmt(opening)} руб.",
+               *rows,
+               f"Обороты: отгружено {_fmt(debit)} руб., оплачено {_fmt(credit)} руб.",
+               f"Сальдо на конец периода: {_fmt(closing)} руб. "
+               + ("(долг контрагента перед нами)" if closing > 0.005
+                  else "(наш долг / аванс контрагента)" if closing < -0.005
+                  else "(взаиморасчёты закрыты)")]
+        out.append("Учтены проведённые реализации и поступления на расчётный счёт. "
+                   "Взаимозачёты и расчёты наличными в источник не входят.")
+        return "\n".join(out)
+
+    # --- движение денежных средств (ДДС) ------------------------------------
+
+    def cash_flow(self, date_from: str | None = None,
+                  date_to: str | None = None) -> str:
+        """Поступления и списания по расчётному счёту помесячно."""
+        inc = self.mapping.entity("incoming_payment")
+        outg = self.mapping.entity("outgoing_payment")
+        base = [Cond("Posted", OP_EQ, True, KIND_BOOL)]
+
+        def load(ent, extra_conds):
+            return list(self.client.run(Query(entity_set=ent.entity_set,
+                                              conditions=base + extra_conds)))
+
+        dates = _date_conds("Date", date_from, date_to)
+        ins = load(inc, dates)
+        outs = load(outg, dates)
+        if not ins and not outs:
+            return (f"Движений по расчётному счёту {_period_label(date_from, date_to)} нет.")
+
+        total_f_in = inc.field_1c("total")
+        total_f_out = outg.field_1c("total")
+        by_month: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0])
+        for d in ins:
+            by_month[str(d.get("Date"))[:7]][0] += float(d.get(total_f_in) or 0)
+        for d in outs:
+            by_month[str(d.get("Date"))[:7]][1] += float(d.get(total_f_out) or 0)
+
+        out = [f"Движение денежных средств, {_period_label(date_from, date_to)}:",
+               "месяц | поступило | списано | чистый поток"]
+        ti = to = 0.0
+        for month in sorted(by_month):
+            got, spent = by_month[month]
+            ti += got
+            to += spent
+            out.append(f"{month} | {_fmt(got)} | {_fmt(spent)} | {_fmt(got - spent)}")
+        out.append(f"ИТОГО | {_fmt(ti)} | {_fmt(to)} | {_fmt(ti - to)}")
+        out.append("Источник — проведённые документы по расчётному счёту. "
+                   "Остаток на счёте не показан: начальный остаток в этих "
+                   "данных отсутствует, показан только оборот за период.")
+        return "\n".join(out)
+
+    # --- отчёт о прибылях и убытках (ОПиУ) ----------------------------------
+
+    def pnl_report(self, date_from: str | None = None,
+                   date_to: str | None = None) -> str:
+        """Выручка, себестоимость и валовая прибыль за период."""
+        try:
+            ent = self.mapping.entity("sales_register")
+        except Exception:
+            return ("Регистр выручки и себестоимости не описан в маппинге этой "
+                    "конфигурации — обратитесь к администратору.")
+        rev_f, cost_f = ent.field_1c("revenue"), ent.field_1c("cost")
+        period_f = ent.fields.get("period", "Period")
+        rows = list(self.client.run(Query(entity_set=ent.entity_set,
+                                          conditions=_date_conds(period_f, date_from, date_to))))
+        if not rows:
+            return f"Продаж {_period_label(date_from, date_to)} нет."
+
+        by_month: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0])
+        for r in rows:
+            m = str(r.get(period_f))[:7]
+            by_month[m][0] += float(r.get(rev_f) or 0)
+            by_month[m][1] += float(r.get(cost_f) or 0)
+
+        out = [f"Отчёт о прибылях и убытках (валовая прибыль), "
+               f"{_period_label(date_from, date_to)}:",
+               "месяц | выручка | себестоимость | валовая прибыль | рентабельность"]
+        tr = tc = 0.0
+        for month in sorted(by_month):
+            rev, cost = by_month[month]
+            tr += rev
+            tc += cost
+            gross = rev - cost
+            out.append(f"{month} | {_fmt(rev)} | {_fmt(cost)} | {_fmt(gross)} | "
+                       f"{gross / rev * 100 if rev else 0:.1f}%")
+        gross = tr - tc
+        out.append(f"ИТОГО | {_fmt(tr)} | {_fmt(tc)} | {_fmt(gross)} | "
+                   f"{gross / tr * 100 if tr else 0:.1f}%")
+        out.append("Это валовая прибыль. Коммерческие и управленческие расходы "
+                   "(счета 26 и 44), налоги и проценты в расчёт не включены: "
+                   "в подключённых данных их нет, поэтому чистая прибыль здесь "
+                   "не выводится.")
+        return "\n".join(out)
+
+    # --- динамика продаж и средний чек --------------------------------------
+
+    def sales_dynamics(self, date_from: str | None = None,
+                       date_to: str | None = None) -> str:
+        """Выручка, число отгрузок и средний чек помесячно."""
+        ent = self.mapping.entity("sale")
+        total_f = ent.field_1c("total")
+        conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", date_from, date_to)
+        docs = list(self.client.run(Query(entity_set=ent.entity_set, conditions=conds)))
+        if not docs:
+            return f"Проведённых реализаций {_period_label(date_from, date_to)} нет."
+
+        by_month: dict[str, list[float]] = defaultdict(lambda: [0.0, 0])
+        for d in docs:
+            m = str(d.get("Date"))[:7]
+            by_month[m][0] += float(d.get(total_f) or 0)
+            by_month[m][1] += 1
+
+        months = sorted(by_month)
+        out = [f"Динамика продаж, {_period_label(date_from, date_to)}:",
+               "месяц | выручка | отгрузок | средний чек | к прошлому месяцу"]
+        prev = None
+        tr, tn = 0.0, 0
+        for m in months:
+            rev, cnt = by_month[m]
+            tr += rev
+            tn += int(cnt)
+            change = "—" if prev is None else f"{(rev - prev) / prev * 100:+.1f}%" if prev else "—"
+            out.append(f"{m} | {_fmt(rev)} | {int(cnt)} | {_fmt(rev / cnt)} | {change}")
+            prev = rev
+        out.append(f"ИТОГО | {_fmt(tr)} | {tn} | {_fmt(tr / tn)} | —")
+        out.append("Средний чек — выручка, делённая на число проведённых реализаций.")
         return "\n".join(out)
 
     # --- спецификации для агента -------------------------------------------
@@ -274,8 +479,40 @@ class AnalyticsTools:
             ),
             ToolSpec(
                 "receivables_aging",
-                "Дебиторка по срокам: 0-30, 31-60, 61-90, свыше 90 дней.",
+                "Сколько нам должны покупатели, по срокам долга.",
                 {"type": "object", "properties": {"as_of": {"type": "string"}}},
                 lambda **kw: self.receivables_aging(**kw),
+            ),
+            ToolSpec(
+                "payables_aging",
+                "Сколько мы должны поставщикам, по срокам долга.",
+                {"type": "object", "properties": {"as_of": {"type": "string"}}},
+                lambda **kw: self.payables_aging(**kw),
+            ),
+            ToolSpec(
+                "reconciliation_act",
+                "Акт сверки с контрагентом: сальдо и обороты по документам.",
+                {"type": "object", "properties": {
+                    "counterparty_key": {"type": "string"}, **dates},
+                 "required": ["counterparty_key"]},
+                lambda **kw: self.reconciliation_act(**kw),
+            ),
+            ToolSpec(
+                "cash_flow",
+                "Движение денег по расчётному счёту помесячно.",
+                {"type": "object", "properties": dates},
+                lambda **kw: self.cash_flow(**kw),
+            ),
+            ToolSpec(
+                "pnl_report",
+                "Прибыли и убытки: выручка, себестоимость, валовая прибыль.",
+                {"type": "object", "properties": dates},
+                lambda **kw: self.pnl_report(**kw),
+            ),
+            ToolSpec(
+                "sales_dynamics",
+                "Динамика продаж по месяцам и средний чек.",
+                {"type": "object", "properties": dates},
+                lambda **kw: self.sales_dynamics(**kw),
             ),
         ]

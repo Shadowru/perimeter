@@ -55,6 +55,12 @@ entities:
       counterparty: Контрагент_Key   # TODO(verify): в БП 3.0 может быть Плательщик/Контрагент
       total: СуммаДокумента          # TODO(verify)
 
+  outgoing_payment:        # Списание с расчётного счёта
+    entity_set: Document_СписаниеСРасчетногоСчета
+    fields:
+      counterparty: Контрагент_Key   # TODO(verify)
+      total: СуммаДокумента          # TODO(verify)
+
   customer_invoice:        # Счёт на оплату покупателю
     entity_set: Document_СчетНаОплатуПокупателю
     fields:

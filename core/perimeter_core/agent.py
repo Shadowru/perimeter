@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .audit import AuditLog
+from .grounding import CORRECTION_PROMPT, WARNING_SUFFIX, check_grounding
 from .i18n import t
 
 Message = dict[str, Any]
@@ -97,6 +98,7 @@ class AgentResult:
     text: str
     steps: int
     stopped_by_limit: bool = False
+    grounded: bool = True   # False -> в ответе есть неподтверждённые данные
 
 
 @dataclass
@@ -199,9 +201,11 @@ class Agent:
     # --- основной цикл ----------------------------------------------------
 
     def run(self, user_text: str, on_delta: DeltaCallback | None = None) -> AgentResult:
+        turn_start = len(self.messages)
         self.messages.append({"role": "user", "content": user_text})
         self.audit.write("user_message", text=user_text[:2000])
         schemas = [s.openai_schema() for s in self.tool_specs]
+        corrected = False
 
         for step in range(1, self.max_iterations + 1):
             text, tool_calls = self._call_model(schemas, on_delta)
@@ -216,8 +220,27 @@ class Agent:
             self.messages.append(assistant_msg)
 
             if not tool_calls:
+                grounding = check_grounding(text, self._turn_tool_outputs(turn_start))
+                if not grounding.ok and not corrected:
+                    corrected = True
+                    self.audit.write("grounding_retry", details=grounding.describe())
+                    self.messages.append({
+                        "role": "user",
+                        "content": CORRECTION_PROMPT.format(details=grounding.describe()),
+                    })
+                    if on_delta:
+                        on_delta("\n\n[сверяю с данными 1С…]\n\n")
+                    continue
+                if not grounding.ok:
+                    details = grounding.describe()
+                    self.audit.write("grounding_failed", details=details)
+                    suffix = WARNING_SUFFIX.format(details=details)
+                    text = (text or "") + suffix
+                    self.messages[-1]["content"] = text
+                    if on_delta:
+                        on_delta(suffix)
                 self.audit.write("assistant_message", text=(text or "")[:2000])
-                return AgentResult(text=text, steps=step)
+                return AgentResult(text=text, steps=step, grounded=grounding.ok)
 
             for call in tool_calls:
                 self._execute_call(call)
@@ -283,6 +306,11 @@ class Agent:
             result = f"Ошибка выполнения: {e}"
         self.audit.write("tool_call", tool=name, args=args, result=str(result)[:500])
         self._record_tool_result(call_id, name, str(result))
+
+    def _turn_tool_outputs(self, turn_start: int) -> list[str]:
+        """Результаты инструментов этого хода — база для сверки ответа."""
+        return [str(m.get("content") or "")
+                for m in self.messages[turn_start:] if m.get("role") == "tool"]
 
     def _record_tool_result(self, call_id: str, name: str, content: str) -> None:
         self.messages.append({

@@ -41,7 +41,12 @@
     "Сверка отгрузок и оплат, дебиторская задолженность по контрагентам",
     "ABC-анализ клиентов и номенклатуры по выручке",
     "Себестоимость и маржа по брендам за период",
-    "Дебиторская задолженность по срокам с указанием документов",
+    "Отчёт о прибылях и убытках: выручка, себестоимость, валовая прибыль",
+    "Движение денежных средств по расчётному счёту помесячно",
+    "Дебиторская и кредиторская задолженность по срокам с указанием документов",
+    "Акт сверки взаиморасчётов с контрагентом",
+    "Динамика продаж по месяцам и средний чек",
+    "Проверка ответа по выгрузке из 1С: цифры и названия сверяются с данными",
     "Черновики документов только после подтверждения человека",
     "Работа без интернета: данные не покидают сервер компании"
   ]
@@ -59,7 +64,7 @@
     {"@type": "Question", "name": "Может ли помощник испортить данные в 1С?",
      "acceptedAnswer": {"@type": "Answer", "text": "Нет. Помощник умеет только читать данные и создавать черновики документов — и то лишь после вашего явного разрешения. Провести документ он не может в принципе: проведение всегда остаётся за человеком в 1С."}},
     {"@type": "Question", "name": "Можно ли получать управленческие отчёты простым вопросом?",
-     "acceptedAnswer": {"@type": "Answer", "text": "Да. Готовы ABC-анализ по клиентам и по товарам, себестоимость и маржа по брендам, дебиторская задолженность по срокам, поиск документов и сверки. Считает не нейросеть, а сама программа — точным расчётом по документам базы; модель только выбирает нужный отчёт и пересказывает результат. Каждый отчёт называет период и документы-источники, поэтому любую строку можно проверить в 1С."}},
+     "acceptedAnswer": {"@type": "Answer", "text": "Да. Готовы ABC-анализ по клиентам и по товарам, себестоимость и маржа по брендам, отчёт о прибылях и убытках, движение денег по расчётному счёту, дебиторка и кредиторка по срокам, акт сверки с контрагентом, динамика продаж и средний чек. Считает не нейросеть, а сама программа — точным расчётом по документам базы; модель только выбирает нужный отчёт и пересказывает результат. Каждый отчёт называет период и документы-источники, а перед выдачей ответа программа сверяет все суммы и номера с данными из 1С, поэтому любую строку можно проверить в базе."}},
     {"@type": "Question", "name": "Сколько это стоит?",
      "acceptedAnswer": {"@type": "Answer", "text": "Сама программа бесплатна: код открыт (лицензия MIT), нейросеть с открытыми весами. Затраты — сервер и работы по установке. Видеокарта не нужна, достаточно 16 ГБ оперативной памяти и 15 ГБ на диске: столько занимает рабочая модель — российская GigaChat 3.1 от Сбера с открытой лицензией. С установкой можем помочь — напишите на proteyrus@gmail.com."}},
     {"@type": "Question", "name": "Быстро ли отвечает?",
@@ -215,6 +220,10 @@
   .report tr.total td { font-weight: 700; background: #FAFBFA; }
   .report .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .report .src { font-size: .8rem; color: var(--dim); }
+  .report .num.neg { color: #B3261E; }
+  .report-note {
+    margin: 12px 2px 0; font-size: .86rem; line-height: 1.5; color: var(--dim);
+  }
   .badge {
     display: inline-block; min-width: 22px; text-align: center; border-radius: 6px;
     font-weight: 800; font-size: .78rem; padding: 2px 7px; color: #fff;
@@ -301,9 +310,9 @@
       <div class="chat-bar"><span class="dot"></span><b>Периметр</b><span>подключён к вашей 1С · офлайн</span></div>
       <div class="chat-body">
         <div class="msg me">Кто нам должен и сколько?</div>
-        <div class="msg bot">ООО «Ромашка» — <b>99 000,00 ₽</b>.<br>Отгрузили по накладной <span class="doc">№РТ‑0005 от 25.06.2026</span>, оплата не поступала. Остальные контрагенты — без долгов.</div>
+        <div class="msg bot">Должны двое, всего <b>192 000,00 ₽</b>.<br>ООО «Ромашка» — 132 000,00 ₽ <span class="doc">(№РТ‑0001 от 03.07.2026, №РТ‑0005 от 25.06.2026)</span><br>ООО «Василёк» — 60 000,00 ₽ <span class="doc">(№РТ‑0006 от 15.05.2026, №РТ‑0004 от 21.07.2026)</span></div>
         <div class="msg me">Сделай ABC‑анализ по клиентам</div>
-        <div class="msg bot">A: ООО «Ромашка» — <b>219 000,00 ₽</b> (93,6%)<br>B: ООО «Василёк» — 15 000,00 ₽ (6,4%)<br><span class="doc">расчёт по проведённым реализациям</span></div>
+        <div class="msg bot">A: ООО «Ромашка» — <b>252 000,00 ₽</b> (77,1%)<br>A: ООО «Василёк» — 75 000,00 ₽ (22,9%)<br><span class="doc">расчёт по проведённым реализациям</span></div>
         <div class="msg me">Подготовь Ромашке счёт как в июне</div>
         <div class="msg bot">Готов черновик счёта на 99 000,00 ₽ по образцу <span class="doc">№СЧ‑0101 от 20.06.2026</span>.<span class="warn">Черновик создаётся только с вашего разрешения. Проведение — всегда за вами в 1С.</span></div>
       </div>
@@ -347,9 +356,9 @@
           <div class="report-scroll"><table>
             <thead><tr><th>Группа</th><th>Клиент</th><th class="num">Выручка</th><th class="num">Доля</th></tr></thead>
             <tbody>
-              <tr><td><span class="badge a">A</span></td><td>ООО «Ромашка»</td><td class="num">219 000,00 ₽</td><td class="num">93,6%</td></tr>
-              <tr><td><span class="badge b">B</span></td><td>ООО «Василёк»</td><td class="num">15 000,00 ₽</td><td class="num">6,4%</td></tr>
-              <tr class="total"><td colspan="2">Итого за всё время</td><td class="num">234 000,00 ₽</td><td class="num">100%</td></tr>
+              <tr><td><span class="badge a">A</span></td><td>ООО «Ромашка»</td><td class="num">252 000,00 ₽</td><td class="num">77,1%</td></tr>
+              <tr><td><span class="badge a">A</span></td><td>ООО «Василёк»</td><td class="num">75 000,00 ₽</td><td class="num">22,9%</td></tr>
+              <tr class="total"><td colspan="2">Итого за всё время</td><td class="num">327 000,00 ₽</td><td class="num">100%</td></tr>
             </tbody>
           </table></div>
         </div>
@@ -370,8 +379,10 @@
           <div class="report-scroll"><table>
             <thead><tr><th>Контрагент</th><th class="num">Долг</th><th>Документ‑основание</th><th class="num">Возраст</th></tr></thead>
             <tbody>
-              <tr><td>ООО «Ромашка»</td><td class="num">99 000,00 ₽</td><td class="src">реализация №РТ‑0001 от 03.07.2026</td><td class="num">28 дней</td></tr>
-              <tr class="total"><td>Итого дебиторка</td><td class="num">99 000,00 ₽</td><td class="src">на 31.07.2026</td><td class="num">—</td></tr>
+              <tr><td>ООО «Ромашка»</td><td class="num">120 000,00 ₽</td><td class="src">реализация №РТ‑0001 от 03.07.2026</td><td class="num">27 дней</td></tr>
+              <tr><td>ООО «Ромашка»</td><td class="num">12 000,00 ₽</td><td class="src">реализация №РТ‑0005 от 25.06.2026</td><td class="num">35 дней</td></tr>
+              <tr><td>ООО «Василёк»</td><td class="num">60 000,00 ₽</td><td class="src">№РТ‑0006 от 15.05.2026, №РТ‑0004 от 21.07.2026</td><td class="num">76 и 9 дней</td></tr>
+              <tr class="total"><td>Итого дебиторка</td><td class="num">192 000,00 ₽</td><td class="src">на 31.07.2026</td><td class="num">—</td></tr>
             </tbody>
           </table></div>
         </div>
@@ -382,9 +393,77 @@
             <thead><tr><th>Товар</th><th class="num">Выручка</th><th>Доля</th></tr></thead>
             <tbody>
               <tr><td>Ноутбук ProBook 14</td><td class="num">189 000,00 ₽</td>
-                  <td><span class="bar-wrap"><span class="bar" style="width:81%"></span></span> 80,8%</td></tr>
-              <tr><td>Монитор 27"</td><td class="num">45 000,00 ₽</td>
-                  <td><span class="bar-wrap"><span class="bar" style="width:19%"></span></span> 19,2%</td></tr>
+                  <td><span class="bar-wrap"><span class="bar" style="width:58%"></span></span> 57,8%</td></tr>
+              <tr><td>Монитор 27"</td><td class="num">105 000,00 ₽</td>
+                  <td><span class="bar-wrap"><span class="bar" style="width:32%"></span></span> 32,1%</td></tr>
+              <tr><td>Услуги консультационные</td><td class="num">33 000,00 ₽</td>
+                  <td><span class="bar-wrap"><span class="bar" style="width:10%"></span></span> 10,1%</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+
+        <div class="report">
+          <div class="report-q">Покажи прибыли и убытки по месяцам</div>
+          <div class="report-scroll"><table>
+            <thead><tr><th>Месяц</th><th class="num">Выручка</th><th class="num">Себестоимость</th><th class="num">Валовая прибыль</th></tr></thead>
+            <tbody>
+              <tr><td>Июнь 2026</td><td class="num">99 000,00 ₽</td><td class="num">67 000,00 ₽</td><td class="num">32 000,00 ₽ · 32,3%</td></tr>
+              <tr><td>Июль 2026</td><td class="num">135 000,00 ₽</td><td class="num">92 500,00 ₽</td><td class="num">42 500,00 ₽ · 31,5%</td></tr>
+              <tr class="total"><td>Итого</td><td class="num">234 000,00 ₽</td><td class="num">159 500,00 ₽</td><td class="num">74 500,00 ₽ · 31,8%</td></tr>
+            </tbody>
+          </table></div>
+          <p class="report-note">Отчёт сам оговаривает, что это валовая прибыль: расходы по счетам 26 и 44 в подключённых данных отсутствуют, поэтому чистую прибыль он не выводит и не досочиняет.</p>
+        </div>
+
+        <div class="report">
+          <div class="report-q">Что с деньгами на счёте за последние месяцы?</div>
+          <div class="report-scroll"><table>
+            <thead><tr><th>Месяц</th><th class="num">Поступило</th><th class="num">Списано</th><th class="num">Чистый поток</th></tr></thead>
+            <tbody>
+              <tr><td>Июнь 2026</td><td class="num">0,00 ₽</td><td class="num">150 000,00 ₽</td><td class="num neg">−150 000,00 ₽</td></tr>
+              <tr><td>Июль 2026</td><td class="num">135 000,00 ₽</td><td class="num">50 000,00 ₽</td><td class="num">+85 000,00 ₽</td></tr>
+              <tr class="total"><td>Итого</td><td class="num">135 000,00 ₽</td><td class="num">200 000,00 ₽</td><td class="num neg">−65 000,00 ₽</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <div class="report">
+          <div class="report-q">Сколько мы должны поставщикам?</div>
+          <div class="report-scroll"><table>
+            <thead><tr><th>Поставщик</th><th class="num">Долг</th><th>Документ‑основание</th><th class="num">Возраст</th></tr></thead>
+            <tbody>
+              <tr><td>АО «ТехноСервис»</td><td class="num">100 000,00 ₽</td><td class="src">поступление №ПТ‑0001 от 05.07.2026</td><td class="num">25 дней</td></tr>
+              <tr><td>ООО «Василёк»</td><td class="num">40 000,00 ₽</td><td class="src">поступление №ПТ‑0002 от 10.03.2026</td><td class="num">142 дня</td></tr>
+              <tr class="total"><td>Итого кредиторка</td><td class="num">140 000,00 ₽</td><td class="src">на 31.07.2026</td><td class="num">—</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <div class="report">
+          <div class="report-q">Сделай акт сверки с Ромашкой</div>
+          <div class="report-scroll"><table>
+            <thead><tr><th>Дата</th><th>Документ</th><th class="num">Сумма</th><th class="num">Сальдо</th></tr></thead>
+            <tbody>
+              <tr><td colspan="3">Сальдо на начало</td><td class="num">0,00 ₽</td></tr>
+              <tr><td>28.05.2026</td><td class="src">отгрузка №РТ‑0007</td><td class="num">33 000,00 ₽</td><td class="num">33 000,00 ₽</td></tr>
+              <tr><td>25.06.2026</td><td class="src">отгрузка №РТ‑0005</td><td class="num">99 000,00 ₽</td><td class="num">132 000,00 ₽</td></tr>
+              <tr><td>03.07.2026</td><td class="src">отгрузка №РТ‑0001</td><td class="num">120 000,00 ₽</td><td class="num">252 000,00 ₽</td></tr>
+              <tr><td>07.07.2026</td><td class="src">оплата №ПС‑0001</td><td class="num">120 000,00 ₽</td><td class="num">132 000,00 ₽</td></tr>
+              <tr class="total"><td colspan="3">Сальдо на конец — долг контрагента</td><td class="num">132 000,00 ₽</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <div class="report">
+          <div class="report-q">Как идут продажи и какой средний чек?</div>
+          <div class="report-scroll"><table>
+            <thead><tr><th>Месяц</th><th class="num">Выручка</th><th class="num">Отгрузок</th><th class="num">Средний чек</th><th class="num">К прошлому</th></tr></thead>
+            <tbody>
+              <tr><td>Май 2026</td><td class="num">93 000,00 ₽</td><td class="num">2</td><td class="num">46 500,00 ₽</td><td class="num">—</td></tr>
+              <tr><td>Июнь 2026</td><td class="num">99 000,00 ₽</td><td class="num">1</td><td class="num">99 000,00 ₽</td><td class="num">+6,5%</td></tr>
+              <tr><td>Июль 2026</td><td class="num">135 000,00 ₽</td><td class="num">2</td><td class="num">67 500,00 ₽</td><td class="num">+36,4%</td></tr>
+              <tr class="total"><td>Итого</td><td class="num">327 000,00 ₽</td><td class="num">5</td><td class="num">65 400,00 ₽</td><td class="num">—</td></tr>
             </tbody>
           </table></div>
         </div>
@@ -411,6 +490,10 @@
         <div class="check">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="#1E6B4F"/><path d="M7 12.5l3.2 3.2L17 9" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <div><b>Каждый шаг записан</b><p>Журнал всех действий помощника нельзя подделать или стереть — ваш ИТ‑специалист может проверить его в любой момент.</p></div>
+        </div>
+        <div class="check">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="#1E6B4F"/><path d="M7 12.5l3.2 3.2L17 9" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div><b>Не выдумывает цифры</b><p>Перед выдачей ответа «Периметр» сверяет каждую сумму, номер документа и название контрагента с тем, что пришло из 1С. Не совпало — ответ переписывается по данным, а если расхождение осталось, вы увидите предупреждение вместо красивой, но неверной таблицы.</p></div>
         </div>
       </div>
     </div>
@@ -471,7 +554,7 @@
         </details>
         <details>
           <summary>Можно ли получать управленческие отчёты простым вопросом?</summary>
-          <p>Да. Готовы ABC‑анализ по клиентам и по товарам, себестоимость и маржа по брендам, дебиторка по срокам, поиск и сверки. Важная деталь: <b>считает не нейросеть, а сам «Периметр»</b> — точным расчётом по вашим документам; модель лишь выбирает нужный отчёт и пересказывает результат. Поэтому цифрам можно доверять так же, как выгрузке из 1С, и каждую строку легко проверить: отчёт называет документы-источники и период.</p>
+          <p>Да. Готовы ABC‑анализ по клиентам и по товарам, себестоимость и маржа по брендам, отчёт о прибылях и убытках, движение денег по расчётному счёту, дебиторка и кредиторка по срокам, акт сверки с контрагентом, динамика продаж и средний чек. Важная деталь: <b>считает не нейросеть, а сам «Периметр»</b> — точным расчётом по вашим документам; модель лишь выбирает нужный отчёт и пересказывает результат, а затем программа сверяет каждую сумму и каждый номер документа с полученными данными. Поэтому цифрам можно доверять так же, как выгрузке из 1С, и каждую строку легко проверить: отчёт называет документы-источники и период.</p>
         </details>
         <details>
           <summary>Сколько это стоит?</summary>

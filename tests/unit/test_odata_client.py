@@ -44,7 +44,7 @@ def test_pagination_multiple_pages():
     with Fake1CServer() as srv:
         client = make_client(srv, page_size=2)
         rows = list(client.query("Document_РеализацияТоваровУслуг"))
-        assert len(rows) == 5  # больше одной страницы
+        assert len(rows) == 7  # больше одной страницы
 
 
 def test_retries_on_5xx():

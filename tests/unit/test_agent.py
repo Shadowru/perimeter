@@ -119,9 +119,14 @@ def test_compaction_budget(tmp_path):
             agent.messages.append({"role": "user", "content": f"вопрос {i} " + "х" * 300})
             agent.messages.append({"role": "assistant", "content": f"ответ {i} " + "у" * 300})
         outbound = agent._outbound_messages()
-        chars = sum(len(str(m.get("content"))) for m in outbound)
-        assert chars < 3000  # бюджет соблюдён
+        # Бюджет ограничивает историю; системный промпт в него не входит —
+        # он не сокращается, поэтому проверяется отдельно ниже.
+        history_chars = sum(len(str(m.get("content"))) for m in outbound[1:])
+        assert history_chars < 1600
         assert outbound[0]["role"] == "system"
+        # Системный промпт уходит модели на каждом ходе: 2500 символов —
+        # это ~700 токенов prefill, около секунды на стенде 16 ГБ.
+        assert len(outbound[0]["content"]) < 2500
         assert "история сокращена" in outbound[1]["content"]
         # Последние сообщения не тронуты:
         assert outbound[-1]["content"].startswith("ответ 19")
@@ -224,4 +229,51 @@ def test_system_prompt_forbids_showing_keys(tmp_path):
     with Fake1CServer() as srv:
         agent, llm = make_agent(tmp_path, srv, [])
         assert "НИКОГДА не показывай пользователю" in agent.system_prompt
+        llm.__exit__()
+
+
+def test_invented_data_triggers_one_retry(tmp_path):
+    """Ответ с выдуманным контрагентом отправляется на переписывание."""
+    script = [
+        Scripted(tool_calls=[{"name": "get_counterparty", "arguments": {"query": "ромашка"}}]),
+        Scripted(content='Клиенты: «Ромашка, ООО» и «ООО Вектор».'),
+        Scripted(content='Найден один контрагент: «Ромашка, ООО».'),
+    ]
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, script)
+        result = agent.run("Кто наши клиенты?")
+        assert "Вектор" not in result.text
+        assert result.grounded and result.steps == 3
+        # Модели ушло указание переписать ответ с перечнем проблем:
+        last = llm.requests[-1]["messages"][-1]
+        assert "ООО Вектор" in last["content"]
+        llm.__exit__()
+
+
+def test_persistent_invention_is_flagged_to_user(tmp_path):
+    """Если и после переписывания данные не подтверждаются — предупреждаем."""
+    script = [
+        Scripted(tool_calls=[{"name": "get_counterparty", "arguments": {"query": "ромашка"}}]),
+        Scripted(content='Долг «ООО Вектор» — 555 000.00 руб.'),
+        Scripted(content='Долг «ООО Вектор» — 555 000.00 руб.'),
+    ]
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, script)
+        result = agent.run("Сколько должен Вектор?")
+        assert not result.grounded
+        assert "не подтверждается" in result.text
+        assert "ООО Вектор" in result.text and "555 000.00" in result.text
+        llm.__exit__()
+
+
+def test_grounded_answer_is_not_retried(tmp_path):
+    """Корректный ответ уходит человеку сразу: лишний ход стоит секунд 20."""
+    script = [
+        Scripted(tool_calls=[{"name": "get_counterparty", "arguments": {"query": "ромашка"}}]),
+        Scripted(content='Контрагент «Ромашка, ООО», ИНН 7701234567.'),
+    ]
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, script)
+        result = agent.run("Найди Ромашку")
+        assert result.steps == 2 and result.grounded
         llm.__exit__()
