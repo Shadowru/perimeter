@@ -101,7 +101,13 @@
   body {
     font-family: var(--sans); background: var(--bg); color: var(--ink); line-height: 1.6;
     -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+    /* Страховка от горизонтального переполнения: любое широкое содержимое
+       (таблица, длинный номер документа) не должно уводить страницу вбок —
+       иначе боковые поля визуально исчезают. */
+    overflow-x: hidden;
+    overflow-wrap: break-word;
   }
+  img, table, pre, svg { max-width: 100%; }
   ::selection { background: rgba(30,107,79,.18); }
   .wrap {
     max-width: 1020px; margin: 0 auto;
@@ -241,9 +247,16 @@
   @media (max-width: 640px) {
     /* Поля по бокам заметнее: на телефоне контент не должен липнуть к краям */
     .wrap {
-      padding-left: max(18px, env(safe-area-inset-left));
-      padding-right: max(18px, env(safe-area-inset-right));
+      padding-left: max(20px, env(safe-area-inset-left));
+      padding-right: max(20px, env(safe-area-inset-right));
     }
+    /* Внутренние отступы всех карточек — единые, чтобы текст нигде не липнул */
+    .card, .stepp, .helpbox, .check, .tech, .report-q { padding: 16px; }
+    .stepp { padding-left: 54px; }
+    .term-body, .chat-body { padding: 12px 13px; }
+    .faq summary { padding: 14px 16px; }
+    .faq details p { padding: 0 16px 14px; }
+    pre.code { padding: 14px; font-size: .78rem; }
     section { padding: 34px 0 6px; }
     .hero { padding: 30px 0 24px; }
     h1 { font-size: clamp(1.7rem, 7vw, 2.1rem); }
