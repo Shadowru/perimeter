@@ -147,7 +147,7 @@
   .msg { max-width: 88%; padding: 10px 14px; border-radius: 14px; font-size: .9rem; line-height: 1.5; }
   .msg.me { background: var(--chat-me); align-self: flex-end; border-bottom-right-radius: 4px; }
   .msg.bot { background: var(--bg); border: 1px solid var(--line); align-self: flex-start; border-bottom-left-radius: 4px; }
-  .msg .doc { font-family: var(--mono); font-size: .8rem; color: var(--green); white-space: nowrap; }
+  .msg .doc { font-family: var(--mono); font-size: .8rem; color: var(--green); }
   .msg .warn { display: block; font-size: .78rem; color: var(--amber-ink); background: var(--amber-soft); border-radius: 8px; padding: 6px 9px; margin-top: 8px; }
 
   section { padding: 46px 0 10px; }
@@ -156,6 +156,10 @@
   .sub { color: var(--dim); max-width: 62ch; margin-bottom: 26px; }
 
   .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  /* min-width:0 обязателен: у элементов grid по умолчанию min-width:auto, и
+     широкая таблица внутри распирает колонку — страница уезжает вбок,
+     а боковые поля визуально пропадают (замечено на мобильных). */
+  .cards > *, .checks > *, .grid2 > * { min-width: 0; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
   .card h3 { font-size: 1rem; margin-bottom: 8px; }
   .card p { font-size: .9rem; color: var(--dim); }
@@ -234,10 +238,27 @@
     .hero { grid-template-columns: 1fr; gap: 30px; padding-top: 36px; }
     .cards, .checks { grid-template-columns: 1fr; }
   }
-  @media (max-width: 480px) {
-    .cta-row .btn { width: 100%; text-align: center; }
-    .helpbox .btn { width: 100%; text-align: center; }
-    nav a { margin-left: 0; padding: 10px 6px; font-size: .8rem; }
+  @media (max-width: 640px) {
+    /* Поля по бокам заметнее: на телефоне контент не должен липнуть к краям */
+    .wrap {
+      padding-left: max(18px, env(safe-area-inset-left));
+      padding-right: max(18px, env(safe-area-inset-right));
+    }
+    section { padding: 34px 0 6px; }
+    .hero { padding: 30px 0 24px; }
+    h1 { font-size: clamp(1.7rem, 7vw, 2.1rem); }
+    .lead { font-size: 1rem; margin: 14px 0 20px; }
+    .cta-row .btn, .helpbox .btn { width: 100%; text-align: center; }
+    nav { display: flex; flex-wrap: wrap; gap: 2px; }
+    nav a { margin-left: 0; padding: 8px 10px 8px 0; font-size: .82rem; }
+    .panel-body, .card, .stepp, .helpbox { padding: 16px; }
+    .stepp { padding-left: 56px; }
+    .report-q { padding: 12px 14px; }
+    .report th, .report td { padding: 9px 10px; }
+    .report table { font-size: .82rem; }
+    .msg { max-width: 94%; }
+    .chat-body { padding: 12px; }
+    footer { padding-bottom: max(32px, env(safe-area-inset-bottom)); }
   }
 </style>
 </head>
