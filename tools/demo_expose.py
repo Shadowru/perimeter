@@ -65,9 +65,11 @@ def make_handler(target: str, user: str, password: str):
                     self.send_header("Content-Type", ctype)
                     self.send_header("Transfer-Encoding", "chunked")
                     self.end_headers()
-                    # Потоковая передача: ответы агента идут по мере генерации
+                    # Потоковая передача: read1() отдаёт то, что уже пришло,
+                    # а read(n) блокируется до накопления n байт — события
+                    # потока мелкие, и ответ не доходил вообще (проверено).
                     while True:
-                        chunk = resp.read(1024)
+                        chunk = resp.read1(4096)
                         if not chunk:
                             break
                         self.wfile.write(b"%x\r\n%s\r\n" % (len(chunk), chunk))
