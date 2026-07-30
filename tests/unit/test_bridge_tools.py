@@ -162,3 +162,23 @@ def test_ambiguous_name_asks_to_clarify():
 def test_guid_still_works():
     with Fake1CServer() as srv:
         assert "132 000.00" in make_tools(srv).ledger_report(GUID_ROMASHKA)
+
+
+def test_absurd_limit_is_clamped():
+    """Модель передала limit=1000000000000000 (замер 30.07) — не выкачиваем базу."""
+    from perimeter_bridge1c.tools import MAX_ROWS, _sane_limit
+    assert _sane_limit(10 ** 15) == MAX_ROWS
+    assert _sane_limit(0) == 1 and _sane_limit(-5) == 1
+    assert _sane_limit(None) == 20 and _sane_limit("много") == 20
+    assert _sane_limit(15) == 15
+    with Fake1CServer() as srv:
+        out = make_tools(srv).find_document("sale", limit=10 ** 15)
+        assert "РТ-0001" in out          # запрос всё равно отработал
+
+
+def test_doc_type_descriptions_distinguish_goods_from_money():
+    """«Поступление» — это и товар, и деньги; модель их путала."""
+    with Fake1CServer() as srv:
+        spec = next(s for s in make_tools(srv).specs() if s.name == "find_document")
+        assert "поступление товаров" in spec.description
+        assert "приход денег" in spec.description

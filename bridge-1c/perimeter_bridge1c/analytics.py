@@ -65,7 +65,9 @@ def _report(text: str, title: str):
         else:
             rows += 1
     if rows:
-        kept.insert(1, f"[таблица из {rows} строк уже показана пользователю целиком]")
+        # Маркер держим коротким: он уходит в prefill с каждым отчётом.
+        # Сам запрет придумывать разбивку стоит один раз в системном промпте.
+        kept.insert(1, f"[{rows} строк показано пользователю таблицей]")
     return ToolOutput(display=text, digest="\n".join(kept), title=title)
 
 

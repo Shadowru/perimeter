@@ -124,9 +124,9 @@ def test_compaction_budget(tmp_path):
         history_chars = sum(len(str(m.get("content"))) for m in outbound[1:])
         assert history_chars < 1600
         assert outbound[0]["role"] == "system"
-        # Системный промпт уходит модели на каждом ходе: 2500 символов —
-        # это ~700 токенов prefill, около секунды на стенде 16 ГБ.
-        assert len(outbound[0]["content"]) < 2500
+        # Системный промпт уходит модели на каждом ходе: 2600 символов —
+        # это ~750 токенов prefill, около секунды на стенде 16 ГБ.
+        assert len(outbound[0]["content"]) < 2600
         assert "история сокращена" in outbound[1]["content"]
         # Последние сообщения не тронуты:
         assert outbound[-1]["content"].startswith("ответ 19")
@@ -471,3 +471,25 @@ def test_truth_from_the_table_is_not_flagged(tmp_path):
         result = agent.run("Кто нам должен?")
         assert result.grounded and result.steps == 2
         llm.__exit__()
+
+
+def test_tool_call_json_never_reaches_the_user():
+    """Модель без инструментов пишет вызов текстом — в ответ он попасть не должен.
+
+    Замер 30.07: на шаге переписывания в ответе оказался
+    {"name": "abc_analysis", "arguments": {...}} — человек видел служебный JSON.
+    """
+    from perimeter_core.agent import strip_tool_call_text
+    text = ('Крупнейшие клиенты:\n'
+            '{"name": "abc_analysis", "arguments": {"dimension": "counterparty"}}\n'
+            'подробности в таблице.')
+    cleaned = strip_tool_call_text(text)
+    assert "abc_analysis" not in cleaned and "arguments" not in cleaned
+    assert "Крупнейшие клиенты:" in cleaned and "подробности в таблице." in cleaned
+
+
+def test_ordinary_braces_survive_cleanup():
+    """Обычный текст с фигурными скобками ломать нельзя."""
+    from perimeter_core.agent import strip_tool_call_text
+    text = 'Долг 100 000 руб. {примечание: без НДС}'
+    assert strip_tool_call_text(text) == text

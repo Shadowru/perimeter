@@ -42,6 +42,19 @@ _TOOL_CALL_TEXT_RE = re.compile(
     r"\s*</tool_call>", re.S)
 _ARG_RE = re.compile(r"<arg_key>([^<]*)</arg_key>\s*<arg_value>([^<]*)</arg_value>", re.S)
 
+# Модель, у которой отобрали инструменты (шаг переписывания), пытается
+# выразить вызов текстом — и JSON утекает в ответ человеку. Замер 2026-07-30:
+# в ответе оказалось {"name": "abc_analysis", "arguments": {...}}.
+_TOOL_JSON_RE = re.compile(
+    r"\{[^{}]*\"name\"\s*:\s*\"[\w.-]+\"[^{}]*\"arguments\"\s*:\s*\{[^{}]*\}[^{}]*\}", re.S)
+
+
+def strip_tool_call_text(text: str) -> str:
+    """Убирает из ответа человеку то, что модель написала как вызов инструмента."""
+    cleaned = _TOOL_JSON_RE.sub("", text or "")
+    cleaned = _TOOL_CALL_TEXT_RE.sub("", cleaned)
+    return re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+
 
 def load_system_prompt(locale: str = "ru") -> str:
     path = _PROMPTS_DIR / f"system.{locale}.md"
@@ -286,6 +299,7 @@ class Agent:
             self.messages.append(assistant_msg)
 
             if not tool_calls:
+                text = strip_tool_call_text(text)
                 grounding = check_grounding(text, self._turn_tool_outputs(turn_start),
                                             question=user_text)
                 if not grounding.ok and grounding.only_fixable_names:

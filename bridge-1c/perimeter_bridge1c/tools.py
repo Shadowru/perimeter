@@ -23,6 +23,18 @@ from .mapping import ConfigurationMapping
 
 DOC_TYPES = ("sale", "purchase", "incoming_payment", "customer_invoice")
 
+# Потолок выборки. Модель однажды передала limit=1000000000000000 (замер
+# 2026-07-30) — без потолка это выкачивание всей базы в контекст.
+MAX_ROWS = 200
+
+
+def _sane_limit(limit: int | None) -> int:
+    try:
+        value = int(limit)
+    except (TypeError, ValueError):
+        return 20
+    return max(1, min(value, MAX_ROWS))
+
 
 def _date_conditions(date_from: str | None, date_to: str | None) -> list[Cond]:
     conds = []
@@ -89,6 +101,7 @@ class Bridge1CTools:
         Без этого инструмента модель на вопрос «список контрагентов»
         выдумывает названия — проверено на живом демо 2026-07-30.
         """
+        limit = _sane_limit(limit)
         ent = self.mapping.entity("counterparty")
         name_f = ent.field_1c("name")
         inn_f = ent.fields.get("inn")
@@ -115,6 +128,7 @@ class Bridge1CTools:
                       date_from: str | None = None, date_to: str | None = None,
                       posted: bool | None = None, number: str | None = None,
                       limit: int = 20) -> str:
+        limit = _sane_limit(limit)
         if doc_type not in DOC_TYPES:
             return f"Неизвестный тип документа «{doc_type}». Доступны: {', '.join(DOC_TYPES)}."
         ent = self.mapping.entity(doc_type)
@@ -242,7 +256,9 @@ class Bridge1CTools:
             ),
             ToolSpec(
                 "find_document",
-                "Документы по типу, контрагенту, периоду, проведению.",
+                "Документы: sale — реализация (отгрузка), purchase — поступление "
+                "товаров и услуг, incoming_payment — приход денег на счёт, "
+                "customer_invoice — счёт покупателю.",
                 {"type": "object", "properties": {
                     "doc_type": {"type": "string", "enum": list(DOC_TYPES)},
                     "counterparty_key": {"type": "string"},
@@ -255,7 +271,7 @@ class Bridge1CTools:
             ),
             ToolSpec(
                 "ledger_report",
-                "Сверка: отгрузки против оплат, сальдо.",
+                "Что отгружено контрагенту и не оплачено: отгрузки против оплат, сальдо.",
                 {"type": "object", "properties": {
                     "counterparty_key": {"type": "string"}, **dates,
                 }, "required": ["counterparty_key"]},

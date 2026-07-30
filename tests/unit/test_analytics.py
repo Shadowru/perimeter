@@ -232,7 +232,7 @@ def test_report_hides_rows_from_the_model():
         assert "Ромашка" in rep.display and "120 000.00" in rep.display
         assert "Ромашка" not in rep.digest      # имён в выжимке нет
         assert "120 000.00" not in rep.digest   # построчных сумм тоже
-        assert "таблица из" in rep.digest       # но модель знает, что она есть
+        assert "строк показано пользователю" in rep.digest  # но знает, что она есть
 
 
 def test_digest_keeps_what_the_model_needs():
@@ -262,3 +262,12 @@ def test_reports_have_titles():
         a = make(srv)
         assert a.cash_flow().title == "Движение денежных средств"
         assert "Ромашка" in a.reconciliation_act(GUID_ROMASHKA).title
+
+
+def test_digest_marks_the_hidden_rows_briefly():
+    """Маркер уходит в prefill с каждым отчётом — он должен быть коротким."""
+    with Fake1CServer() as srv:
+        digest = make(srv).payables_aging(as_of="2026-07-31T00:00:00").digest
+        marker = next(l for l in digest.splitlines() if l.startswith("["))
+        assert "строк показано пользователю" in marker and len(marker) < 60
+        assert "140 000.00" in digest    # итог назвать можно и нужно
