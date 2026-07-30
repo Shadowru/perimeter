@@ -446,7 +446,7 @@ def test_report_reaches_the_user_whole(tmp_path):
 
 
 def test_model_inventing_beyond_the_digest_is_still_caught(tmp_path):
-    """Выжимка не оправдывает выдумку: сверка идёт против полного отчёта."""
+    """Выдумка сверх выжимки ловится."""
     script = [
         Scripted(tool_calls=[{"name": "receivables_aging", "arguments": {}}]),
         Scripted(content="Больше всех должно «ООО Вектор» — 999 000.00 руб."),
@@ -460,11 +460,30 @@ def test_model_inventing_beyond_the_digest_is_still_caught(tmp_path):
         llm.__exit__()
 
 
-def test_truth_from_the_table_is_not_flagged(tmp_path):
-    """Если модель назвала то, что есть в таблице, придираться не за что."""
+def test_row_level_guess_is_not_accepted_even_if_it_matches(tmp_path):
+    """Совпавшая догадка — всё равно догадка.
+
+    Строк таблицы модель не видит. Если она называет построчную сумму, взять
+    её было неоткуда; сегодня совпало, завтра нет, а выглядит одинаково.
+    """
     script = [
         Scripted(tool_calls=[{"name": "receivables_aging", "arguments": {}}]),
         Scripted(content="Больше всех должна «Ромашка» — 132 000.00 руб."),
+        Scripted(content="Всего нам должны 186 000.00 руб., детали в таблице."),
+    ]
+    with Fake1CServer() as srv:
+        agent, llm = make_full_agent(tmp_path, srv, script)
+        result = agent.run("Кто нам должен?")
+        assert "132 000.00" not in result.text     # догадку переписали
+        assert result.grounded and result.steps == 3
+        llm.__exit__()
+
+
+def test_total_from_the_digest_passes(tmp_path):
+    """Итог модель видит — называть его можно и нужно."""
+    script = [
+        Scripted(tool_calls=[{"name": "receivables_aging", "arguments": {}}]),
+        Scripted(content="Нам должны 186 000.00 руб., подробности в таблице."),
     ]
     with Fake1CServer() as srv:
         agent, llm = make_full_agent(tmp_path, srv, script)

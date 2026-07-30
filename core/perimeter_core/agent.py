@@ -164,7 +164,6 @@ class Agent:
             self.system_prompt += "\n\n" + self.extra_system
         self._tools_by_name = {s.name: s for s in self.tool_specs}
         self.reports: list[ToolOutput] = []
-        self._full_outputs: list[str] = []
 
     # --- история → модель (единственный шов; здесь же компактизация) -----
 
@@ -233,7 +232,6 @@ class Agent:
     def run(self, user_text: str, on_delta: DeltaCallback | None = None) -> AgentResult:
         turn_start = len(self.messages)
         self.reports = []          # отчёты этого хода
-        self._full_outputs = []
         self.messages.append({"role": "user", "content": user_text})
         self.audit.write("user_message", text=user_text[:2000])
         schemas = [s.openai_schema() for s in self.tool_specs]
@@ -420,20 +418,23 @@ class Agent:
             # Человек получает отчёт целиком, модель — только выжимку.
             self.reports.append(result)
             self._record_tool_result(call_id, name, result.digest)
-            self._full_outputs.append(result.display)
         else:
             self._record_tool_result(call_id, name, str(result))
 
     def _turn_tool_outputs(self, turn_start: int) -> list[str]:
-        """База для сверки ответа: то, что инструменты дали на этом ходе.
+        """База для сверки ответа: ровно то, что модель видела на этом ходе.
 
-        Для отчётов берём ПОЛНЫЙ текст, а не выжимку, которую видела модель:
-        если она напишет что-то сверх выжимки и это окажется правдой из
-        таблицы — придираться не за что; а выдумку поймаем по-прежнему.
+        Сначала мы сверяли с полным текстом отчёта, включая скрытые от
+        модели строки. Это слишком мягко: строк модель не видит, поэтому
+        названная ею построчная сумма — догадка, даже если случайно совпала
+        с таблицей. Считать удачную догадку подтверждённой нельзя: в
+        следующий раз она не совпадёт, а выглядеть будет так же.
+
+        Поэтому сверяем с выжимкой. Инструменты без разделения (поиск
+        документов, справочник) отдают полный текст и от этого не страдают.
         """
-        return ([str(m.get("content") or "")
-                 for m in self.messages[turn_start:] if m.get("role") == "tool"]
-                + list(self._full_outputs))
+        return [str(m.get("content") or "")
+                for m in self.messages[turn_start:] if m.get("role") == "tool"]
 
     def _record_tool_result(self, call_id: str, name: str, content: str) -> None:
         self.messages.append({
