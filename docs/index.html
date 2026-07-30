@@ -185,6 +185,36 @@
   .helpbox b { display: block; font-size: 1.02rem; margin-bottom: 4px; }
   .helpbox p { font-size: .9rem; color: var(--dim); max-width: 52ch; }
 
+  /* --- карточки управленческих отчётов --- */
+  .report { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .report-q {
+    display: flex; align-items: flex-start; gap: 8px; padding: 14px 18px;
+    border-bottom: 1px solid var(--line); background: var(--green-soft);
+    font-weight: 600; font-size: .92rem;
+  }
+  .report-q::before { content: "?"; color: var(--green); font-weight: 800; flex: none; }
+  .report-scroll { overflow-x: auto; }
+  .report table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  .report th {
+    text-align: left; font-weight: 600; font-size: .74rem; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--dim); padding: 10px 14px;
+    border-bottom: 1px solid var(--line); white-space: nowrap;
+  }
+  .report td { padding: 11px 14px; border-bottom: 1px solid var(--line); }
+  .report tbody tr:last-child td { border-bottom: none; }
+  .report tr.total td { font-weight: 700; background: #FAFBFA; }
+  .report .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .report .src { font-size: .8rem; color: var(--dim); }
+  .badge {
+    display: inline-block; min-width: 22px; text-align: center; border-radius: 6px;
+    font-weight: 800; font-size: .78rem; padding: 2px 7px; color: #fff;
+  }
+  .badge.a { background: var(--green); }
+  .badge.b { background: #B8891F; }
+  .badge.c { background: #8A97A3; }
+  .bar { height: 6px; border-radius: 3px; background: var(--green); display: block; min-width: 3px; }
+  .bar-wrap { background: var(--green-soft); border-radius: 3px; width: 90px; }
+
   .faq details { background: var(--card); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 10px; }
   .faq summary { cursor: pointer; font-weight: 600; padding: 15px 18px; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
   .faq summary::-webkit-details-marker { display: none; }
@@ -277,35 +307,54 @@
       <h2>Управленческие отчёты — вопросом, а не выгрузкой</h2>
       <p class="sub">Отчёты, ради которых обычно собирают выгрузки в Excel и ждут неделю. Здесь их считает сам «Периметр» — не нейросеть на глазок, а точный расчёт по вашим документам; модель только выбирает нужный отчёт и пересказывает результат.</p>
       <div class="grid2">
-        <div class="term">
-          <div class="term-bar">ABC‑АНАЛИЗ КЛИЕНТОВ</div>
-          <div class="term-body"><span class="p">›</span> <span class="q">сделай ABC‑анализ по клиентам</span>
 
-ABC‑анализ по выручке за всё время:
-<span class="doc">A | ООО «Ромашка» | 219 000,00 ₽ | 93,6%</span>
-<span class="doc">B | ООО «Василёк» | 15 000,00 ₽ | 6,4%</span></div>
+        <div class="report">
+          <div class="report-q">Сделай ABC‑анализ по клиентам</div>
+          <div class="report-scroll"><table>
+            <thead><tr><th>Группа</th><th>Клиент</th><th class="num">Выручка</th><th class="num">Доля</th></tr></thead>
+            <tbody>
+              <tr><td><span class="badge a">A</span></td><td>ООО «Ромашка»</td><td class="num">219 000,00 ₽</td><td class="num">93,6%</td></tr>
+              <tr><td><span class="badge b">B</span></td><td>ООО «Василёк»</td><td class="num">15 000,00 ₽</td><td class="num">6,4%</td></tr>
+              <tr class="total"><td colspan="2">Итого за всё время</td><td class="num">234 000,00 ₽</td><td class="num">100%</td></tr>
+            </tbody>
+          </table></div>
         </div>
-        <div class="term">
-          <div class="term-bar">СЕБЕСТОИМОСТЬ И МАРЖА ПО БРЕНДАМ</div>
-          <div class="term-body"><span class="p">›</span> <span class="q">дай себестоимость и маржу по брендам за июль</span>
 
-<span class="doc">Гамма | выручка 135 000,00 | себестоимость 92 500,00
-      | маржа 42 500,00 (31,5%)</span></div>
+        <div class="report">
+          <div class="report-q">Дай себестоимость и маржу по брендам за июль</div>
+          <div class="report-scroll"><table>
+            <thead><tr><th>Бренд</th><th class="num">Выручка</th><th class="num">Себестоимость</th><th class="num">Маржа</th></tr></thead>
+            <tbody>
+              <tr><td>Гамма</td><td class="num">135 000,00 ₽</td><td class="num">92 500,00 ₽</td><td class="num">42 500,00 ₽ · 31,5%</td></tr>
+              <tr class="total"><td>Итого</td><td class="num">135 000,00 ₽</td><td class="num">92 500,00 ₽</td><td class="num">42 500,00 ₽ · 31,5%</td></tr>
+            </tbody>
+          </table></div>
         </div>
-        <div class="term">
-          <div class="term-bar">ДЕБИТОРКА ПО СРОКАМ</div>
-          <div class="term-body"><span class="p">›</span> <span class="q">кто нам должен и как давно?</span>
 
-ООО «Ромашка» — 99 000,00 ₽
-<span class="doc">№РТ‑0001 от 03.07.2026, возраст 28 дней</span></div>
+        <div class="report">
+          <div class="report-q">Кто нам должен и как давно?</div>
+          <div class="report-scroll"><table>
+            <thead><tr><th>Контрагент</th><th class="num">Долг</th><th>Документ‑основание</th><th class="num">Возраст</th></tr></thead>
+            <tbody>
+              <tr><td>ООО «Ромашка»</td><td class="num">99 000,00 ₽</td><td class="src">реализация №РТ‑0001 от 03.07.2026</td><td class="num">28 дней</td></tr>
+              <tr class="total"><td>Итого дебиторка</td><td class="num">99 000,00 ₽</td><td class="src">на 31.07.2026</td><td class="num">—</td></tr>
+            </tbody>
+          </table></div>
         </div>
-        <div class="term">
-          <div class="term-bar">ЛИДЕРЫ ПО ВЫРУЧКЕ</div>
-          <div class="term-body"><span class="p">›</span> <span class="q">какие товары приносят больше всего выручки?</span>
 
-<span class="doc">Ноутбук ProBook 14 — 189 000,00 ₽ (80,8%)
-Монитор 27" — 45 000,00 ₽ (19,2%)</span></div>
+        <div class="report">
+          <div class="report-q">Какие товары приносят больше всего выручки?</div>
+          <div class="report-scroll"><table>
+            <thead><tr><th>Товар</th><th class="num">Выручка</th><th>Доля</th></tr></thead>
+            <tbody>
+              <tr><td>Ноутбук ProBook 14</td><td class="num">189 000,00 ₽</td>
+                  <td><span class="bar-wrap"><span class="bar" style="width:81%"></span></span> 80,8%</td></tr>
+              <tr><td>Монитор 27"</td><td class="num">45 000,00 ₽</td>
+                  <td><span class="bar-wrap"><span class="bar" style="width:19%"></span></span> 19,2%</td></tr>
+            </tbody>
+          </table></div>
         </div>
+
       </div>
       <p class="footnote">Ответы выше — из нашего тестового прогона на демонстрационной базе; на ваших данных цифры будут ваши. Каждый отчёт подписывает период, за который построен, и перечисляет документы-источники, чтобы любую строку можно было проверить в 1С.</p>
     </div>
