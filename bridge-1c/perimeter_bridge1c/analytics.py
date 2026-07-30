@@ -229,7 +229,7 @@ class AnalyticsTools:
                 # отгрузкам относится долг (живой прогон 2026-07-30).
                 docs_by_cp[cp].append(
                     f"№{d.get('Number')} от {str(d.get('Date'))[:10]} — "
-                    f"{_fmt(unpaid)} руб., {days} дн.")
+                    f"не оплачено {_fmt(unpaid)} руб., возраст {days} дн. с даты отгрузки")
 
         if not by_cp:
             return "Просроченной дебиторской задолженности нет — всё оплачено."
@@ -247,7 +247,9 @@ class AnalyticsTools:
                 out.append(f"    {line}")
         out.append("ИТОГО | " + " | ".join(_fmt(totals[b]) for b in buckets)
                    + f" | {_fmt(sum(totals.values()))}")
-        out.append(f"Расчёт на {as_of_dt.date()}, оплаты разнесены по FIFO.")
+        out.append(f"Расчёт на {as_of_dt.date()}, оплаты разнесены по FIFO. "
+                   "Возраст считается от даты отгрузки; сроки оплаты по договорам "
+                   "в данных отсутствуют, поэтому слово «просрочено» здесь неприменимо.")
         return "\n".join(out)
 
     # --- спецификации для агента -------------------------------------------
