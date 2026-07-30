@@ -41,6 +41,9 @@ def main() -> int:
         agent, _ = build_agent(args.config, confirm)
         return agent
 
+    print("Прогреваю кэш модели…")
+    factory(lambda n, a: False).warmup()
+
     ui = UIServer(cfg.ui.host, cfg.ui.port, factory)
     ui.start()
     print(f"Периметр готов: {ui.base_url}")

@@ -163,3 +163,17 @@ def test_agent_uses_low_temperature(tmp_path):
             f"агент вызвал модель с температурой {llm.requests[0]['temperature']} — "
             "выбор инструмента станет случайным")
         llm.__exit__()
+
+
+def test_warmup_sends_full_prompt_and_tools(tmp_path):
+    """Прогрев должен слать тот же префикс, что и рабочие запросы."""
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, [Scripted(content="ок")])
+        elapsed = agent.warmup()
+        assert elapsed >= 0
+        req = llm.requests[0]
+        assert req["messages"][0]["role"] == "system"
+        assert req["messages"][0]["content"] == agent.system_prompt
+        assert len(req["tools"]) == len(agent.tool_specs)
+        assert agent.messages == []  # история не засоряется
+        llm.__exit__()

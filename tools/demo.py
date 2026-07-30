@@ -76,6 +76,10 @@ def main() -> int:
             extra_system=catalog_text(skills),
         )
 
+    print("Прогреваю кэш модели (иначе первый вопрос ждёт дольше)…")
+    warm = factory(lambda n, a: False).warmup()
+    print(f"  прогрев занял {warm:.1f} с" if warm >= 0 else "  прогрев не удался")
+
     ui = UIServer(cfg.ui.host, ui_port, factory)
     ui.start()
 
