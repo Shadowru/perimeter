@@ -192,3 +192,11 @@ def test_ambiguous_prefix_is_not_guessed():
     res = check_grounding("Долг «ТехнXXX» — 100.00 руб.",
                           ['АО "ТехноСервис" | key=b', 'ООО "Технополис" | key=c'])
     assert res.unverified_names == ["ТехнXXX"] and not res.name_corrections
+
+
+def test_nested_quotes_do_not_hide_a_distortion():
+    """«АО "Технʼyервис"»: раньше проверялось только «АО », искажение проходило."""
+    res = check_grounding('Контрагент «АО "Технʼyервис"» должен 100.00 руб.',
+                          ['АО "ТехноСервис" | ИНН 5047112233 | key=b'])
+    assert res.unverified_names == ['АО "Технʼyервис"']
+    assert res.name_corrections['АО "Технʼyервис"'] == 'АО "ТехноСервис"'

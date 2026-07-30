@@ -280,6 +280,18 @@ class Agent:
             if not tool_calls:
                 grounding = check_grounding(text, self._turn_tool_outputs(turn_start),
                                             question=user_text)
+                if not grounding.ok and grounding.only_fixable_names:
+                    text, fixes = apply_name_corrections(text, grounding)
+                    self.audit.write("names_corrected", fixes=fixes)
+                    # Пересверяем ДО добавления пометки: сама пометка цитирует
+                    # исходное искажение и иначе ловилась бы как ошибка.
+                    grounding = check_grounding(
+                        text, self._turn_tool_outputs(turn_start), question=user_text)
+                    note = NAME_FIX_NOTE.format(fixes=", ".join(fixes))
+                    text += note
+                    self.messages[-1]["content"] = text
+                    if on_delta:
+                        on_delta(note)
                 if not grounding.ok and not corrected:
                     corrected = True
                     self.audit.write("grounding_retry", details=grounding.describe())

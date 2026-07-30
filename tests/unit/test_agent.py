@@ -326,8 +326,7 @@ def test_distorted_name_is_repaired_from_data(tmp_path):
     script = [
         Scripted(tool_calls=[{"name": "get_counterparty", "arguments": {"query": "техно"}}]),
         Scripted(content="Контрагент «ТехнSERVIC», ИНН 5047112233."),
-        Scripted(content="Контрагент «ТехнSERVIC», ИНН 5047112233."),
-    ]
+    ]   # второго ответа не нужно: правим сразу, без переписывания
     with Fake1CServer() as srv:
         agent, llm = make_agent(tmp_path, srv, script)
         result = agent.run("Найди ТехноСервис")
@@ -335,6 +334,7 @@ def test_distorted_name_is_repaired_from_data(tmp_path):
         assert "ТехнSERVIC" not in body      # в самом ответе искажения нет
         assert "ТехноСервис" in body
         assert "«ТехнSERVIC» -> «АО \"ТехноСервис\"»" in note  # правка названа
+        assert result.steps == 2   # лишнего хода модели не было
         assert result.grounded          # после правки расхождений не осталось
         assert "не подтверждается" not in result.text
         events = [json.loads(line)["event"]

@@ -24,8 +24,20 @@ from dataclasses import dataclass, field
 _AMOUNT_RE = re.compile(r"\b\d[\d  ]{2,}(?:[.,]\d{2})?\b")
 # Номер документа: №РТ-0002, № ПС-0001
 _DOCNUM_RE = re.compile(r"№\s?([A-Za-zА-Яа-я]{1,4}[-‑]?\d{2,})")
-# Название в кавычках: «Ромашка», "ТехноСервис"
-_QUOTED_RE = re.compile(r"[«\"]([^»\"]{2,60})[»\"]")
+# Название в кавычках. Ёлочки и обычные кавычки разбираем отдельно: модель
+# пишет «АО "ТехноСервис"», и общий шаблон обрывался на внутренней кавычке,
+# отдавая «АО » — то есть искажение внутри вообще не проверялось.
+_QUOTED_RES = (re.compile(r"«([^»]{2,60})»"), re.compile(r"\"([^\"]{2,60})\""))
+
+
+def _quoted_names(text: str) -> list[str]:
+    names, seen = [], set()
+    for rx in _QUOTED_RES:
+        for m in rx.findall(text):
+            if m not in seen:
+                seen.add(m)
+                names.append(m)
+    return names
 
 
 # Организационно-правовые формы: в базе «ООО "Ромашка"», в ответе модели
@@ -125,6 +137,18 @@ class GroundingResult:
         return not (self.unverified_amounts or self.unverified_docs
                     or self.unverified_names)
 
+    @property
+    def only_fixable_names(self) -> bool:
+        """Проблема лишь в написании названий, и все опознаны однозначно.
+
+        Такой случай чинится подстановкой из данных: гонять модель на
+        переписывание незачем — это лишние 20-30 секунд ожидания, а на
+        живом прогоне она в ответ ещё и путалась в объяснениях.
+        """
+        return (bool(self.unverified_names)
+                and not self.unverified_amounts and not self.unverified_docs
+                and all(n in self.name_corrections for n in self.unverified_names))
+
     def describe(self) -> str:
         parts = []
         if self.unverified_docs:
@@ -173,12 +197,16 @@ def check_grounding(answer: str, tool_outputs: list[str],
             result.unverified_docs.append(num)
 
     source_names = _norm_name(source + "\n" + question)
-    for name in _QUOTED_RE.findall(answer):
+    for name in _quoted_names(answer):
         normalized = _norm_name(name)
         # Слишком короткий остаток («ООО», «АО») ничего не идентифицирует.
         if len(normalized) < 3:
             continue
         if not _name_present(normalized, source_names):
+            # «АО "Технервис"» и «Технервис» — одно и то же искажение,
+            # вытащенное разными кавычками. Сообщаем один раз.
+            if any(name in seen for seen in result.unverified_names):
+                continue
             result.unverified_names.append(name)
             # Модель коверкала «ТехноСервис» в «Технервис» и повторяла ошибку
             # даже после указания переписать дословно (живой прогон
