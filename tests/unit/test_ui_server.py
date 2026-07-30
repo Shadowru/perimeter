@@ -91,3 +91,28 @@ def test_write_denied_without_checkbox(tmp_path):
             post(True)
             assert len(srv.created) == 1  # с галочкой — черновик создан
             assert srv.created[0][1]["Posted"] is False
+
+
+def test_reports_are_sent_to_the_browser_whole():
+    """Таблица уходит в UI отдельным полем, а не через пересказ модели."""
+    from perimeter_core.toolspec import ToolOutput
+
+    class FakeAgent:
+        def run(self, message, on_delta=None):
+            from perimeter_core.agent import AgentResult
+            if on_delta:
+                on_delta("Нам должны 192 000.00 руб.")
+            return AgentResult(
+                text="Нам должны 192 000.00 руб.", steps=2,
+                reports=[ToolOutput(display="контрагент | долг\nРомашка | 132 000.00",
+                                    digest="итог", title="Дебиторка")])
+
+    with UIServer("127.0.0.1", 0, lambda confirm: FakeAgent()) as ui:
+        req = urllib.request.Request(
+            ui.base_url + "/api/chat",
+            data=json.dumps({"message": "кто должен?"}).encode(),
+            headers={"Content-Type": "application/json"})
+        done = next(e for e in sse_events(urllib.request.urlopen(req)) if "done" in e)
+        assert done["reports"][0]["title"] == "Дебиторка"
+        assert "Ромашка | 132 000.00" in done["reports"][0]["text"]
+        assert done["grounded"] is True

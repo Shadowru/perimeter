@@ -72,7 +72,12 @@ class UIServer:
                     try:
                         result = agent.run(message,
                                            on_delta=lambda d: emit({"delta": d}))
-                        emit({"done": result.text})
+                        # Отчёты идут человеку как есть: их таблицы модель не
+                        # пересказывает, поэтому в них нечего исказить.
+                        emit({"done": result.text,
+                              "reports": [{"title": r.title, "text": r.display}
+                                          for r in result.reports],
+                              "grounded": result.grounded})
                     except Exception as e:  # noqa: BLE001 — ошибка уходит в UI
                         emit({"error": str(e)})
 

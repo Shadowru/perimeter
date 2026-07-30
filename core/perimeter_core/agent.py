@@ -27,6 +27,7 @@ from .audit import AuditLog
 from .grounding import (CORRECTION_PROMPT, NAME_FIX_NOTE, WARNING_SUFFIX,
                         apply_name_corrections, check_grounding)
 from .i18n import t
+from .toolspec import ToolOutput
 
 Message = dict[str, Any]
 ConfirmCallback = Callable[[str, dict[str, Any]], bool]
@@ -101,6 +102,8 @@ class AgentResult:
     stopped_by_limit: bool = False
     grounded: bool = True   # False -> в ответе есть неподтверждённые данные
     model_failed: bool = False  # True -> ответ собран из данных в обход модели
+    # Отчёты, которые показываются человеку целиком (модель их не пересказывает)
+    reports: list[ToolOutput] = field(default_factory=list)
 
 
 @dataclass
@@ -147,6 +150,8 @@ class Agent:
         if self.extra_system:
             self.system_prompt += "\n\n" + self.extra_system
         self._tools_by_name = {s.name: s for s in self.tool_specs}
+        self.reports: list[ToolOutput] = []
+        self._full_outputs: list[str] = []
 
     # --- история → модель (единственный шов; здесь же компактизация) -----
 
@@ -214,6 +219,8 @@ class Agent:
 
     def run(self, user_text: str, on_delta: DeltaCallback | None = None) -> AgentResult:
         turn_start = len(self.messages)
+        self.reports = []          # отчёты этого хода
+        self._full_outputs = []
         self.messages.append({"role": "user", "content": user_text})
         self.audit.write("user_message", text=user_text[:2000])
         schemas = [s.openai_schema() for s in self.tool_specs]
@@ -258,7 +265,8 @@ class Agent:
                 self.messages.append({"role": "assistant", "content": fallback})
                 if on_delta:
                     on_delta("\n\n" + fallback)
-                return AgentResult(text=fallback, steps=step, model_failed=True)
+                return AgentResult(text=fallback, steps=step, model_failed=True,
+                                   reports=list(self.reports))
             if offered is None and tool_calls:
                 # Инструментов не предлагали, а модель всё равно их запросила.
                 # Не исполняем: бюджет на то и бюджет.
@@ -325,7 +333,8 @@ class Agent:
                     if on_delta and suffix:
                         on_delta(suffix)
                 self.audit.write("assistant_message", text=(text or "")[:2000])
-                return AgentResult(text=text, steps=step, grounded=grounding.ok)
+                return AgentResult(text=text, steps=step, grounded=grounding.ok,
+                                   reports=list(self.reports))
 
             for call in tool_calls:
                 self._execute_call(call)
@@ -333,7 +342,8 @@ class Agent:
         limit_text = t("agent.turn_limit", limit=self.max_iterations)
         self.messages.append({"role": "assistant", "content": limit_text})
         self.audit.write("turn_limit", limit=self.max_iterations)
-        return AgentResult(text=limit_text, steps=self.max_iterations, stopped_by_limit=True)
+        return AgentResult(text=limit_text, steps=self.max_iterations,
+                           stopped_by_limit=True, reports=list(self.reports))
 
     def _call_model(self, schemas: list[dict[str, Any]] | None,
                     on_delta: DeltaCallback | None,
@@ -392,12 +402,24 @@ class Agent:
         except Exception as e:  # noqa: BLE001 — ошибка уходит модели
             result = f"Ошибка выполнения: {e}"
         self.audit.write("tool_call", tool=name, args=args, result=str(result)[:500])
-        self._record_tool_result(call_id, name, str(result))
+        if isinstance(result, ToolOutput):
+            # Человек получает отчёт целиком, модель — только выжимку.
+            self.reports.append(result)
+            self._record_tool_result(call_id, name, result.digest)
+            self._full_outputs.append(result.display)
+        else:
+            self._record_tool_result(call_id, name, str(result))
 
     def _turn_tool_outputs(self, turn_start: int) -> list[str]:
-        """Результаты инструментов этого хода — база для сверки ответа."""
-        return [str(m.get("content") or "")
-                for m in self.messages[turn_start:] if m.get("role") == "tool"]
+        """База для сверки ответа: то, что инструменты дали на этом ходе.
+
+        Для отчётов берём ПОЛНЫЙ текст, а не выжимку, которую видела модель:
+        если она напишет что-то сверх выжимки и это окажется правдой из
+        таблицы — придираться не за что; а выдумку поймаем по-прежнему.
+        """
+        return ([str(m.get("content") or "")
+                 for m in self.messages[turn_start:] if m.get("role") == "tool"]
+                + list(self._full_outputs))
 
     def _record_tool_result(self, call_id: str, name: str, content: str) -> None:
         self.messages.append({

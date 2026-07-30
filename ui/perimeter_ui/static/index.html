@@ -12,6 +12,17 @@
          white-space: pre-wrap; overflow-y: auto; }
   .u { font-weight: 600; margin-top: .5rem; }
   .a { margin: .25rem 0 .75rem; }
+  .report { margin: .5rem 0 1rem; border: 1px solid #8884; border-radius: 8px;
+            overflow-x: auto; white-space: normal; }
+  .report h2 { font-size: .85rem; margin: 0; padding: .5rem .7rem; background: #8881;
+               font-weight: 600; }
+  .report table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  .report th, .report td { padding: .35rem .7rem; text-align: left; white-space: nowrap;
+                           border-bottom: 1px solid #8883; }
+  .report td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .report tr.total td { font-weight: 700; }
+  .report .note { padding: .5rem .7rem; font-size: .8rem; opacity: .75;
+                  white-space: pre-wrap; }
   form { display: flex; gap: .5rem; margin-top: .75rem; flex-wrap: wrap; }
   input[type=text] { flex: 1; padding: .5rem; min-width: 200px; }
   label { font-size: .85rem; align-self: center; }
@@ -27,6 +38,34 @@
 </form>
 <script>
 const log = document.getElementById("log");
+
+const esc = (s) => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const isNum = (c) => /^[\d\s.,+\-−%₽]+$/.test(c.trim()) && /\d/.test(c);
+
+// Отчёт приходит строками «колонка | колонка». Таблицу собираем здесь, а не
+// просим модель её пересказать — пересказ и был источником ошибок в цифрах.
+function renderReport(r) {
+  const rows = [], notes = [];
+  r.text.split("\n").forEach((line, i) => {
+    if (i === 0) { notes.push({head: line}); return; }
+    if (line.includes("|")) rows.push(line.split("|").map(c => c.trim()));
+    else if (line.trim()) notes.push({text: line});
+  });
+  let html = `<div class="report"><h2>${esc(r.title || (notes[0] && notes[0].head) || "Отчёт")}</h2>`;
+  if (rows.length) {
+    html += "<table>";
+    rows.forEach((cells, i) => {
+      const total = /^(ИТОГО|Итого)/.test(cells[0]);
+      const tag = i === 0 && !total ? "th" : "td";
+      html += `<tr${total ? ' class="total"' : ""}>` + cells.map(c =>
+        `<${tag}${tag === "td" && isNum(c) ? ' class="num"' : ""}>${esc(c)}</${tag}>`).join("") + "</tr>";
+    });
+    html += "</table>";
+  }
+  const tail = notes.filter(n => n.text).map(n => esc(n.text)).join("\n");
+  if (tail) html += `<div class="note">${tail}</div>`;
+  return html + "</div>";
+}
 document.getElementById("f").addEventListener("submit", async (e) => {
   e.preventDefault();
   const msg = document.getElementById("msg").value.trim();
@@ -54,7 +93,10 @@ document.getElementById("f").addEventListener("submit", async (e) => {
       if (!line.startsWith("data:")) continue;
       const ev = JSON.parse(line.slice(5));
       if (ev.delta) { acc += ev.delta; out.textContent = acc; }
-      if (ev.done !== undefined) out.textContent = ev.done;
+      if (ev.done !== undefined) {
+        out.textContent = ev.done;
+        (ev.reports || []).forEach(r => out.insertAdjacentHTML("afterend", renderReport(r)));
+      }
       if (ev.error) out.textContent = "Ошибка: " + ev.error;
       log.scrollTop = log.scrollHeight;
     }

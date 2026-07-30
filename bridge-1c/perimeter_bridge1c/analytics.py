@@ -48,6 +48,27 @@ def _period_label(date_from: str | None, date_to: str | None) -> str:
     return f"с {(date_from or '...')[:10]} по {(date_to or '...')[:10]}"
 
 
+def _report(text: str, title: str):
+    """Оборачивает готовый отчёт: человеку — таблица, модели — выжимка.
+
+    Строки таблицы модели не показываем сознательно (см. ToolOutput):
+    пересказывая их, она путала корзины и коверкала названия. Ей остаются
+    шапка с периодом, итоги и оговорки — этого хватает на фразу-подводку.
+    """
+    from perimeter_core.toolspec import ToolOutput
+    kept, rows = [], 0
+    for i, line in enumerate(text.splitlines()):
+        is_row = (line.count("|") >= 2 or line.startswith("    ")) \
+            and not line.startswith("ИТОГО")
+        if i == 0 or not is_row:
+            kept.append(line)
+        else:
+            rows += 1
+    if rows:
+        kept.insert(1, f"[таблица из {rows} строк уже показана пользователю целиком]")
+    return ToolOutput(display=text, digest="\n".join(kept), title=title)
+
+
 def _abc_group(share_before: float) -> str:
     """Группа позиции по накопленной доле ПЕРЕД ней.
 
@@ -140,7 +161,7 @@ class AnalyticsTools:
                 + f"({len(ordered)} позиций, выручка {_fmt(grand)} руб.):")
         tail = ("Группы: " + ", ".join(f"{g} — {counts[g]}" for g in ("A", "B", "C") if counts[g])
                 + ". Расчёт по проведённым реализациям.")
-        return "\n".join([head, *out, tail])
+        return _report("\n".join([head, *out, tail]), "ABC-анализ")
 
     # --- себестоимость и рентабельность по брендам -------------------------
 
@@ -184,8 +205,9 @@ class AnalyticsTools:
         out.append(f"ИТОГО | выручка {_fmt(tr)} | себестоимость {_fmt(tc)} | "
                    f"маржа {_fmt(total_margin)} "
                    f"({total_margin / tr * 100 if tr else 0:.1f}%)")
-        return (f"Себестоимость и маржа по брендам, {_period_label(date_from, date_to)}:\n"
-                + "\n".join(out))
+        return _report(
+            f"Себестоимость и маржа по брендам, {_period_label(date_from, date_to)}:\n"
+            + "\n".join(out), "Маржа по брендам")
 
     # --- старение задолженности (дебиторка и кредиторка) --------------------
 
@@ -260,7 +282,7 @@ class AnalyticsTools:
         out.append(f"Расчёт на {as_of_dt.date()}, оплаты разнесены по FIFO. "
                    "Возраст считается от даты документа; сроки оплаты по договорам "
                    "в данных отсутствуют, поэтому слово «просрочено» здесь неприменимо.")
-        return "\n".join(out)
+        return _report("\n".join(out), title)
 
     def receivables_aging(self, as_of: str | None = None) -> str:
         """Сколько должны нам и как давно: 0–30, 31–60, 61–90, свыше 90 дней."""
@@ -344,7 +366,7 @@ class AnalyticsTools:
                   else "(взаиморасчёты закрыты)")]
         out.append("Учтены проведённые реализации и поступления на расчётный счёт. "
                    "Взаимозачёты и расчёты наличными в источник не входят.")
-        return "\n".join(out)
+        return _report("\n".join(out), f"Акт сверки с {name}")
 
     # --- движение денежных средств (ДДС) ------------------------------------
 
@@ -385,7 +407,7 @@ class AnalyticsTools:
         out.append("Источник — проведённые документы по расчётному счёту. "
                    "Остаток на счёте не показан: начальный остаток в этих "
                    "данных отсутствует, показан только оборот за период.")
-        return "\n".join(out)
+        return _report("\n".join(out), "Движение денежных средств")
 
     # --- отчёт о прибылях и убытках (ОПиУ) ----------------------------------
 
@@ -428,7 +450,7 @@ class AnalyticsTools:
                    "(счета 26 и 44), налоги и проценты в расчёт не включены: "
                    "в подключённых данных их нет, поэтому чистая прибыль здесь "
                    "не выводится.")
-        return "\n".join(out)
+        return _report("\n".join(out), "Прибыли и убытки")
 
     # --- динамика продаж и средний чек --------------------------------------
 
@@ -462,7 +484,7 @@ class AnalyticsTools:
             prev = rev
         out.append(f"ИТОГО | {_fmt(tr)} | {tn} | {_fmt(tr / tn)} | —")
         out.append("Средний чек — выручка, делённая на число проведённых реализаций.")
-        return "\n".join(out)
+        return _report("\n".join(out), "Динамика продаж")
 
     # --- спецификации для агента -------------------------------------------
 

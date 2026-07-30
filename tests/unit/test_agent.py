@@ -408,3 +408,66 @@ def test_backend_failure_without_data_still_raises(tmp_path):
         with pytest.raises(InferenceError):
             agent.run("Привет")
         llm.__exit__()
+
+
+# --- отчёты идут человеку напрямую, минуя пересказ ------------------------
+
+def make_full_agent(tmp_path, srv_1c, script, **kw):
+    from perimeter_bridge1c.analytics import AnalyticsTools
+    mapping = load_mapping("bp30")
+    client = ODataClient(srv_1c.base_url, "robot", "test", mapping=mapping)
+    fake_llm = FakeOpenAIServer(script)
+    fake_llm.__enter__()
+    agent = Agent(
+        client=InferenceClient(fake_llm.base_url, model="fake"),
+        tool_specs=Bridge1CTools(client, mapping).specs()
+                   + AnalyticsTools(client, mapping).specs(),
+        audit=AuditLog(tmp_path / "audit.log"), confirm=lambda n, a: True, **kw)
+    return agent, fake_llm
+
+
+def test_report_reaches_the_user_whole(tmp_path):
+    """Таблица приходит человеку целиком, а модель её не пересказывает."""
+    script = [
+        Scripted(tool_calls=[{"name": "receivables_aging", "arguments": {}}]),
+        Scripted(content="Нам должны 192 000.00 руб., подробности в таблице."),
+    ]
+    with Fake1CServer() as srv:
+        agent, llm = make_full_agent(tmp_path, srv, script)
+        result = agent.run("Кто нам должен?")
+        assert len(result.reports) == 1
+        report = result.reports[0]
+        assert "Ромашка" in report.display and "120 000.00" in report.display
+        # Модели строки не показывали:
+        tool_msg = next(m for m in agent.messages if m["role"] == "tool")
+        assert "Ромашка" not in tool_msg["content"]
+        assert result.grounded
+        llm.__exit__()
+
+
+def test_model_inventing_beyond_the_digest_is_still_caught(tmp_path):
+    """Выжимка не оправдывает выдумку: сверка идёт против полного отчёта."""
+    script = [
+        Scripted(tool_calls=[{"name": "receivables_aging", "arguments": {}}]),
+        Scripted(content="Больше всех должно «ООО Вектор» — 999 000.00 руб."),
+        Scripted(content="Больше всех должно «ООО Вектор» — 999 000.00 руб."),
+    ]
+    with Fake1CServer() as srv:
+        agent, llm = make_full_agent(tmp_path, srv, script)
+        result = agent.run("Кто нам должен?")
+        assert not result.grounded
+        assert "999 000.00" in result.text and "не подтверждается" in result.text
+        llm.__exit__()
+
+
+def test_truth_from_the_table_is_not_flagged(tmp_path):
+    """Если модель назвала то, что есть в таблице, придираться не за что."""
+    script = [
+        Scripted(tool_calls=[{"name": "receivables_aging", "arguments": {}}]),
+        Scripted(content="Больше всех должна «Ромашка» — 132 000.00 руб."),
+    ]
+    with Fake1CServer() as srv:
+        agent, llm = make_full_agent(tmp_path, srv, script)
+        result = agent.run("Кто нам должен?")
+        assert result.grounded and result.steps == 2
+        llm.__exit__()

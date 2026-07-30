@@ -92,29 +92,29 @@ def _reports():
     with Fake1CServer() as srv:
         m = load_mapping("bp30")
         a = AnalyticsTools(ODataClient(srv.base_url, "robot", "test", mapping=m), m)
-        yield "abc", a.abc_analysis("counterparty"), (
+        yield "abc", str(a.abc_analysis("counterparty")), (
             "ABC-анализ по выручке за всё время: группа A — «ООО «Ромашка»» "
             "252 000.00 руб. (77.1%) и «ООО «Василёк»» 75 000.00 руб. (22.9%). "
             "Всего 327 000.00 руб.")
-        yield "receivables", a.receivables_aging(as_of="2026-07-31T00:00:00"), (
+        yield "receivables", str(a.receivables_aging(as_of="2026-07-31T00:00:00")), (
             "Нам должны 192 000.00 руб. «ООО «Ромашка»» — 132 000.00 руб. "
             "(№РТ-0001 от 03.07.2026 на 120 000.00 и №РТ-0005 от 25.06.2026 "
             "на 12 000.00), «ООО «Василёк»» — 60 000.00 руб.")
-        yield "payables", a.payables_aging(as_of="2026-07-31T00:00:00"), (
+        yield "payables", str(a.payables_aging(as_of="2026-07-31T00:00:00")), (
             "Мы должны поставщикам 140 000.00 руб.: «АО «ТехноСервис»» "
             "100 000.00 по № ПТ-0001, «ООО «Василёк»» 40 000.00 по № ПТ-0002.")
-        yield "cash_flow", a.cash_flow(), (
+        yield "cash_flow", str(a.cash_flow()), (
             "За всё время поступило 135 000.00 руб., списано 200 000.00 руб., "
             "чистый поток минус 65 000.00 руб.")
-        yield "pnl", a.pnl_report(), (
+        yield "pnl", str(a.pnl_report()), (
             "Выручка 234 000.00 руб., себестоимость 159 500.00 руб., "
             "валовая прибыль 74 500.00 руб. Это валовая прибыль: расходы по "
             "счетам 26 и 44 в данных отсутствуют.")
-        yield "act", a.reconciliation_act(GUID_ROMASHKA), (
+        yield "act", str(a.reconciliation_act(GUID_ROMASHKA)), (
             "Акт сверки с «ООО «Ромашка»»: отгружено 252 000.00 руб., "
             "оплачено 120 000.00 руб., сальдо на конец 132 000.00 руб. "
             "в нашу пользу (№ РТ-0001, № РТ-0005, № РТ-0007, № ПС-0001).")
-        yield "dynamics", a.sales_dynamics(), (
+        yield "dynamics", str(a.sales_dynamics()), (
             "Продажи растут: май 93 000.00, июнь 99 000.00, июль 135 000.00 руб. "
             "Средний чек в июле 67 500.00 руб. при 2 отгрузках.")
 
