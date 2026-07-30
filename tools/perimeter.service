@@ -1,0 +1,34 @@
+[Unit]
+# Запуск «Периметра» как системной службы.
+#
+#   sudo cp tools/perimeter.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now perimeter
+#
+# Для демо-режима на вымышленных данных замените ExecStart на
+#   ExecStart=/opt/perimeter/.venv/bin/python /opt/perimeter/tools/demo.py
+Description=Периметр — локальный AI-работник для 1С
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/perimeter
+ExecStart=/opt/perimeter/.venv/bin/python /opt/perimeter/run_perimeter.py
+# Пароль 1С — только из окружения или keyring, никогда из конфига
+EnvironmentFile=-/etc/perimeter.env
+Restart=on-failure
+RestartSec=10
+# Модель грузится и прогревается до минуты — не считать это зависанием
+TimeoutStartSec=600
+KillMode=mixed
+KillSignal=SIGTERM
+# Дочерний процесс движка должен умирать вместе со службой
+TimeoutStopSec=60
+
+# Ограничения: продукту не нужны привилегии
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=false
+
+[Install]
+WantedBy=multi-user.target
