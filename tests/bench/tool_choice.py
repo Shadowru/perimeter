@@ -124,7 +124,14 @@ CASES: list[tuple[str, str, list[str]]] = [
 ]
 
 
-def run(llm_url: str, model: str) -> dict:
+def run(llm_url: str, model: str, repeat: int = 1,
+        temperature: float | None = None) -> dict:
+    """repeat > 1 — каждый вопрос задаётся несколько раз.
+
+    Для финансовой отчётности воспроизводимость не придирка, а свойство:
+    один и тот же вопрос обязан давать один и тот же разбор. Нестабильность
+    меряем, а не предполагаем.
+    """
     results = []
     with Fake1CServer() as srv:
         mapping = load_mapping("bp30")
@@ -132,10 +139,14 @@ def run(llm_url: str, model: str) -> dict:
         specs = (Bridge1CTools(client, mapping).specs()
                  + AnalyticsTools(client, mapping).specs())
         for question, want_tool, want_args in CASES:
+          seen_tools = set()
+          first: dict | None = None
+          for attempt in range(repeat):
+            kw = {} if temperature is None else {"temperature": temperature}
             agent = Agent(
                 client=InferenceClient(llm_url, model=model, timeout_s=600),
                 tool_specs=specs, audit=AuditLog(Path("/tmp/bench_audit.log")),
-                confirm=lambda n, a: True, today=TODAY)
+                confirm=lambda n, a: True, today=TODAY, **kw)
             t0 = time.monotonic()
             try:
                 res = agent.run(question)
@@ -154,14 +165,21 @@ def run(llm_url: str, model: str) -> dict:
             tool_ok = want_tool in names
             args_ok = tool_ok and all(frag.lower() in args_json.lower()
                                       for frag in want_args)
-            results.append({
+            seen_tools.add(tuple(names))
+            row = {
                 "question": question, "want": want_tool, "got": names,
                 "args": args_json[:200], "want_args": want_args,
                 "tool_ok": tool_ok, "args_ok": args_ok, "error": error,
                 "seconds": round(elapsed, 1),
                 "steps": res.steps if res else 0,
                 "grounded": bool(res and res.grounded),
-            })
+            }
+            # В статистику идёт первый прогон: иначе нестабильные вопросы
+            # учитывались бы дважды и портили сами проценты.
+            if first is None:
+                first = row
+          first["unstable"] = len(seen_tools) > 1
+          results.append(first)
     return summarize(results)
 
 
@@ -180,18 +198,25 @@ def summarize(results: list[dict]) -> dict:
         "max_seconds": round(max(times), 1) if times else None,
         "failures": [r for r in results if not r["args_ok"]],
         "unverified": [r["question"] for r in results if not r["grounded"]],
+        "unstable": sorted({r["question"] for r in results if r.get("unstable")}),
     }
 
 
 def main() -> int:
     url = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8090"
     model = sys.argv[2] if len(sys.argv) > 2 else "gigachat"
-    s = run(url, model)
+    repeat = int(sys.argv[3]) if len(sys.argv) > 3 else 1
+    temp = float(sys.argv[4]) if len(sys.argv) > 4 else None
+    s = run(url, model, repeat=repeat, temperature=temp)
     print(f"\nМодель: {model}  ({s['cases']} вопросов)")
     print(f"  выбор инструмента: {s['tool_accuracy']}%")
     print(f"  инструмент + параметры: {s['args_accuracy']}%")
     print(f"  ошибок бэкенда: {s['errors']}, ответов без подтверждения: {s['ungrounded']}")
     print(f"  время: медиана {s['median_seconds']} c, максимум {s['max_seconds']} c")
+    if s.get("unstable"):
+        print(f"\nРазный разбор при повторе ({len(s['unstable'])}):")
+        for q in s["unstable"]:
+            print(f"  {q}")
     if s["unverified"]:
         print("\nОтветы без подтверждения данными:")
         for q in s["unverified"]:

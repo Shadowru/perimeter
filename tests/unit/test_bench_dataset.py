@@ -41,3 +41,17 @@ def test_dataset_covers_every_tool():
 def test_questions_are_unique():
     questions = [q for q, _, _ in CASES]
     assert len(questions) == len(set(questions))
+
+
+def test_repeat_counts_each_question_once():
+    """Повторные прогоны меряют нестабильность, а не портят проценты."""
+    from tool_choice import summarize
+    rows = [{"question": "q1", "want": "a", "got": ["a"], "tool_ok": True,
+             "args_ok": True, "error": "", "seconds": 1.0, "steps": 2,
+             "grounded": True, "unstable": True, "args": "", "want_args": []},
+            {"question": "q2", "want": "b", "got": ["b"], "tool_ok": True,
+             "args_ok": True, "error": "", "seconds": 1.0, "steps": 2,
+             "grounded": True, "unstable": False, "args": "", "want_args": []}]
+    s = summarize(rows)
+    assert s["cases"] == 2 and s["tool_accuracy"] == 100.0
+    assert s["unstable"] == ["q1"]
