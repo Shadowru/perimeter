@@ -116,3 +116,16 @@ def test_reports_are_sent_to_the_browser_whole():
         assert done["reports"][0]["title"] == "Дебиторка"
         assert "Ромашка | 132 000.00" in done["reports"][0]["text"]
         assert done["grounded"] is True
+
+
+def test_report_renderer_in_the_browser():
+    """JS-рендер таблиц проверяем как код, а не на глаз (нужен node)."""
+    import shutil
+    import subprocess
+    node = shutil.which("node")
+    if not node:
+        import pytest
+        pytest.skip("node не установлен — рендер проверяется вручную")
+    script = Path(__file__).parent / "test_ui_render.js"
+    proc = subprocess.run([node, str(script)], capture_output=True, text=True)
+    assert proc.returncode == 0, proc.stderr or proc.stdout
