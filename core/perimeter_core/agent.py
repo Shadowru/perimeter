@@ -114,6 +114,10 @@ class Agent:
     # часа на один ход. Вызов инструмента укладывается в ~80 токенов, деловой
     # ответ — в ~150, так что 192 хватает, а лишние рассуждения отсекаются.
     max_tokens_per_call: int = 192
+    # Сколько вызовов инструментов даём модели на один вопрос. Реальным
+    # сценариям хватает трёх (найти контрагента -> найти документы -> ответ);
+    # запас взят на уточнения. Всё сверх этого — почти всегда зацикливание.
+    max_tool_calls_per_turn: int = 5
     # Выбор инструмента должен быть воспроизводимым. При температуре по
     # умолчанию (0.6) модель на одном и том же вопросе то вызывает
     # abc_analysis, то ищет контрагента «клиенты» (замер на стенде 16 ГБ,
@@ -206,9 +210,30 @@ class Agent:
         self.audit.write("user_message", text=user_text[:2000])
         schemas = [s.openai_schema() for s in self.tool_specs]
         corrected = False
+        forced_answer = False
 
         for step in range(1, self.max_iterations + 1):
-            text, tool_calls = self._call_model(schemas, on_delta)
+            # Исчерпав бюджет инструментов, забираем их из запроса: модели
+            # физически нечего вызвать, и она отвечает по уже собранным
+            # данным. Иначе получается худший исход — «достигнут лимит
+            # шагов» после пяти минут работы (живой прогон 2026-07-30:
+            # нужный отчёт пришёл первым ходом, а модель ушла вызывать все
+            # инструменты подряд и ответа так и не дала).
+            calls_made = sum(1 for m in self.messages[turn_start:]
+                             if m.get("role") == "tool")
+            offered = schemas if calls_made < self.max_tool_calls_per_turn else None
+            if offered is None and not forced_answer:
+                forced_answer = True
+                self.audit.write("tool_budget_reached", calls=calls_made)
+            text, tool_calls = self._call_model(offered, on_delta)
+            if offered is None and tool_calls:
+                # Инструментов не предлагали, а модель всё равно их запросила.
+                # Не исполняем: бюджет на то и бюджет.
+                self.audit.write("tool_call_after_budget",
+                                 tools=[c.get("function", {}).get("name") for c in tool_calls])
+                tool_calls = []
+                if not (text or "").strip():
+                    continue
             if not tool_calls:
                 salvaged = salvage_tool_calls(text, set(self._tools_by_name))
                 if salvaged:
@@ -220,7 +245,8 @@ class Agent:
             self.messages.append(assistant_msg)
 
             if not tool_calls:
-                grounding = check_grounding(text, self._turn_tool_outputs(turn_start))
+                grounding = check_grounding(text, self._turn_tool_outputs(turn_start),
+                                            question=user_text)
                 if not grounding.ok and not corrected:
                     corrected = True
                     self.audit.write("grounding_retry", details=grounding.describe())
@@ -250,7 +276,7 @@ class Agent:
         self.audit.write("turn_limit", limit=self.max_iterations)
         return AgentResult(text=limit_text, steps=self.max_iterations, stopped_by_limit=True)
 
-    def _call_model(self, schemas: list[dict[str, Any]],
+    def _call_model(self, schemas: list[dict[str, Any]] | None,
                     on_delta: DeltaCallback | None) -> tuple[str, list[dict[str, Any]]]:
         outbound = self._outbound_messages()
         if on_delta is None:

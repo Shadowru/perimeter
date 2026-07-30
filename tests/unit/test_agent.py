@@ -277,3 +277,42 @@ def test_grounded_answer_is_not_retried(tmp_path):
         result = agent.run("Найди Ромашку")
         assert result.steps == 2 and result.grounded
         llm.__exit__()
+
+
+def test_tool_budget_forces_an_answer(tmp_path):
+    """Модель, ушедшая вызывать инструменты подряд, обязана всё же ответить.
+
+    Живой прогон 2026-07-30: нужный отчёт пришёл первым ходом, после чего
+    модель вызвала ещё одиннадцать инструментов и упёрлась в лимит шагов —
+    330 секунд без ответа. Исчерпав бюджет, мы убираем инструменты из
+    запроса, и модели остаётся только ответить по собранным данным.
+    """
+    script = ([Scripted(tool_calls=[{"name": "get_counterparty",
+                                     "arguments": {"query": "ромашка"}}])] * 9
+              + [Scripted(content="Контрагент «Ромашка, ООО», ИНН 7701234567.")])
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, script, max_tool_calls_per_turn=3)
+        result = agent.run("Кто такая Ромашка?")
+        assert not result.stopped_by_limit
+        assert "Ромашка" in result.text
+        # Инструменты выполнены ровно по бюджету:
+        assert sum(1 for m in agent.messages if m["role"] == "tool") == 3
+        # На последнем запросе инструментов модели не предлагали:
+        assert llm.requests[-1].get("tools") in (None, [])
+        events = [json.loads(line)["event"]
+                  for line in (tmp_path / "audit.log").read_text().splitlines()]
+        assert "tool_budget_reached" in events
+        llm.__exit__()
+
+
+def test_tool_budget_does_not_disturb_normal_turns(tmp_path):
+    """Обычный сценарий в бюджет укладывается — инструменты не отбираются."""
+    script = [
+        Scripted(tool_calls=[{"name": "get_counterparty", "arguments": {"query": "ромашка"}}]),
+        Scripted(content="Контрагент «Ромашка, ООО», ИНН 7701234567."),
+    ]
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, script)
+        agent.run("Найди Ромашку")
+        assert all(r.get("tools") for r in llm.requests)
+        llm.__exit__()

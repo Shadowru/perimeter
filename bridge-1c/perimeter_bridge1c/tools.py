@@ -44,25 +44,8 @@ def _fmt_date(iso: str) -> str:
     return (iso or "")[:10]
 
 
-# Организационно-правовые формы, которые пользователь пишет, а в наименовании
-# справочника они могут стоять иначе (или отсутствовать).
-_LEGAL_FORMS = ("ооо", "оао", "зао", "пао", "ао", "ип", "нко", "ано", "гуп", "муп")
-_QUOTES = "«»\"'“”„‟‘’`"
-
-
-def normalize_counterparty_query(query: str) -> str:
-    """«ООО «Ромашка»» -> «ромашка».
-
-    Живой пользователь пишет контрагента как угодно: с кавычками-ёлочками,
-    с формой собственности, в любом регистре. Поиск в 1С идёт подстрокой,
-    поэтому ищем по ядру наименования (найдено живым прогоном 2026-07-30:
-    модель спрашивала уточнение, потому что «ООО «Ромашка»» не совпало).
-    """
-    text = query.strip().lower()
-    for ch in _QUOTES:
-        text = text.replace(ch, " ")
-    words = [w for w in text.split() if w and w.strip(".") not in _LEGAL_FORMS]
-    return " ".join(words).strip() or query.strip().lower()
+from .counterparty import (CounterpartyNotResolved,  # noqa: F401 — публичный ре-экспорт
+                           normalize_counterparty_query, resolve_counterparty_key)
 
 
 class Bridge1CTools:
@@ -124,6 +107,10 @@ class Bridge1CTools:
         head += " из большего числа, показаны первые):" if len(rows) > limit else "):"
         return head + "\n" + "\n".join(lines)
 
+    def _key(self, value: str) -> str:
+        """Ключ контрагента по ключу или названию (см. counterparty.py)."""
+        return resolve_counterparty_key(self.client, self.mapping, value)
+
     def find_document(self, doc_type: str, counterparty_key: str | None = None,
                       date_from: str | None = None, date_to: str | None = None,
                       posted: bool | None = None, number: str | None = None,
@@ -135,6 +122,10 @@ class Bridge1CTools:
         total_f = ent.field_1c("total")
         conds: list[Cond] = []
         if counterparty_key:
+            try:
+                counterparty_key = self._key(counterparty_key)
+            except CounterpartyNotResolved as e:
+                return str(e)
             conds.append(Cond(cp_f, OP_EQ, counterparty_key, KIND_GUID))
         conds += _date_conditions(date_from, date_to)
         if posted is not None:
@@ -166,6 +157,10 @@ class Bridge1CTools:
         покупателями — имя регистра различается по конфигурациям, добавить в
         маппинг после верификации на живой базе.
         """
+        try:
+            counterparty_key = self._key(counterparty_key)
+        except CounterpartyNotResolved as e:
+            return str(e)
         out = []
         totals = {}
         for logical, title in (("sale", "Отгрузки"), ("incoming_payment", "Оплаты")):
@@ -196,6 +191,10 @@ class Bridge1CTools:
                               based_on_key: str | None = None) -> str:
         if doc_type not in ("customer_invoice", "sale"):
             return f"Создание черновиков поддержано для: customer_invoice, sale. Получено: {doc_type}."
+        try:
+            counterparty_key = self._key(counterparty_key)
+        except CounterpartyNotResolved as e:
+            return str(e)
         ent = self.mapping.entity(doc_type)
         payload: dict[str, Any] = {ent.field_1c("counterparty"): counterparty_key}
         if based_on_key:

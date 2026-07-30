@@ -134,3 +134,31 @@ def test_list_counterparties_marks_truncation():
         out = make_tools(srv).list_counterparties(limit=2)
         assert "показаны первые" in out
         assert out.count("key=") == 2
+
+
+# --- контрагент по названию, а не только по ключу -------------------------
+# Живой прогон 2026-07-30: модель сочиняла ключи вида «key_ООО_Ромашка».
+
+def test_tools_accept_counterparty_name_instead_of_key():
+    with Fake1CServer() as srv:
+        t = make_tools(srv)
+        out = t.ledger_report("Ромашка")
+        assert "сальдо (не оплачено) 132 000.00" in out
+        assert "РТ-0001" in t.find_document("sale", counterparty_key='ООО "Ромашка"')
+
+
+def test_invented_key_gives_a_useful_message_not_a_wrong_report():
+    with Fake1CServer() as srv:
+        out = make_tools(srv).ledger_report("key_ООО_Ромашка")
+        assert "не найден" in out and "list_counterparties" in out
+
+
+def test_ambiguous_name_asks_to_clarify():
+    with Fake1CServer() as srv:
+        out = make_tools(srv).ledger_report("ООО")
+        assert "несколько контрагентов" in out
+
+
+def test_guid_still_works():
+    with Fake1CServer() as srv:
+        assert "132 000.00" in make_tools(srv).ledger_report(GUID_ROMASHKA)

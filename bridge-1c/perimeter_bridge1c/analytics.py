@@ -17,6 +17,7 @@ from typing import Any
 
 from .backend import (KIND_BOOL, KIND_DATETIME, KIND_GUID, OP_EQ, OP_GE, OP_LE,
                       Backend, Cond, Query)
+from .counterparty import CounterpartyNotResolved, resolve_counterparty_key
 from .mapping import ConfigurationMapping
 
 # Границы групп ABC по накопленной доле выручки (классика 80/15/5).
@@ -287,6 +288,12 @@ class AnalyticsTools:
         Первое, что бухгалтер делает перед закрытием периода. Форма привычная:
         отгрузки увеличивают долг контрагента, оплаты уменьшают.
         """
+        try:
+            counterparty_key = resolve_counterparty_key(
+                self.client, self.mapping, counterparty_key)
+        except CounterpartyNotResolved as e:
+            return str(e)
+
         sale = self.mapping.entity("sale")
         pay = self.mapping.entity("incoming_payment")
         cp_s, total_s = sale.field_1c("counterparty"), sale.field_1c("total")

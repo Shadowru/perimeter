@@ -54,6 +54,24 @@ def _norm_name(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip().lower()
 
 
+def _name_present(name: str, source: str) -> bool:
+    """Есть ли название в источнике, с поправкой на падеж.
+
+    Пользователь пишет «сверка с Ромашкой», в базе — «Ромашка»: точного
+    вхождения нет, а контрагент тот же. Поэтому при неудаче сравниваем по
+    основам слов, отбрасывая по два символа окончания.
+
+    Послабление не размывает суть: «технервис» даёт основу «технерв», а её
+    в «техносервис» нет — искажённое название по-прежнему ловится.
+    """
+    if name in source:
+        return True
+    words = [w for w in name.split() if len(w) >= 4]
+    if not words:
+        return False
+    return all(w[:max(4, len(w) - 2)] in source for w in words)
+
+
 @dataclass
 class GroundingResult:
     unverified_amounts: list[str] = field(default_factory=list)
@@ -76,8 +94,15 @@ class GroundingResult:
         return "; ".join(parts)
 
 
-def check_grounding(answer: str, tool_outputs: list[str]) -> GroundingResult:
-    """Сверяет факты из ответа с тем, что вернули инструменты."""
+def check_grounding(answer: str, tool_outputs: list[str],
+                    question: str = "") -> GroundingResult:
+    """Сверяет факты из ответа с тем, что вернули инструменты.
+
+    `question` — вопрос пользователя. Названия из него не считаются
+    выдуманными: если человек спросил «сделай акт сверки с Ромашкой», а
+    данных не нашлось, ответ «по Ромашке данных нет» правдив, и придираться
+    к имени в нём не за что. На суммы это послабление не распространяется.
+    """
     result = GroundingResult()
     if not answer.strip():
         return result
@@ -102,13 +127,13 @@ def check_grounding(answer: str, tool_outputs: list[str]) -> GroundingResult:
         if normalized not in source_lower.replace("‑", "-"):
             result.unverified_docs.append(num)
 
-    source_names = _norm_name(source)
+    source_names = _norm_name(source + "\n" + question)
     for name in _QUOTED_RE.findall(answer):
         normalized = _norm_name(name)
         # Слишком короткий остаток («ООО», «АО») ничего не идентифицирует.
         if len(normalized) < 3:
             continue
-        if normalized not in source_names:
+        if not _name_present(normalized, source_names):
             result.unverified_names.append(name)
 
     return result

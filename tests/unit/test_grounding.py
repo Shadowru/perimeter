@@ -136,3 +136,31 @@ def test_dates_are_not_mistaken_for_amounts():
     """«от 03.07.2026» — это дата, а не сумма: год не должен ловиться."""
     assert check_grounding("Отгрузка от 03.07.2026 и от 2026-07-03.",
                            ["РТ-0001 | 2026-07-03 | 90 000.00"]).ok
+
+
+def test_name_from_the_question_is_not_invented():
+    """«Сделай акт сверки с Ромашкой» -> «по Ромашке данных нет» — это правда."""
+    res = check_grounding("По контрагенту «Ромашка» данных нет.",
+                          ["По этому контрагенту нет проведённых отгрузок и оплат."],
+                          question="Сделай акт сверки с Ромашкой")
+    assert res.ok
+
+
+def test_question_does_not_excuse_invented_amounts():
+    res = check_grounding("Долг «Ромашка» — 700 000.00 руб.",
+                          ["По этому контрагенту нет проведённых отгрузок."],
+                          question="Сколько должна Ромашка?")
+    assert res.unverified_amounts == ["700 000.00"]
+
+
+def test_case_endings_do_not_break_name_check():
+    """«Ромашке», «Ромашкой», «Ромашки» — тот же контрагент, что «Ромашка»."""
+    src = ['ООО "Ромашка" | ИНН 7701234567']
+    for form in ("Ромашке", "Ромашкой", "Ромашки", "Ромашка"):
+        assert check_grounding(f"Долг «{form}» — 100.00 руб.", src).unverified_names == []
+
+
+def test_stem_match_still_catches_distortion():
+    """Послабление на падежи не должно пропускать искажённое название."""
+    res = check_grounding("Отгрузка «ТехнSERVIC».", ['АО "ТехноСервис" | key=bbb'])
+    assert res.unverified_names == ["ТехнSERVIC"]
