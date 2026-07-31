@@ -49,6 +49,13 @@
     width: .5rem; height: .5rem; border-radius: 50%; background: var(--green);
     display: inline-block; margin-right: .35rem;
   }
+  /* Демо обязано выглядеть демо: иначе «в базе 3 контрагента» читается как
+     факт о настоящей базе заказчика. */
+  header .where.demo {
+    background: var(--amber-bg); color: var(--amber-ink); font-weight: 600;
+    border-radius: 999px; padding: .15rem .6rem;
+  }
+  header .where.demo .dot { background: var(--amber-ink); }
 
   main { flex: 1 1 auto; overflow-y: auto; }
   .wrap { max-width: 820px; margin: 0 auto; padding: 1rem 1rem 0; }
@@ -145,7 +152,7 @@
 <body>
 <header>
   <h1>{{ui.title}}</h1>
-  <span class="where"><span class="dot"></span>подключён к 1С · работает без интернета</span>
+  <span class="where {{ui.source_class}}"><span class="dot"></span>{{ui.source}}</span>
 </header>
 
 <main><div class="wrap" id="log"></div></main>

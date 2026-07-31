@@ -21,12 +21,19 @@ _STATIC = Path(__file__).parent / "static"
 
 
 class UIServer:
-    def __init__(self, host: str, port: int, agent_factory):
-        """agent_factory(confirm) -> Agent — свой агент на каждую сессию UI."""
+    def __init__(self, host: str, port: int, agent_factory, source_note: str = ""):
+        """agent_factory(confirm) -> Agent — свой агент на каждую сессию UI.
+
+        source_note — чем питается интерфейс. Пусто = рабочая установка,
+        подключённая к 1С заказчика. Демо обязано сказать, что данные
+        вымышленные: без этого «в базе 3 контрагента» читается как факт о
+        настоящей базе (поймано вопросом пользователя 2026-07-31).
+        """
         outer = self
         self._agent = None
         self._agent_lock = threading.Lock()
         self._factory = agent_factory
+        self._source_note = source_note
 
         class Handler(BaseHTTPRequestHandler):
             def log_message(self, *args: object) -> None:
@@ -39,6 +46,9 @@ class UIServer:
                 page = (_STATIC / "index.html").read_text(encoding="utf-8")
                 for key in ("ui.title", "ui.placeholder", "ui.send", "ui.working"):
                     page = page.replace("{{" + key + "}}", t(key))
+                page = page.replace("{{ui.source}}", outer._source_note or t("ui.source"))
+                page = page.replace("{{ui.source_class}}",
+                                    "demo" if outer._source_note else "")
                 body = page.encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html;charset=utf-8")

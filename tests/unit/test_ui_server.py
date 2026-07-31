@@ -129,3 +129,35 @@ def test_report_renderer_in_the_browser():
     script = Path(__file__).parent / "test_ui_render.js"
     proc = subprocess.run([node, str(script)], capture_output=True, text=True)
     assert proc.returncode == 0, proc.stderr or proc.stdout
+
+
+def test_demo_declares_that_the_data_is_fictional():
+    """«В базе 3 контрагента» не должно читаться как факт о настоящей 1С.
+
+    Вопрос пользователя 31.07: «а в учебной базе точно 3 контрагента?» —
+    ответ был верен для демо-данных, но интерфейс об этом молчал.
+    """
+    class FakeAgent:
+        def run(self, message, on_delta=None):
+            from perimeter_core.agent import AgentResult
+            return AgentResult(text="ок", steps=1)
+
+    with UIServer("127.0.0.1", 0, lambda c: FakeAgent(),
+                  source_note="ДЕМО — вымышленная база, не ваша 1С") as ui:
+        html = urllib.request.urlopen(ui.base_url + "/").read().decode("utf-8")
+        assert "ДЕМО — вымышленная база" in html
+        assert 'class="where demo"' in html
+        assert "{{" not in html
+
+
+def test_working_installation_says_it_is_connected_to_1c():
+    class FakeAgent:
+        def run(self, message, on_delta=None):
+            from perimeter_core.agent import AgentResult
+            return AgentResult(text="ок", steps=1)
+
+    with UIServer("127.0.0.1", 0, lambda c: FakeAgent()) as ui:
+        html = urllib.request.urlopen(ui.base_url + "/").read().decode("utf-8")
+        assert "подключён к 1С" in html
+        assert "ДЕМО" not in html
+        assert 'class="where "' in html or 'class="where"' in html

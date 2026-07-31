@@ -80,7 +80,8 @@ def main() -> int:
     warm = factory(lambda n, a: False).warmup()
     print(f"  прогрев занял {warm:.1f} с" if warm >= 0 else "  прогрев не удался")
 
-    ui = UIServer(cfg.ui.host, ui_port, factory)
+    ui = UIServer(cfg.ui.host, ui_port, factory,
+                  source_note="ДЕМО — вымышленная база, не ваша 1С")
     ui.start()
 
     print(f"""

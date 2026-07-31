@@ -16,5 +16,6 @@
   "ui.send": "Send",
   "ui.working": "Working…",
   "agent.model_failed_with_data": "The model failed to produce an answer ({error}). Data received from 1C:\n\n{data}",
-  "agent.no_answer": "The model failed to produce an answer. Please repeat or rephrase the question."
+  "agent.no_answer": "The model failed to produce an answer. Please repeat or rephrase the question.",
+  "ui.source": "connected to 1C · works offline"
 }
