@@ -614,3 +614,22 @@ def test_prompt_carries_the_boundaries(tmp_path):
         assert "этот год: 2026-01-01" in agent.system_prompt
         assert "сам не вычисляй" in agent.system_prompt
         llm.__exit__()
+
+
+def test_fallback_shows_the_first_tool_result_not_the_last(tmp_path):
+    """Первый инструмент — выбор модели по вопросу, последний — перебор.
+
+    Живой прогон 31.07: на «сколько заработали за год» модель вызвала пять
+    отчётов и не ответила, а человек увидел движение денежных средств —
+    последний из перебранных, а не прибыль, о которой спрашивал.
+    """
+    script = ([Scripted(tool_calls=[{"name": "receivables_aging", "arguments": {}}]),
+               Scripted(tool_calls=[{"name": "cash_flow", "arguments": {}}])]
+              + [Scripted(content="<|function_call|>")] * 5)
+    with Fake1CServer() as srv:
+        agent, llm = make_full_agent(tmp_path, srv, script, max_tool_calls_per_turn=2)
+        result = agent.run("Кто нам должен?")
+        assert result.model_failed
+        assert "Дебиторская задолженность" in result.text     # первый вызов
+        assert "Движение денежных средств" not in result.text  # не последний
+        llm.__exit__()

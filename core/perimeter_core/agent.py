@@ -188,7 +188,7 @@ class Agent:
     # Сколько вызовов инструментов даём модели на один вопрос. Реальным
     # сценариям хватает трёх (найти контрагента -> найти документы -> ответ);
     # запас взят на уточнения. Всё сверх этого — почти всегда зацикливание.
-    max_tool_calls_per_turn: int = 5
+    max_tool_calls_per_turn: int = 4
     # Выбор инструмента должен быть воспроизводимым. При температуре по
     # умолчанию (0.6) модель на одном и том же вопросе то вызывает
     # abc_analysis, то ищет контрагента «клиенты» (замер на стенде 16 ГБ,
@@ -319,8 +319,11 @@ class Agent:
                                  tool_results=len(collected))
                 if not collected:
                     raise
+                # Первый инструмент — осознанный выбор модели по вопросу;
+                # последний обычно из перебора «на всякий случай» (живой
+                # прогон 2026-07-31: на вопрос о прибыли показывался ДДС).
                 fallback = t("agent.model_failed_with_data",
-                             error=str(e)[:120], data=collected[-1])
+                             error=str(e)[:120], data=collected[0])
                 self.messages.append({"role": "assistant", "content": fallback})
                 if on_delta:
                     on_delta("\n\n" + fallback)
@@ -357,7 +360,7 @@ class Agent:
                     self.audit.write("no_answer")
                     collected = self._turn_tool_outputs(turn_start)
                     text = (t("agent.model_failed_with_data",
-                              error=t("agent.no_answer"), data=collected[-1])
+                              error=t("agent.no_answer"), data=collected[0])
                             if collected else t("agent.no_answer"))
                     self.messages.append({"role": "assistant", "content": text})
                     return AgentResult(text=text, steps=step, model_failed=True,
