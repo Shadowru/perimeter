@@ -24,7 +24,10 @@ class EntityMapping:
     logical_name: str
     entity_set: str
     fields: dict[str, str] = field(default_factory=dict)
-    rows: str | None = None
+    rows: str | None = None            # основная часть (для черновиков)
+    # Все части со строками. В БП 3.0 у реализации их две — «Товары» и
+    # «Услуги», и в базах с услугами первая пуста (живая база 2026-07-31).
+    row_sections: list[str] = field(default_factory=list)
     # Колонки табличной части: логическое имя -> имя в 1С. Отдельно от fields,
     # потому что имена в шапке и в строках совпадать не обязаны.
     row_fields: dict[str, str] = field(default_factory=dict)
@@ -71,7 +74,10 @@ def load_mapping(configuration: str) -> ConfigurationMapping:
             logical_name=name,
             entity_set=spec["entity_set"],
             fields=spec.get("fields") or {},
-            rows=spec.get("rows"),
+            rows=(spec.get("rows") if isinstance(spec.get("rows"), str)
+                  else (spec.get("rows") or [None])[0]),
+            row_sections=([spec["rows"]] if isinstance(spec.get("rows"), str)
+                          else list(spec.get("rows") or [])),
             row_fields=dict(spec.get("row_fields") or {}),
         )
         for name, spec in (raw.get("entities") or {}).items()

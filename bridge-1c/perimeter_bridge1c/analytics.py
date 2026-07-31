@@ -48,6 +48,19 @@ def _period_label(date_from: str | None, date_to: str | None) -> str:
     return f"с {(date_from or '...')[:10]} по {(date_to or '...')[:10]}"
 
 
+def _doc_rows(doc: dict, ent) -> list[dict]:
+    """Строки документа из всех его табличных частей.
+
+    В БП 3.0 у реализации их две — «Товары» и «Услуги». В базе с услугами
+    первая пуста, и отчёты по строкам молча выходили нулевыми (живая база
+    2026-07-31).
+    """
+    out: list[dict] = []
+    for section in (ent.row_sections or ([ent.rows] if ent.rows else [])):
+        out.extend(doc.get(section) or [])
+    return out
+
+
 def _net_revenue(doc: dict, ent) -> float:
     """Выручка по документу БЕЗ НДС — суммой по строкам табличной части.
 
@@ -64,7 +77,7 @@ def _net_revenue(doc: dict, ent) -> float:
     Строк нет или НДС строки не описан — возвращаем полную сумму, и отчёт
     об этом честно пишет.
     """
-    rows = doc.get(ent.rows) if ent.rows else None
+    rows = _doc_rows(doc, ent)
     if rows and ent.row_fields.get("amount"):
         amount_f = ent.row_field("amount")
         vat_f = ent.row_fields.get("vat")
@@ -192,7 +205,7 @@ class AnalyticsTools:
             return []
         conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", date_from, date_to)
         return list(self.client.run(Query(entity_set=ent.entity_set, conditions=conds,
-                                          with_rows=ent.rows)))
+                                          with_rows=ent.row_sections)))
 
     def _has_returns(self) -> bool:
         try:
@@ -222,7 +235,7 @@ class AnalyticsTools:
 
         conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", date_from, date_to)
         docs = list(self.client.run(Query(entity_set=ent.entity_set, conditions=conds,
-                                          with_rows=ent.rows)))
+                                          with_rows=ent.row_sections)))
         if not docs:
             return (f"Проведённых реализаций {_period_label(date_from, date_to)} нет. "
                     "Если период не нужен — не указывайте даты, отчёт построится за всё время.")
@@ -246,13 +259,13 @@ class AnalyticsTools:
             qty_f = ent.row_fields.get("quantity")
             cost_f = ent.row_fields.get("cost")
             for d in docs:
-                for line in d.get(rows_field) or []:
+                for line in _doc_rows(d, ent):
                     key = line.get(ent.row_field("nomenclature"), "")
                     totals[key] += _line_net(line, ent)
                     extra[key][0] += float(line.get(qty_f) or 0) if qty_f else 0.0
                     extra[key][1] += float(line.get(cost_f) or 0) if cost_f else 0.0
             for r in returns:
-                for line in r.get(ret_ent.rows) or []:
+                for line in _doc_rows(r, ret_ent):
                     key = line.get(ret_ent.row_field("nomenclature"), "")
                     totals[key] -= _line_net(line, ret_ent)
                     rq = ret_ent.row_fields.get("quantity")
@@ -314,7 +327,7 @@ class AnalyticsTools:
             cost_f = ent.row_fields.get("cost")
             for d in docs:
                 month = str(d.get("Date"))[:7]
-                for row in d.get(ent.rows) or []:
+                for row in _doc_rows(d, ent):
                     net = float(row.get(amt_f) or 0)
                     if vat_f:
                         net -= float(row.get(vat_f) or 0)
@@ -324,7 +337,7 @@ class AnalyticsTools:
         sale = self.mapping.entity("sale")
         conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", date_from, date_to)
         docs = list(self.client.run(Query(entity_set=sale.entity_set, conditions=conds,
-                                          with_rows=sale.rows)))
+                                          with_rows=sale.row_sections)))
         yield from lines(sale, docs, 1)
         if self._has_returns():
             ret = self.mapping.entity("sales_return")
@@ -348,12 +361,12 @@ class AnalyticsTools:
             return {}
         conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", None, date_to)
         docs = self.client.run(Query(entity_set=ent.entity_set, conditions=conds,
-                                     with_rows=ent.rows))
+                                     with_rows=ent.row_sections))
         nom_f = ent.row_field("nomenclature")
         qty_f = ent.row_field("quantity")
         sums: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0])
         for d in docs:
-            for row in d.get(ent.rows) or []:
+            for row in _doc_rows(d, ent):
                 qty = float(row.get(qty_f) or 0)
                 if qty <= 0:
                     continue
@@ -367,7 +380,7 @@ class AnalyticsTools:
         sale = self.mapping.entity("sale")
         conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", date_from, date_to)
         docs = list(self.client.run(Query(entity_set=sale.entity_set, conditions=conds,
-                                          with_rows=sale.rows)))
+                                          with_rows=sale.row_sections)))
         if not docs:
             return f"Проведённых реализаций {_period_label(date_from, date_to)} нет."
 
@@ -377,7 +390,7 @@ class AnalyticsTools:
         # [выручка без НДС, количество, себестоимость из 1С]
         agg: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0, 0.0])
         for d in docs:
-            for row in d.get(sale.rows) or []:
+            for row in _doc_rows(d, sale):
                 key = row.get(nom_f, "")
                 agg[key][0] += _line_net(row, sale)
                 agg[key][1] += float(row.get(qty_f) or 0) if qty_f else 0.0
@@ -387,7 +400,7 @@ class AnalyticsTools:
             rqty = ret.row_fields.get("quantity")
             rcost = ret.row_fields.get("cost")
             for r in self._returns(date_from, date_to):
-                for row in r.get(ret.rows) or []:
+                for row in _doc_rows(r, ret):
                     key = row.get(ret.row_field("nomenclature"), "")
                     agg[key][0] -= _line_net(row, ret)
                     agg[key][1] -= float(row.get(rqty) or 0) if rqty else 0.0
@@ -697,7 +710,7 @@ class AnalyticsTools:
         ent = self.mapping.entity("sale")
         conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", date_from, date_to)
         docs = self.client.run(Query(entity_set=ent.entity_set, conditions=conds,
-                                     with_rows=ent.rows))
+                                     with_rows=ent.row_sections))
         total = sum(_net_revenue(d, ent) for d in docs)
         if self._has_returns():
             ret = self.mapping.entity("sales_return")

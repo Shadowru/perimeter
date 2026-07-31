@@ -120,3 +120,34 @@ def test_failure_inside_1c_surfaces(robot_stack):
         assert "поле не найдено" in str(e.value)
     finally:
         robot._execute = original
+
+
+def test_query_asks_for_every_tabular_section(robot_stack):
+    """У реализации в БП две части: «Товары» и «Услуги».
+
+    В базе с услугами первая пуста, и отчёты по строкам выходили нулевыми
+    (живая база 2026-07-31). Запрос обязан называть обе.
+    """
+    from perimeter_bridge1c.backend import Query
+    mapping = load_mapping("bp30")
+    sale = mapping.entity("sale")
+    assert sale.row_sections == ["Товары", "Услуги"]
+    payload = Query(entity_set=sale.entity_set, with_rows=sale.row_sections).as_dict()
+    assert payload["with_rows"] == ["Товары", "Услуги"]
+
+
+def test_analytics_reads_lines_from_the_services_section():
+    """Если товарная часть пуста, выручка должна взяться из услуг."""
+    from fakes.fake_1c_server import Fake1CServer, default_dataset
+    from perimeter_bridge1c.analytics import AnalyticsTools
+    from perimeter_bridge1c.odata import ODataClient
+
+    ds = default_dataset()
+    for doc in ds["Document_РеализацияТоваровУслуг"]:
+        doc["Услуги"] = doc.pop("Товары", [])      # как в базе с услугами
+    with Fake1CServer(dataset=ds) as srv:
+        mapping = load_mapping("bp30")
+        tools = AnalyticsTools(
+            ODataClient(srv.base_url, "robot", "test", mapping=mapping), mapping)
+        out = str(tools.abc_analysis("nomenclature"))
+        assert "267 500.00" in out       # выручка нашлась в «Услугах»
