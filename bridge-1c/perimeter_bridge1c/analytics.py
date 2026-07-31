@@ -410,7 +410,7 @@ class AnalyticsTools:
         averages = self._avg_purchase_cost(date_to)
         out = ["позиция | продано | выручка без НДС | себестоимость | источник | маржа"]
         tr = tc = 0.0
-        estimated = 0
+        estimated = unknown = 0
         for key, (revenue, qty, cost) in sorted(agg.items(), key=lambda kv: -kv[1][0]):
             if abs(revenue) < 0.005 and abs(qty) < 0.005:
                 continue
@@ -421,14 +421,23 @@ class AnalyticsTools:
                 estimated += 1
             elif cost <= 0.005:
                 source = "нет данных"
-            margin = revenue - cost
             tr += revenue
             tc += cost
+            # Без себестоимости маржа равна выручке и печатается как «100%» —
+            # директор прочтёт это как прибыль. Живая база 2026-07-31: у услуг
+            # себестоимости нет вовсе, и отчёт показывал 100% по всем строкам.
+            if source == "нет данных":
+                unknown += 1
+                margin_text = "—"
+            else:
+                margin = revenue - cost
+                margin_text = _fmt(margin) + (f" ({margin / revenue * 100:.1f}%)"
+                                              if revenue else "")
             out.append(f"{names.get(key, '?')} | {qty:g} | {_fmt(revenue)} | {_fmt(cost)} | "
-                       f"{source} | {_fmt(margin)}"
-                       + (f" ({margin / revenue * 100:.1f}%)" if revenue else ""))
-        out.append(f"ИТОГО | | {_fmt(tr)} | {_fmt(tc)} | | {_fmt(tr - tc)}"
-                   + (f" ({(tr - tc) / tr * 100:.1f}%)" if tr else ""))
+                       f"{source} | {margin_text}")
+        total_margin = ("—" if unknown else
+                        _fmt(tr - tc) + (f" ({(tr - tc) / tr * 100:.1f}%)" if tr else ""))
+        out.append(f"ИТОГО | | {_fmt(tr)} | {_fmt(tc)} | | {total_margin}")
         out.append(f"Себестоимость проданного, {_period_label(date_from, date_to)}. "
                    "Источник «1С» — значение из строки документа; «оценка по "
                    "закупкам» — средневзвешенная цена поступлений, потому что "
@@ -436,6 +445,10 @@ class AnalyticsTools:
         if estimated:
             out.append(f"ВНИМАНИЕ: по {estimated} позициям себестоимость оценена, "
                        "а не взята из учёта. Для отчётности дождитесь закрытия месяца.")
+        if unknown:
+            out.append(f"По {unknown} позициям себестоимости нет ни в документах, ни в "
+                       "закупках — маржа по ним и по отчёту в целом не выводится. "
+                       "Для услуг это нормально: себестоимости у них не бывает.")
         return _report("\n".join(out), "Себестоимость проданного")
 
     def _cost_note(self, cost_total: float, revenue_total: float) -> str:

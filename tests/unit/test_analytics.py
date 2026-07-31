@@ -523,3 +523,22 @@ def test_cost_report_is_registered_as_a_tool():
     with Fake1CServer() as srv:
         names = [s.name for s in make(srv).specs()]
         assert "cost_report" in names
+
+
+def test_unknown_cost_does_not_print_a_hundred_percent_margin():
+    """Живая база 31.07: по услугам себестоимости нет, а отчёт показывал 100%.
+
+    Директор читает это как прибыль. Без себестоимости маржа не выводится.
+    """
+    ds = default_dataset()
+    for doc in ds["Document_РеализацияТоваровУслуг"]:
+        for row in doc.get("Товары", []):
+            row["Себестоимость"] = 0
+    ds["Document_ПоступлениеТоваровУслуг"] = []      # и оценить не по чему
+    with Fake1CServer(dataset=ds) as srv:
+        out = str(make(srv).cost_report())
+        assert "100.0%" not in out
+        assert "нет данных" in out
+        итого = next(l for l in out.splitlines() if l.startswith("ИТОГО"))
+        assert итого.rstrip().endswith("—")
+        assert "маржа по ним и по отчёту в целом не выводится" in out
