@@ -229,6 +229,9 @@ class AnalyticsTools:
         ret_ent = self.mapping.entity("sales_return") if self._has_returns() else None
 
         totals: dict[str, float] = defaultdict(float)
+        # По товарам классический ABC смотрят не только на выручку: сколько
+        # штук продано и сколько на этом заработано — [количество, себестоимость].
+        extra: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0])
         if dimension == "counterparty":
             for d in docs:
                 totals[d.get(cp_f, "")] += _net_revenue(d, ent)
@@ -238,12 +241,22 @@ class AnalyticsTools:
         else:
             if not rows_field:
                 return "Товарный состав документов не описан в маппинге (rows)."
+            qty_f = ent.row_fields.get("quantity")
+            cost_f = ent.row_fields.get("cost")
             for d in docs:
                 for line in d.get(rows_field) or []:
-                    totals[line.get(ent.row_field("nomenclature"), "")] += _line_net(line, ent)
+                    key = line.get(ent.row_field("nomenclature"), "")
+                    totals[key] += _line_net(line, ent)
+                    extra[key][0] += float(line.get(qty_f) or 0) if qty_f else 0.0
+                    extra[key][1] += float(line.get(cost_f) or 0) if cost_f else 0.0
             for r in returns:
                 for line in r.get(ret_ent.rows) or []:
-                    totals[line.get(ret_ent.row_field("nomenclature"), "")] -= _line_net(line, ret_ent)
+                    key = line.get(ret_ent.row_field("nomenclature"), "")
+                    totals[key] -= _line_net(line, ret_ent)
+                    rq = ret_ent.row_fields.get("quantity")
+                    rc = ret_ent.row_fields.get("cost")
+                    extra[key][0] -= float(line.get(rq) or 0) if rq else 0.0
+                    extra[key][1] -= float(line.get(rc) or 0) if rc else 0.0
             names = self._names("nomenclature", set(totals))
         totals = {k: v for k, v in totals.items() if abs(v) > 0.005}
 
@@ -252,14 +265,24 @@ class AnalyticsTools:
             return "Выручка за период нулевая."
 
         ordered = sorted(totals.items(), key=lambda kv: -kv[1])
+        by_goods = dimension == "nomenclature"
         out, cum = [], 0.0
         counts: dict[str, int] = defaultdict(int)
+        if by_goods:
+            out.append("группа | позиция | выручка без НДС | доля | нарастающим | "
+                       "продано | маржа")
         for key, amount in ordered[:limit]:
             group = _abc_group(cum / grand)   # доля ДО этой позиции
             cum += amount
             counts[group] += 1
-            out.append(f"{group} | {names.get(key, '?')} | {_fmt(amount)} руб. | "
-                       f"{amount / grand * 100:.1f}% | нарастающим {cum / grand * 100:.1f}%")
+            line = (f"{group} | {names.get(key, '?')} | {_fmt(amount)} руб. | "
+                    f"{amount / grand * 100:.1f}% | нарастающим {cum / grand * 100:.1f}%")
+            if by_goods:
+                qty, cost = extra[key]
+                margin = amount - cost
+                line += (f" | {qty:g} | " + (_fmt(margin) if cost else "нет себестоимости")
+                         + (f" ({margin / amount * 100:.1f}%)" if cost and amount else ""))
+            out.append(line)
 
         head = ("ABC-анализ по выручке, "
                 + ("контрагенты" if dimension == "counterparty" else "номенклатура")
@@ -303,6 +326,99 @@ class AnalyticsTools:
         if self._has_returns():
             ret = self.mapping.entity("sales_return")
             yield from lines(ret, self._returns(date_from, date_to), -1)
+
+    def _avg_purchase_cost(self, date_to: str | None = None) -> dict[str, float]:
+        """Средневзвешенная цена закупки за единицу, без НДС.
+
+        Нужна, когда 1С ещё не рассчитала себестоимость: в «Бухгалтерии» она
+        появляется в строках реализации при проведении или при закрытии
+        месяца. До этого маржа равна выручке, что читается как прибыль.
+        Средняя по приходам — не замена расчёту 1С, а оценка, и отчёт это
+        называет прямо.
+
+        Период закупок не ограничиваем снизу: средняя считается по всей
+        доступной истории поступлений, иначе товар, купленный раньше начала
+        периода, остался бы без цены.
+        """
+        ent = self.mapping.entity("purchase")
+        if not (ent.rows and ent.row_fields.get("quantity")):
+            return {}
+        conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", None, date_to)
+        docs = self.client.run(Query(entity_set=ent.entity_set, conditions=conds))
+        nom_f = ent.row_field("nomenclature")
+        qty_f = ent.row_field("quantity")
+        sums: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0])
+        for d in docs:
+            for row in d.get(ent.rows) or []:
+                qty = float(row.get(qty_f) or 0)
+                if qty <= 0:
+                    continue
+                sums[row.get(nom_f, "")][0] += _line_net(row, ent)
+                sums[row.get(nom_f, "")][1] += qty
+        return {nom: cost / qty for nom, (cost, qty) in sums.items() if qty > 0}
+
+    def cost_report(self, date_from: str | None = None,
+                    date_to: str | None = None) -> str:
+        """Себестоимость проданного по номенклатуре: сколько, почём, с какой маржой."""
+        sale = self.mapping.entity("sale")
+        conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", date_from, date_to)
+        docs = list(self.client.run(Query(entity_set=sale.entity_set, conditions=conds)))
+        if not docs:
+            return f"Проведённых реализаций {_period_label(date_from, date_to)} нет."
+
+        nom_f = sale.row_field("nomenclature")
+        qty_f = sale.row_fields.get("quantity")
+        cost_f = sale.row_fields.get("cost")
+        # [выручка без НДС, количество, себестоимость из 1С]
+        agg: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0, 0.0])
+        for d in docs:
+            for row in d.get(sale.rows) or []:
+                key = row.get(nom_f, "")
+                agg[key][0] += _line_net(row, sale)
+                agg[key][1] += float(row.get(qty_f) or 0) if qty_f else 0.0
+                agg[key][2] += float(row.get(cost_f) or 0) if cost_f else 0.0
+        if self._has_returns():
+            ret = self.mapping.entity("sales_return")
+            rqty = ret.row_fields.get("quantity")
+            rcost = ret.row_fields.get("cost")
+            for r in self._returns(date_from, date_to):
+                for row in r.get(ret.rows) or []:
+                    key = row.get(ret.row_field("nomenclature"), "")
+                    agg[key][0] -= _line_net(row, ret)
+                    agg[key][1] -= float(row.get(rqty) or 0) if rqty else 0.0
+                    agg[key][2] -= float(row.get(rcost) or 0) if rcost else 0.0
+
+        names = self._names("nomenclature", set(agg))
+        averages = self._avg_purchase_cost(date_to)
+        out = ["позиция | продано | выручка без НДС | себестоимость | источник | маржа"]
+        tr = tc = 0.0
+        estimated = 0
+        for key, (revenue, qty, cost) in sorted(agg.items(), key=lambda kv: -kv[1][0]):
+            if abs(revenue) < 0.005 and abs(qty) < 0.005:
+                continue
+            source = "1С"
+            if cost <= 0.005 and qty > 0 and key in averages:
+                cost = averages[key] * qty
+                source = "оценка по закупкам"
+                estimated += 1
+            elif cost <= 0.005:
+                source = "нет данных"
+            margin = revenue - cost
+            tr += revenue
+            tc += cost
+            out.append(f"{names.get(key, '?')} | {qty:g} | {_fmt(revenue)} | {_fmt(cost)} | "
+                       f"{source} | {_fmt(margin)}"
+                       + (f" ({margin / revenue * 100:.1f}%)" if revenue else ""))
+        out.append(f"ИТОГО | | {_fmt(tr)} | {_fmt(tc)} | | {_fmt(tr - tc)}"
+                   + (f" ({(tr - tc) / tr * 100:.1f}%)" if tr else ""))
+        out.append(f"Себестоимость проданного, {_period_label(date_from, date_to)}. "
+                   "Источник «1С» — значение из строки документа; «оценка по "
+                   "закупкам» — средневзвешенная цена поступлений, потому что "
+                   "1С ещё не рассчитала себестоимость (обычно до закрытия месяца).")
+        if estimated:
+            out.append(f"ВНИМАНИЕ: по {estimated} позициям себестоимость оценена, "
+                       "а не взята из учёта. Для отчётности дождитесь закрытия месяца.")
+        return _report("\n".join(out), "Себестоимость проданного")
 
     def _cost_note(self, cost_total: float, revenue_total: float) -> str:
         if cost_total > 0.005:
@@ -723,6 +839,12 @@ class AnalyticsTools:
                 "Прибыли и убытки: выручка, себестоимость, валовая прибыль.",
                 {"type": "object", "properties": dates},
                 lambda **kw: self.pnl_report(**kw),
+            ),
+            ToolSpec(
+                "cost_report",
+                "Себестоимость проданного по товарам: сколько, почём, маржа.",
+                {"type": "object", "properties": dates},
+                lambda **kw: self.cost_report(**kw),
             ),
             ToolSpec(
                 "sales_dynamics",

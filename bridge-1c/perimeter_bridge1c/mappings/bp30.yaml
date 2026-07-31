@@ -65,6 +65,12 @@ entities:
     fields:
       counterparty: Контрагент_Key   # подтверждено
       total: СуммаДокумента          # подтверждено
+    rows: Товары                     # подтверждено
+    row_fields:                      # нужны для расчёта средней цены закупки
+      nomenclature: Номенклатура_Key
+      quantity: Количество
+      amount: Сумма
+      vat: СуммаНДС
 
   incoming_payment:        # Поступление на расчётный счёт
     entity_set: Document_ПоступлениеНаРасчетныйСчет

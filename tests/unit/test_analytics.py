@@ -217,7 +217,7 @@ def test_analytics_specs_are_compact():
         assert [s.name for s in specs] == [
             "abc_analysis", "profit_by_brand", "receivables_aging",
             "payables_aging", "reconciliation_act", "cash_flow",
-            "pnl_report", "sales_dynamics"]
+            "pnl_report", "cost_report", "sales_dynamics"]
         assert all(not s.requires_approval for s in specs)  # только чтение
         size = len(json.dumps([s.openai_schema() for s in specs], ensure_ascii=False))
         # Схемы уходят модели на КАЖДОМ ходе, поэтому описания держим в одну
@@ -465,3 +465,61 @@ def test_vat_comes_from_lines_not_from_the_document_header():
         out = str(make(srv).abc_analysis("counterparty"))
         assert "210 000.00" in out          # 252 000 с НДС -> 210 000 без НДС
         assert "252 000.00" not in out
+
+
+# --- потоварный ABC и расчёт себестоимости --------------------------------
+
+def test_item_abc_shows_quantity_and_margin():
+    """Классический потоварный ABC — это не только выручка."""
+    with Fake1CServer() as srv:
+        out = str(make(srv).abc_analysis("nomenclature"))
+        assert "продано | маржа" in out
+        # Ноутбук: 4 шт, выручка 157 500, себестоимость 105 000 -> маржа 52 500
+        assert "| 4 | 52 500.00 (33.3%)" in out
+        # По контрагентам этих колонок быть не должно — там нет ни штук, ни себестоимости
+        assert "продано | маржа" not in str(make(srv).abc_analysis("counterparty"))
+
+
+def test_cost_report_uses_1c_figures_when_present():
+    with Fake1CServer() as srv:
+        out = str(make(srv).cost_report())
+        assert "Ноутбук ProBook 14 | 4 | 157 500.00 | 105 000.00 | 1С" in out
+        итого = next(l for l in out.splitlines() if l.startswith("ИТОГО"))
+        assert "267 500.00" in итого and "178 333.33" in итого and "89 166.67" in итого
+
+
+def test_cost_report_estimates_from_purchases_when_1c_has_not_calculated():
+    """До закрытия месяца себестоимости в строках нет — оцениваем по закупкам.
+
+    Показывать в этом случае маржу, равную выручке, нельзя: это читается как
+    прибыль. Оценка помечается в каждой строке и отдельным предупреждением.
+    """
+    ds = default_dataset()
+    for doc in ds["Document_РеализацияТоваровУслуг"]:
+        for row in doc.get("Товары", []):
+            row["Себестоимость"] = 0
+    with Fake1CServer(dataset=ds) as srv:
+        out = str(make(srv).cost_report())
+        assert "оценка по закупкам" in out
+        assert "себестоимость оценена, а не взята из учёта" in out
+        # Ноутбук закуплен 3 шт на 180 000 с НДС = 150 000 без НДС -> 50 000/шт;
+        # продано 4 шт -> оценка 200 000
+        assert "200 000.00" in out
+
+
+def test_cost_report_marks_positions_without_any_cost_source():
+    """Не продавали и не покупали — честное «нет данных», а не ноль."""
+    ds = default_dataset()
+    for doc in ds["Document_РеализацияТоваровУслуг"]:
+        for row in doc.get("Товары", []):
+            row["Себестоимость"] = 0
+    ds["Document_ПоступлениеТоваровУслуг"] = []
+    with Fake1CServer(dataset=ds) as srv:
+        out = str(make(srv).cost_report())
+        assert "нет данных" in out
+
+
+def test_cost_report_is_registered_as_a_tool():
+    with Fake1CServer() as srv:
+        names = [s.name for s in make(srv).specs()]
+        assert "cost_report" in names
