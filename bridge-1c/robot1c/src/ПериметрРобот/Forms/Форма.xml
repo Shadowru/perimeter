@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.20">
+	<Form uuid="8b6a935a-7777-47c0-9ae2-f4abd7fb7777">
+		<Properties>
+			<Name>Форма</Name>
+			<Synonym><v8:item><v8:lang>ru</v8:lang><v8:content>Периметр: робот</v8:content></v8:item></Synonym>
+			<Comment/>
+			<FormType>Managed</FormType>
+			<IncludeHelpInContents>false</IncludeHelpInContents>
+			<ExtendedPresentation/>
+		</Properties>
+	</Form>
+</MetaDataObject>

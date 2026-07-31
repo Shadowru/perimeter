@@ -13,9 +13,11 @@
 				<v8:item><v8:lang>ru</v8:lang><v8:content>Периметр: робот</v8:content></v8:item>
 			</Synonym>
 			<Comment/>
-			<DefaultForm/>
+			<DefaultForm>ExternalDataProcessor.ПериметрРобот.Form.Форма</DefaultForm>
 			<AuxiliaryForm/>
 		</Properties>
-		<ChildObjects/>
+		<ChildObjects>
+			<Form>Форма</Form>
+		</ChildObjects>
 	</ExternalDataProcessor>
 </MetaDataObject>

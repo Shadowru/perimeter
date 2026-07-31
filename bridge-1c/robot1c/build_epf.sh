@@ -21,9 +21,12 @@ OUT="${3:-$HERE/perimeter_robot.epf}"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-mkdir -p "$WORK/Ext"
+# Раскладка проверена на живой платформе 8.3.27: дочерние объекты обработки
+# лежат в подкаталоге с её именем, а не в корне выгрузки.
+mkdir -p "$WORK/ПериметрРобот/Ext"
 cp "$HERE/src/ПериметрРобот.xml" "$WORK/"
-cp "$HERE/robot_module.bsl" "$WORK/Ext/ObjectModule.bsl"
+cp -r "$HERE/src/ПериметрРобот/." "$WORK/ПериметрРобот/"
+cp "$HERE/robot_module.bsl" "$WORK/ПериметрРобот/Ext/ObjectModule.bsl"
 
 # На свежих дистрибутивах Linux платформа падает из-за собственной libgcc:
 # подставляем системную (проверено на Ubuntu 26.04).
