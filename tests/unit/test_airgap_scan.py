@@ -46,3 +46,15 @@ def test_scanner_ignores_comments_and_loopback(tmp_path):
 
     mod.REPO = tmp_path
     assert mod.scan_file(ok, []) == []
+
+
+def test_audit_log_is_not_tracked_by_git():
+    """Журнал аудита — данные заказчика, в репозитории ему не место.
+
+    31.07 он попал в коммит через `git add -A`. Содержимое оказалось
+    безобидным, но сам факт — утечка по построению.
+    """
+    import subprocess
+    out = subprocess.run(["git", "ls-files"], capture_output=True, text=True).stdout
+    tracked = [l for l in out.splitlines() if l.startswith("var/") or l.endswith("audit.log")]
+    assert not tracked, f"в репозитории лежат журналы: {tracked}"
