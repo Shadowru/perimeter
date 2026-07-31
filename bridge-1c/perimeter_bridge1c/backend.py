@@ -50,11 +50,16 @@ class Query:
     select: list[str] | None = None
     order_by: str | None = None
     top: int | None = None
+    with_rows: str | None = None   # имя табличной части, если она нужна
 
     def as_dict(self) -> dict[str, Any]:
         """Сериализация для передачи роботу 1С."""
         return {
             "entity": self.entity_set,
+            # Табличная часть. OData отдаёт её вложенной сама, роботу нужно
+            # сказать имя: без этого отчёты по строкам приходили пустыми
+            # (живая база 2026-07-31).
+            "with_rows": self.with_rows,
             "conditions": [
                 {"field": c.field, "op": c.op, "value": c.value, "kind": c.kind}
                 for c in self.conditions

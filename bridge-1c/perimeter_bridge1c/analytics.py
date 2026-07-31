@@ -191,7 +191,8 @@ class AnalyticsTools:
         except Exception:
             return []
         conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", date_from, date_to)
-        return list(self.client.run(Query(entity_set=ent.entity_set, conditions=conds)))
+        return list(self.client.run(Query(entity_set=ent.entity_set, conditions=conds,
+                                          with_rows=ent.rows)))
 
     def _has_returns(self) -> bool:
         try:
@@ -220,7 +221,8 @@ class AnalyticsTools:
         rows_field = ent.rows
 
         conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", date_from, date_to)
-        docs = list(self.client.run(Query(entity_set=ent.entity_set, conditions=conds)))
+        docs = list(self.client.run(Query(entity_set=ent.entity_set, conditions=conds,
+                                          with_rows=ent.rows)))
         if not docs:
             return (f"Проведённых реализаций {_period_label(date_from, date_to)} нет. "
                     "Если период не нужен — не указывайте даты, отчёт построится за всё время.")
@@ -321,7 +323,8 @@ class AnalyticsTools:
 
         sale = self.mapping.entity("sale")
         conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", date_from, date_to)
-        docs = list(self.client.run(Query(entity_set=sale.entity_set, conditions=conds)))
+        docs = list(self.client.run(Query(entity_set=sale.entity_set, conditions=conds,
+                                          with_rows=sale.rows)))
         yield from lines(sale, docs, 1)
         if self._has_returns():
             ret = self.mapping.entity("sales_return")
@@ -344,7 +347,8 @@ class AnalyticsTools:
         if not (ent.rows and ent.row_fields.get("quantity")):
             return {}
         conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", None, date_to)
-        docs = self.client.run(Query(entity_set=ent.entity_set, conditions=conds))
+        docs = self.client.run(Query(entity_set=ent.entity_set, conditions=conds,
+                                     with_rows=ent.rows))
         nom_f = ent.row_field("nomenclature")
         qty_f = ent.row_field("quantity")
         sums: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0])
@@ -362,7 +366,8 @@ class AnalyticsTools:
         """Себестоимость проданного по номенклатуре: сколько, почём, с какой маржой."""
         sale = self.mapping.entity("sale")
         conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", date_from, date_to)
-        docs = list(self.client.run(Query(entity_set=sale.entity_set, conditions=conds)))
+        docs = list(self.client.run(Query(entity_set=sale.entity_set, conditions=conds,
+                                          with_rows=sale.rows)))
         if not docs:
             return f"Проведённых реализаций {_period_label(date_from, date_to)} нет."
 
@@ -691,7 +696,8 @@ class AnalyticsTools:
         """Выручка по документам без НДС — для сверки с регистром."""
         ent = self.mapping.entity("sale")
         conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", date_from, date_to)
-        docs = self.client.run(Query(entity_set=ent.entity_set, conditions=conds))
+        docs = self.client.run(Query(entity_set=ent.entity_set, conditions=conds,
+                                     with_rows=ent.rows))
         total = sum(_net_revenue(d, ent) for d in docs)
         if self._has_returns():
             ret = self.mapping.entity("sales_return")

@@ -97,3 +97,28 @@ def test_gateway_is_shared_between_agents(tmp_path):
         for gw in app._GATEWAYS.values():
             gw.stop()
         app._GATEWAYS.clear()
+
+
+def test_robot_module_blocks_are_balanced():
+    """Синтаксический контроль 1С пропускает незакрытые блоки.
+
+    Дважды за день (31.07) собранная обработка проходила /CheckModules и
+    падала при открытии: «Обнаружено логическое завершение исходного текста
+    модуля». Считаем блоки сами — это дёшево и ловит именно этот класс.
+    """
+    import re
+    from pathlib import Path
+    text = Path("bridge-1c/robot1c/robot_module.bsl").read_text(encoding="utf-8").lower()
+
+    def count(*starts: str) -> int:
+        return sum(len(re.findall(r"(?m)^\s*" + s, text)) for s in starts)
+
+    # КонецЦикла закрывает и «Пока», и «Для» — считаем их вместе.
+    checks = [(("процедура ",), "конецпроцедуры"),
+              (("функция ",), "конецфункции"),
+              (("пока ", "для "), "конеццикла"),
+              (("попытка",), "конецпопытки")]
+    for starts, end in checks:
+        opened = count(*starts)
+        closed = len(re.findall(r"(?m)^\s*" + end, text))
+        assert opened == closed, f"{'/'.join(s.strip() for s in starts)}: {opened}, {end}: {closed}"
