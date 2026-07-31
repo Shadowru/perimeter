@@ -537,3 +537,40 @@ def test_prompt_demands_dates_when_a_period_is_named():
     prompt = load_system_prompt()
     assert "ОБЯЗАТЕЛЬНО передай date_from и date_to" in prompt
     assert "не придумывай" in prompt      # обратное правило осталось
+
+
+def test_special_token_never_reaches_the_user():
+    """Живой прогон 31.07: в ответе оказался один «<|function_call|>»."""
+    from perimeter_core.agent import strip_tool_call_text
+    assert strip_tool_call_text("<|function_call|>") == ""
+    assert strip_tool_call_text("Долг 100.00 <|im_end|>") == "Долг 100.00"
+    # Обычный текст с угловыми скобками ломать нельзя
+    assert strip_tool_call_text("Сумма < 100 и > 10") == "Сумма < 100 и > 10"
+
+
+def test_empty_answer_is_retried_not_shown(tmp_path):
+    """Пустой ответ — это не ответ: просим модель ещё раз."""
+    script = [
+        Scripted(content="<|function_call|>"),
+        Scripted(content="Готово: контрагентов в базе три."),
+    ]
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, script)
+        result = agent.run("Сколько контрагентов?")
+        assert result.text == "Готово: контрагентов в базе три."
+        assert "function_call" not in result.text
+        events = [json.loads(line)["event"]
+                  for line in (tmp_path / "audit.log").read_text().splitlines()]
+        assert "empty_answer_retry" in events
+        llm.__exit__()
+
+
+def test_persistent_empty_answer_does_not_loop_forever(tmp_path):
+    script = [Scripted(content="<|function_call|>")] * 8
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, script, max_iterations=6)
+        result = agent.run("Сколько контрагентов?")
+        assert "function_call" not in result.text
+        assert "не смогла сформулировать ответ" in result.text
+        assert result.model_failed
+        llm.__exit__()

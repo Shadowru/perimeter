@@ -49,10 +49,17 @@ _TOOL_JSON_RE = re.compile(
     r"\{[^{}]*\"name\"\s*:\s*\"[\w.-]+\"[^{}]*\"arguments\"\s*:\s*\{[^{}]*\}[^{}]*\}", re.S)
 
 
+# Служебные маркеры моделей: <|function_call|>, <|im_end|> и подобные. Если
+# бэкенд не разобрал вызов инструмента, маркер утекает в текст ответа —
+# живой прогон 2026-07-31 показал человеку ровно «<|function_call|>».
+_SPECIAL_TOKEN_RE = re.compile(r"<\|[^|>]{0,40}\|>")
+
+
 def strip_tool_call_text(text: str) -> str:
-    """Убирает из ответа человеку то, что модель написала как вызов инструмента."""
+    """Убирает из ответа человеку всё служебное: маркеры и вызовы инструментов."""
     cleaned = _TOOL_JSON_RE.sub("", text or "")
     cleaned = _TOOL_CALL_TEXT_RE.sub("", cleaned)
+    cleaned = _SPECIAL_TOKEN_RE.sub("", cleaned)
     return re.sub(r"\n{3,}", "\n\n", cleaned).strip()
 
 
@@ -238,6 +245,7 @@ class Agent:
         corrected = False
         forced_answer = False
         rewriting = False
+        empty_answers = 0
 
         for step in range(1, self.max_iterations + 1):
             # Исчерпав бюджет инструментов, забираем их из запроса: модели
@@ -298,6 +306,22 @@ class Agent:
 
             if not tool_calls:
                 text = strip_tool_call_text(text)
+                if not text.strip():
+                    # Модель выдала один служебный маркер и замолчала. Отдавать
+                    # человеку пустоту или сырой токен нельзя.
+                    self.messages.pop()          # пустой ответ в историю не кладём
+                    if empty_answers < 2:
+                        empty_answers += 1
+                        self.audit.write("empty_answer_retry", attempt=empty_answers)
+                        continue
+                    self.audit.write("no_answer")
+                    collected = self._turn_tool_outputs(turn_start)
+                    text = (t("agent.model_failed_with_data",
+                              error=t("agent.no_answer"), data=collected[-1])
+                            if collected else t("agent.no_answer"))
+                    self.messages.append({"role": "assistant", "content": text})
+                    return AgentResult(text=text, steps=step, model_failed=True,
+                                       reports=list(self.reports))
                 grounding = check_grounding(text, self._turn_tool_outputs(turn_start),
                                             question=user_text)
                 if not grounding.ok and grounding.only_fixable_names:
