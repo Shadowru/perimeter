@@ -31,6 +31,26 @@ from perimeter_bridge1c.tools import Bridge1CTools  # noqa: E402
 from perimeter_inference.client import InferenceClient  # noqa: E402
 
 
+# Шлюз робота — один на процесс, а не на агента. UI создаёт агента на сессию,
+# и второй вызов build_agent пытался занять тот же порт: «Address already in
+# use», продукт падал на первом же запросе пользователя в рабочем режиме
+# (поймано на живом подключении 2026-07-31; в демо-режиме канал другой,
+# поэтому тесты этого не видели).
+_GATEWAYS: dict[tuple[str, int], RobotGateway] = {}
+
+
+def _shared_gateway(host: str, port: int, token: str) -> tuple[RobotGateway, bool]:
+    """Возвращает шлюз и признак «поднят только что»."""
+    key = (host, port)
+    gateway = _GATEWAYS.get(key)
+    if gateway is None:
+        gateway = RobotGateway(host, port, token)
+        gateway.start()
+        _GATEWAYS[key] = gateway
+        return gateway, True
+    return gateway, False
+
+
 def build_agent(config_path: str | Path,
                 confirm: Callable[[str, dict], bool]) -> tuple[Agent, PerimeterConfig]:
     cfg = load_config(config_path)
@@ -43,10 +63,10 @@ def build_agent(config_path: str | Path,
     mapping = load_mapping(cfg.bridge_1c.configuration)
     if cfg.robot.enabled:
         # Обратное подключение: ждём, пока 1С придёт сама.
-        gateway = RobotGateway(cfg.robot.host, cfg.robot.port, cfg.robot.token)
-        gateway.start()
+        gateway, started = _shared_gateway(cfg.robot.host, cfg.robot.port, cfg.robot.token)
         backend = RobotBackend(gateway, mapping=mapping, timeout_s=cfg.robot.timeout_s)
-        audit.write("robot_gateway_started", url=gateway.base_url)
+        if started:
+            audit.write("robot_gateway_started", url=gateway.base_url)
     else:
         backend = ODataClient(
             cfg.bridge_1c.base_url, cfg.bridge_1c.username,
