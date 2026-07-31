@@ -227,14 +227,13 @@ def test_analytics_specs_are_compact():
 
 # --- разделение «человеку таблица, модели выжимка» ------------------------
 
-def test_report_hides_rows_from_the_model():
-    """Строк таблицы модель не получает — искажать нечего."""
+def test_model_sees_the_top_but_not_the_tail():
+    """Верхушку модель копирует, хвост не видит и потому не перечисляет."""
     with Fake1CServer() as srv:
         rep = make(srv).receivables_aging(as_of="2026-07-31T00:00:00")
-        assert "Ромашка" in rep.display and "120 000.00" in rep.display
-        assert "Ромашка" not in rep.digest      # имён в выжимке нет
-        assert "120 000.00" not in rep.digest   # построчных сумм тоже
-        assert "строк показано пользователю" in rep.digest  # но знает, что она есть
+        assert "Ромашка" in rep.digest              # верхнюю строку назвать можно
+        assert "РТ-0005" not in rep.digest          # документы-основания скрыты
+        assert "ещё" in rep.digest                  # и модель знает, что скрыты
 
 
 def test_digest_keeps_what_the_model_needs():
@@ -249,14 +248,13 @@ def test_digest_keeps_what_the_model_needs():
         assert "чистая прибыль здесь" in pnl.digest
         act = a.reconciliation_act(GUID_ROMASHKA)
         assert "Сальдо на конец периода: 132 000.00" in act.digest
-        assert "РТ-0007" not in act.digest            # строк оборотов нет
 
 
-def test_digest_is_much_smaller_than_the_report():
-    """Выжимка уходит в prefill на каждом ходе — она должна быть короткой."""
+def test_digest_stays_shorter_than_the_report():
+    """Выжимка уходит в prefill на каждом ходе — она не должна равняться отчёту."""
     with Fake1CServer() as srv:
         rep = make(srv).receivables_aging(as_of="2026-07-31T00:00:00")
-        assert len(rep.digest) < len(rep.display) / 2
+        assert len(rep.digest) < len(rep.display) * 0.8
 
 
 def test_reports_have_titles():
@@ -386,3 +384,31 @@ def test_tool_descriptions_use_the_words_accountants_use():
         assert "производител" in by_name["profit_by_brand"]
         assert "боротов" in by_name["reconciliation_act"] or \
                "Обороты" in by_name["reconciliation_act"]
+
+
+def test_digest_shows_top_rows_so_the_model_can_name_them():
+    """Ответ на «раздели клиентов на группы» обязан называть клиентов.
+
+    Не видя ни одной строки, модель их выдумывала — на замере 31.07 так
+    помечались четыре ответа из 61. Верхушку показываем: её модель копирует,
+    и искажение ловится сверкой, потому что источник у неё тот же.
+    """
+    with Fake1CServer() as srv:
+        rep = make(srv).abc_analysis("counterparty")
+        assert "Ромашка" in rep.digest and "210 000.00" in rep.digest
+
+
+def test_digest_hides_the_tail_and_says_so():
+    with Fake1CServer() as srv:
+        rep = make(srv).receivables_aging(as_of="2026-07-31T00:00:00")
+        # Документы-основания (строки с отступом) модель не видит никогда.
+        assert "РТ-0005" not in rep.digest
+        assert "ещё" in rep.digest and "показано пользователю таблицей" in rep.digest
+
+
+def test_column_header_does_not_eat_the_row_budget():
+    """Шапка «контрагент | 0-30 | …» — не строка данных."""
+    with Fake1CServer() as srv:
+        rep = make(srv).receivables_aging(as_of="2026-07-31T00:00:00")
+        assert "контрагент | 0-30" in rep.digest
+        assert "Ромашка" in rep.digest and "Василёк" in rep.digest

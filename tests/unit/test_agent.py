@@ -438,9 +438,10 @@ def test_report_reaches_the_user_whole(tmp_path):
         assert len(result.reports) == 1
         report = result.reports[0]
         assert "Ромашка" in report.display and "120 000.00" in report.display
-        # Модели строки не показывали:
+        # Модели ушла выжимка, а не весь отчёт: документы-основания скрыты.
         tool_msg = next(m for m in agent.messages if m["role"] == "tool")
-        assert "Ромашка" not in tool_msg["content"]
+        assert "РТ-0005" not in tool_msg["content"]
+        assert len(tool_msg["content"]) < len(report.display)
         assert result.grounded
         llm.__exit__()
 
@@ -460,22 +461,35 @@ def test_model_inventing_beyond_the_digest_is_still_caught(tmp_path):
         llm.__exit__()
 
 
-def test_row_level_guess_is_not_accepted_even_if_it_matches(tmp_path):
-    """Совпавшая догадка — всё равно догадка.
+def test_hidden_row_guess_is_not_accepted(tmp_path):
+    """Про скрытую строку модель может только гадать — и это ловится.
 
-    Строк таблицы модель не видит. Если она называет построчную сумму, взять
-    её было неоткуда; сегодня совпало, завтра нет, а выглядит одинаково.
+    Документы-основания в выжимку не попадают, поэтому названная по ним
+    сумма взята ниоткуда: сегодня совпадёт, завтра нет, а выглядит одинаково.
     """
     script = [
         Scripted(tool_calls=[{"name": "receivables_aging", "arguments": {}}]),
-        Scripted(content="Больше всех должна «Ромашка» — 132 000.00 руб."),
+        Scripted(content="Не оплачен счёт «Ромашка» на 39 000.00 руб. по №РТ-0006."),
         Scripted(content="Всего нам должны 186 000.00 руб., детали в таблице."),
     ]
     with Fake1CServer() as srv:
         agent, llm = make_full_agent(tmp_path, srv, script)
         result = agent.run("Кто нам должен?")
-        assert "132 000.00" not in result.text     # догадку переписали
+        assert "РТ-0006" not in result.text        # догадку переписали
         assert result.grounded and result.steps == 3
+        llm.__exit__()
+
+
+def test_top_row_may_be_named(tmp_path):
+    """Верхнюю строку модель видит — называть её можно без предупреждений."""
+    script = [
+        Scripted(tool_calls=[{"name": "receivables_aging", "arguments": {}}]),
+        Scripted(content="Больше всех должна «Ромашка» — 132 000.00 руб."),
+    ]
+    with Fake1CServer() as srv:
+        agent, llm = make_full_agent(tmp_path, srv, script)
+        result = agent.run("Кто нам должен?")
+        assert result.grounded and result.steps == 2
         llm.__exit__()
 
 
