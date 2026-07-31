@@ -23,3 +23,16 @@ def test_load_skill_tool():
     assert "ledger_report" in body
     assert "Нет навыка" in tool.func(name="nope")
     assert not tool.requires_approval
+
+
+def test_catalog_does_not_read_as_a_list_of_capabilities():
+    """Модель отвечала «навыка для ABC-анализа нет», имея рабочий инструмент.
+
+    Причина была в заголовке каталога: он читался как исчерпывающий список
+    умений (живой прогон 31.07).
+    """
+    from perimeter_core.skills import Skill, catalog_text
+    text = catalog_text({"sverka": Skill(name="sverka", description="Сверка", body="")})
+    assert "НЕ перечень твоих возможностей" in text
+    assert "Доступные навыки" not in text
+    assert "sverka" in text
