@@ -322,9 +322,13 @@ def test_report_declares_its_basis():
 
 
 def test_missing_vat_field_is_declared_not_hidden():
-    """Нет реквизита НДС в маппинге — отчёт предупреждает, а не молчит."""
+    """Нет НДС в описании строк — отчёт предупреждает, а не молчит.
+
+    НДС живёт в строках документа: реквизита в шапке у БП 3.0 нет
+    (проверено роботом на живой базе 31.07).
+    """
     mapping = load_mapping("bp30")
-    mapping.entity("sale").fields.pop("vat", None)
+    mapping.entity("sale").row_fields.pop("vat", None)
     with Fake1CServer() as srv:
         tools = AnalyticsTools(
             ODataClient(srv.base_url, "robot", "test", mapping=mapping), mapping)
@@ -446,3 +450,18 @@ def test_mapping_has_no_unverified_entity_names():
     todos = [l.strip() for l in text.splitlines()
              if "TODO(verify)" in l and not l.strip().startswith("#")]
     assert not todos, f"остались непроверенные имена: {todos}"
+
+
+def test_vat_comes_from_lines_not_from_the_document_header():
+    """У БП 3.0 нет реквизита СуммаНДС в шапке — только в строках.
+
+    Проверка живой базы 31.07 показала, что прежний расчёт по шапке молча
+    вычитал ноль и выдавал сумму с НДС за сумму без НДС.
+    """
+    ds = default_dataset()
+    for doc in ds["Document_РеализацияТоваровУслуг"]:
+        doc.pop("СуммаНДС", None)          # как в настоящей БП 3.0
+    with Fake1CServer(dataset=ds) as srv:
+        out = str(make(srv).abc_analysis("counterparty"))
+        assert "210 000.00" in out          # 252 000 с НДС -> 210 000 без НДС
+        assert "252 000.00" not in out

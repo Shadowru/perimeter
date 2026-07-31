@@ -49,30 +49,44 @@ def _period_label(date_from: str | None, date_to: str | None) -> str:
 
 
 def _net_revenue(doc: dict, ent) -> float:
-    """Выручка по документу БЕЗ НДС.
+    """Выручка по документу БЕЗ НДС — суммой по строкам табличной части.
 
-    В БП 3.0 `СуммаДокумента` — это сумма С НДС: контрагент должен именно
-    её. Но управленческая выручка считается без НДС, иначе она завышена на
-    ставку налога, а маржа — вдвойне, потому что себестоимость идёт без НДС.
-    Поэтому долги мы считаем по полной сумме, а выручку — за вычетом налога.
+    В БП 3.0 `СуммаДокумента` — сумма С НДС: контрагент должен именно её.
+    Управленческая выручка считается без НДС, иначе она завышена на ставку
+    налога, а маржа завышена дважды (себестоимость идёт без НДС).
 
-    Если реквизит НДС в маппинге не описан (его имя различается по базам),
-    вычитать нечего — возвращаем полную сумму, а отчёт об этом пишет.
+    Раньше мы вычитали реквизит `СуммаНДС` из ШАПКИ документа. На живой
+    БП 3.0.111 такого реквизита в шапке НЕТ — НДС есть только в строках
+    (робот перечислил метаданные изнутри базы, 2026-07-31). Прежний код
+    молча вычитал ноль и выдавал сумму с НДС за сумму без НДС: цифра
+    выглядела правильной и была неверна ровно на ставку налога.
+
+    Строк нет или НДС строки не описан — возвращаем полную сумму, и отчёт
+    об этом честно пишет.
     """
-    total = float(doc.get(ent.field_1c("total")) or 0)
-    vat_f = ent.fields.get("vat")
-    if not vat_f:
+    rows = doc.get(ent.rows) if ent.rows else None
+    if rows and ent.row_fields.get("amount"):
+        amount_f = ent.row_field("amount")
+        vat_f = ent.row_fields.get("vat")
+        total = sum(float(r.get(amount_f) or 0) for r in rows)
+        if vat_f:
+            total -= sum(float(r.get(vat_f) or 0) for r in rows)
         return total
-    return total - float(doc.get(vat_f) or 0)
+    return float(doc.get(ent.field_1c("total")) or 0)
 
 
-def _line_net(line: dict) -> float:
-    """Строка табличной части без НДС (СуммаНДС может отсутствовать)."""
-    return float(line.get("Сумма") or 0) - float(line.get("СуммаНДС") or 0)
+def _line_net(line: dict, ent=None) -> float:
+    """Строка табличной части без НДС. Имена колонок — из маппинга."""
+    amount_f = ent.row_field("amount") if ent else "Сумма"
+    vat_f = (ent.row_fields.get("vat") if ent else "СуммаНДС") or None
+    net = float(line.get(amount_f) or 0)
+    if vat_f:
+        net -= float(line.get(vat_f) or 0)
+    return net
 
 
 def _vat_known(ent) -> bool:
-    return bool(ent.fields.get("vat"))
+    return bool(ent.rows and ent.row_fields.get("vat"))
 
 
 def _vat_note(ent) -> str:
@@ -226,10 +240,10 @@ class AnalyticsTools:
                 return "Товарный состав документов не описан в маппинге (rows)."
             for d in docs:
                 for line in d.get(rows_field) or []:
-                    totals[line.get("Номенклатура_Key", "")] += _line_net(line)
+                    totals[line.get(ent.row_field("nomenclature"), "")] += _line_net(line, ent)
             for r in returns:
                 for line in r.get(ret_ent.rows) or []:
-                    totals[line.get("Номенклатура_Key", "")] -= _line_net(line)
+                    totals[line.get(ret_ent.row_field("nomenclature"), "")] -= _line_net(line, ret_ent)
             names = self._names("nomenclature", set(totals))
         totals = {k: v for k, v in totals.items() if abs(v) > 0.005}
 
