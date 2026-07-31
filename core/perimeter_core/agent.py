@@ -63,6 +63,46 @@ def strip_tool_call_text(text: str) -> str:
     return re.sub(r"\n{3,}", "\n\n", cleaned).strip()
 
 
+def period_hints(today: str) -> str:
+    """Готовые границы периодов для системного промпта.
+
+    Дату модель считать не умеет: на вопрос «сколько заработали за год» она
+    передала в отчёт диапазон 2025-01-01…2026-07-31 — девятнадцать месяцев
+    (живой прогон 2026-07-31). Цифра получилась верной для этого диапазона и
+    бесполезной для вопроса. Арифметику убираем у модели совсем: границы
+    считаем здесь и отдаём готовыми.
+    """
+    from calendar import monthrange
+    from datetime import date, timedelta
+
+    d = date.fromisoformat(today)
+    week_start = d - timedelta(days=d.weekday())
+    start_month = d.replace(day=1)
+    prev_month_end = start_month - timedelta(days=1)
+    prev_month_start = prev_month_end.replace(day=1)
+    quarter_start = d.replace(month=(d.month - 1) // 3 * 3 + 1, day=1)
+    # Ровно 12 месяцев назад: первое число месяца, следующего за тем же
+    # месяцем прошлого года. Иначе получается тринадцать.
+    same_month_last_year = d.replace(year=d.year - 1, day=1)
+    year_ago = (same_month_last_year + timedelta(days=32)).replace(day=1)
+
+    def rng(a: date, b: date) -> str:
+        return f"{a.isoformat()}T00:00:00 … {b.isoformat()}T23:59:59"
+
+    return (
+        f"Сегодня {today}. Готовые границы периодов — бери их отсюда, сам не вычисляй:\n"
+        f"- этот год: {rng(d.replace(month=1, day=1), d.replace(month=12, day=31))}\n"
+        f"- прошлый год: {rng(d.replace(year=d.year - 1, month=1, day=1), d.replace(year=d.year - 1, month=12, day=31))}\n"
+        f"- этот квартал: {rng(quarter_start, d)}\n"
+        f"- этот месяц: {rng(start_month, d.replace(day=monthrange(d.year, d.month)[1]))}\n"
+        f"- эта неделя: {rng(week_start, week_start + timedelta(days=6))}\n"
+        f"- прошлый месяц: {rng(prev_month_start, prev_month_end)}\n"
+        f"- последние 12 месяцев: {rng(year_ago, d)}\n"
+        "«За год» без уточнения — это ЭТОТ год. Названный месяц («за июль») — "
+        "первое и последнее число этого месяца текущего года."
+    )
+
+
 def load_system_prompt(locale: str = "ru") -> str:
     path = _PROMPTS_DIR / f"system.{locale}.md"
     if not path.exists():
@@ -166,7 +206,7 @@ class Agent:
         # (живое демо 2026-07-30: выдала произвольный диапазон).
         from datetime import date
         today = self.today or date.today().isoformat()
-        self.system_prompt += f"\n\nСегодня {today}. От этой даты считай «сегодня», «эта неделя», «этот месяц», «этот год»."
+        self.system_prompt += "\n\n" + period_hints(today)
         if self.extra_system:
             self.system_prompt += "\n\n" + self.extra_system
         self._tools_by_name = {s.name: s for s in self.tool_specs}

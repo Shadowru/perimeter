@@ -124,9 +124,11 @@ def test_compaction_budget(tmp_path):
         history_chars = sum(len(str(m.get("content"))) for m in outbound[1:])
         assert history_chars < 1600
         assert outbound[0]["role"] == "system"
-        # Системный промпт уходит модели на каждом ходе: 2600 символов —
-        # это ~750 токенов prefill, около секунды на стенде 16 ГБ.
-        assert len(outbound[0]["content"]) < 2600
+        # Системный промпт уходит модели на каждом ходе. 3200 символов —
+        # это ~900 токенов prefill, около секунды на стенде 16 ГБ. Выросло
+        # осознанно: готовые границы периодов (≈600 символов) убирают у
+        # модели арифметику дат, на которой она ошибалась целыми кварталами.
+        assert len(outbound[0]["content"]) < 3200
         assert "история сокращена" in outbound[1]["content"]
         # Последние сообщения не тронуты:
         assert outbound[-1]["content"].startswith("ответ 19")
@@ -573,4 +575,42 @@ def test_persistent_empty_answer_does_not_loop_forever(tmp_path):
         assert "function_call" not in result.text
         assert "не смогла сформулировать ответ" in result.text
         assert result.model_failed
+        llm.__exit__()
+
+
+# --- границы периодов считаем мы, а не модель ------------------------------
+# Живой прогон 31.07: на «сколько заработали за год» модель передала в отчёт
+# 2025-01-01…2026-07-31 — девятнадцать месяцев. Цифра верная для диапазона и
+# бесполезная для вопроса.
+
+def test_period_hints_cover_the_usual_periods():
+    from perimeter_core.agent import period_hints
+    t = period_hints("2026-07-31")
+    assert "этот год: 2026-01-01T00:00:00 … 2026-12-31T23:59:59" in t
+    assert "прошлый год: 2025-01-01T00:00:00 … 2025-12-31T23:59:59" in t
+    assert "этот месяц: 2026-07-01T00:00:00 … 2026-07-31T23:59:59" in t
+    assert "прошлый месяц: 2026-06-01T00:00:00 … 2026-06-30T23:59:59" in t
+    assert "этот квартал: 2026-07-01T00:00:00" in t
+    assert "«За год» без уточнения — это ЭТОТ год" in t
+
+
+def test_rolling_year_is_twelve_months_not_thirteen():
+    from perimeter_core.agent import period_hints
+    assert "последние 12 месяцев: 2025-08-01T00:00:00 … 2026-07-31" in period_hints("2026-07-31")
+    # Январь: год назад — февраль предыдущего года, а не январь.
+    assert "последние 12 месяцев: 2025-02-01T00:00:00" in period_hints("2026-01-15")
+
+
+def test_period_hints_survive_leap_day():
+    from perimeter_core.agent import period_hints
+    t = period_hints("2024-02-29")
+    assert "прошлый месяц: 2024-01-01T00:00:00 … 2024-01-31" in t
+    assert "последние 12 месяцев: 2023-03-01T00:00:00 … 2024-02-29" in t
+
+
+def test_prompt_carries_the_boundaries(tmp_path):
+    with Fake1CServer() as srv:
+        agent, llm = make_agent(tmp_path, srv, [], today="2026-07-31")
+        assert "этот год: 2026-01-01" in agent.system_prompt
+        assert "сам не вычисляй" in agent.system_prompt
         llm.__exit__()
