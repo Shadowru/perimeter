@@ -3,8 +3,13 @@
 const fs = require("fs"), assert = require("assert");
 const page = fs.readFileSync(__dirname + "/../../ui/perimeter_ui/static/index.html", "utf8");
 const script = page.split("<script>")[1].split("</script>")[0];
-const body = script.slice(0, script.indexOf('document.getElementById("f")'));
-eval(body.replace('const log = document.getElementById("log");', ""));
+// Граница помечена в самой странице: выше неё только чистые функции, их и
+// проверяем. Раньше тест резал скрипт по первому обращению к DOM и ломался
+// при любой перестановке строк.
+const MARK = "// --- ГРАНИЦА:";
+const cut = script.indexOf(MARK);
+assert(cut > 0, "в index.html нет строки-границы для теста");
+eval(script.slice(0, cut));
 
 const report = {
   title: "Дебиторка",
