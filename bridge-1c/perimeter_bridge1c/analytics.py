@@ -256,34 +256,63 @@ class AnalyticsTools:
                 + _vat_note(ent) + " " + self._returns_note())
         return _report("\n".join([head, *out, tail]), "ABC-анализ")
 
+    def _sale_lines(self, date_from: str | None, date_to: str | None):
+        """Строки проведённых реализаций минус возвраты: (номенклатура, месяц, выручка, себестоимость).
+
+        Источник — табличная часть документа, а НЕ регистр. Регистр
+        «ВыручкаИСебестоимостьПродаж» мы предполагали по аналогии с УТ, но на
+        живой БП 3.0.111 его нет вовсе (проверено 2026-07-31). Зато у строк
+        реализации есть колонки «Сумма», «СуммаНДС» и «Себестоимость» — этого
+        достаточно и для выручки без НДС, и для маржи.
+
+        Побочная польза: выручка теперь считается из одного источника во всех
+        отчётах, и ОПиУ сходится с ABC без оговорок.
+        """
+        def lines(ent, docs, sign):
+            nom_f = ent.row_field("nomenclature")
+            amt_f = ent.row_field("amount")
+            vat_f = ent.row_fields.get("vat")
+            cost_f = ent.row_fields.get("cost")
+            for d in docs:
+                month = str(d.get("Date"))[:7]
+                for row in d.get(ent.rows) or []:
+                    net = float(row.get(amt_f) or 0)
+                    if vat_f:
+                        net -= float(row.get(vat_f) or 0)
+                    cost = float(row.get(cost_f) or 0) if cost_f else 0.0
+                    yield row.get(nom_f, ""), month, sign * net, sign * cost
+
+        sale = self.mapping.entity("sale")
+        conds = [Cond("Posted", OP_EQ, True, KIND_BOOL)] + _date_conds("Date", date_from, date_to)
+        docs = list(self.client.run(Query(entity_set=sale.entity_set, conditions=conds)))
+        yield from lines(sale, docs, 1)
+        if self._has_returns():
+            ret = self.mapping.entity("sales_return")
+            yield from lines(ret, self._returns(date_from, date_to), -1)
+
+    def _cost_note(self, cost_total: float, revenue_total: float) -> str:
+        if cost_total > 0.005:
+            return ""
+        return (" ВНИМАНИЕ: себестоимость в строках документов не заполнена — "
+                "в «Бухгалтерии» она рассчитывается при проведении или при "
+                "закрытии месяца. Маржа показана без себестоимости и завышена.")
+
     # --- себестоимость и рентабельность по брендам -------------------------
 
     def profit_by_brand(self, date_from: str | None = None,
                         date_to: str | None = None) -> str:
-        """Выручка, себестоимость и маржа по брендам — из регистра продаж."""
-        try:
-            ent = self.mapping.entity("sales_register")
-        except Exception:
-            return ("Регистр выручки и себестоимости не описан в маппинге этой "
-                    "конфигурации — обратитесь к администратору.")
-
-        nom_f = ent.field_1c("nomenclature")
-        rev_f = ent.field_1c("revenue")
-        cost_f = ent.field_1c("cost")
-        period_f = ent.fields.get("period", "Period")
-
-        conds = _date_conds(period_f, date_from, date_to)
-        rows = list(self.client.run(Query(entity_set=ent.entity_set, conditions=conds)))
-        if not rows:
+        """Выручка, себестоимость и маржа по брендам — из строк реализаций."""
+        lines = list(self._sale_lines(date_from, date_to))
+        if not lines:
             return (f"Данных о продажах {_period_label(date_from, date_to)} нет. "
                     "Без указания дат отчёт строится за всё время.")
 
         brands = self._brands()
         agg: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0])
-        for r in rows:
-            brand = brands.get(r.get(nom_f, ""), "без бренда")
-            agg[brand][0] += float(r.get(rev_f) or 0)
-            agg[brand][1] += float(r.get(cost_f) or 0)
+        for nom, _month, net, cost in lines:
+            brand = brands.get(nom, "без бренда")
+            agg[brand][0] += net
+            agg[brand][1] += cost
 
         out = []
         tr = tc = 0.0
@@ -298,6 +327,8 @@ class AnalyticsTools:
         out.append(f"ИТОГО | выручка {_fmt(tr)} | себестоимость {_fmt(tc)} | "
                    f"маржа {_fmt(total_margin)} "
                    f"({total_margin / tr * 100 if tr else 0:.1f}%)")
+        out.append("Источник: строки проведённых реализаций за вычетом возвратов. "
+                   "Выручка без НДС." + self._cost_note(tc, tr))
         return _report(
             f"Себестоимость и маржа по брендам, {_period_label(date_from, date_to)}:\n"
             + "\n".join(out), "Маржа по брендам")
@@ -540,23 +571,14 @@ class AnalyticsTools:
     def pnl_report(self, date_from: str | None = None,
                    date_to: str | None = None) -> str:
         """Выручка, себестоимость и валовая прибыль за период."""
-        try:
-            ent = self.mapping.entity("sales_register")
-        except Exception:
-            return ("Регистр выручки и себестоимости не описан в маппинге этой "
-                    "конфигурации — обратитесь к администратору.")
-        rev_f, cost_f = ent.field_1c("revenue"), ent.field_1c("cost")
-        period_f = ent.fields.get("period", "Period")
-        rows = list(self.client.run(Query(entity_set=ent.entity_set,
-                                          conditions=_date_conds(period_f, date_from, date_to))))
-        if not rows:
+        lines = list(self._sale_lines(date_from, date_to))
+        if not lines:
             return f"Продаж {_period_label(date_from, date_to)} нет."
 
         by_month: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0])
-        for r in rows:
-            m = str(r.get(period_f))[:7]
-            by_month[m][0] += float(r.get(rev_f) or 0)
-            by_month[m][1] += float(r.get(cost_f) or 0)
+        for _nom, month, net, cost in lines:
+            by_month[month][0] += net
+            by_month[month][1] += cost
 
         out = [f"Отчёт о прибылях и убытках (валовая прибыль), "
                f"{_period_label(date_from, date_to)}:",
@@ -576,14 +598,19 @@ class AnalyticsTools:
         # (регистр может не покрывать услуги и незакрытые периоды). Показываем
         # расхождение сами: иначе бухгалтер найдёт его первым и перестанет
         # доверять обоим отчётам.
+        # Источник теперь один и тот же во всех отчётах — расхождению взяться
+        # неоткуда. Сверку с шапками документов оставляем: она ловит случай,
+        # когда часть суммы документа не разнесена по строкам (например, услуги
+        # лежат в отдельной табличной части).
         by_docs = self._doc_revenue(date_from, date_to)
         gap = by_docs - tr
-        out.append(f"Источник: регистр выручки и себестоимости. "
-                   f"Выручка по документам за тот же период — {_fmt(by_docs)} руб.")
+        out.append("Источник: строки проведённых реализаций за вычетом возвратов. "
+                   f"Выручка по шапкам документов — {_fmt(by_docs)} руб."
+                   + self._cost_note(tc, tr))
         if abs(gap) > 0.005:
-            out.append(f"Расхождение с документами {_fmt(gap)} руб. Обычные причины: "
-                       "регистр не покрывает услуги и незакрытые периоды. "
-                       "Если расхождение непонятно — сверьте в 1С до принятия решений.")
+            out.append(f"Расхождение со строками {_fmt(gap)} руб. — часть суммы "
+                       "документов не разнесена по товарным строкам (услуги, "
+                       "агентские). Сверьте в 1С до принятия решений.")
         out.append("Это валовая прибыль. Коммерческие и управленческие расходы "
                    "(счета 26 и 44), налоги и проценты в расчёт не включены: "
                    "в подключённых данных их нет, поэтому чистая прибыль здесь "

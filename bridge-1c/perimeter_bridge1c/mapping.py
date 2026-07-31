@@ -25,6 +25,18 @@ class EntityMapping:
     entity_set: str
     fields: dict[str, str] = field(default_factory=dict)
     rows: str | None = None
+    # Колонки табличной части: логическое имя -> имя в 1С. Отдельно от fields,
+    # потому что имена в шапке и в строках совпадать не обязаны.
+    row_fields: dict[str, str] = field(default_factory=dict)
+
+
+    def row_field(self, logical: str, default: str | None = None) -> str:
+        """Имя колонки табличной части. Без него отчёты по строкам не строятся."""
+        name = self.row_fields.get(logical, default)
+        if not name:
+            raise MappingError(
+                f"колонка «{logical}» табличной части не описана в маппинге")
+        return name
 
     def field_1c(self, logical: str) -> str:
         try:
@@ -60,6 +72,7 @@ def load_mapping(configuration: str) -> ConfigurationMapping:
             entity_set=spec["entity_set"],
             fields=spec.get("fields") or {},
             rows=spec.get("rows"),
+            row_fields=dict(spec.get("row_fields") or {}),
         )
         for name, spec in (raw.get("entities") or {}).items()
     }

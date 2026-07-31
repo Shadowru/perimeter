@@ -48,7 +48,10 @@ def default_dataset() -> dict[str, list[dict[str, Any]]]:
         document["Товары"] = [
             {"LineNumber": str(i + 1), "Номенклатура_Key": nom,
              "Количество": qty, "Сумма": amount, "Цена": round(amount / qty, 2),
-             "СуммаНДС": round(amount - amount / 1.20, 2)}
+             "СуммаНДС": round(amount - amount / 1.20, 2),
+             # Себестоимость в БП 3.0 лежит в строке документа (проверено на
+             # живой базе 31.07). Берём 2/3 от суммы без НДС.
+             "Себестоимость": round(amount / 1.20 * 2 / 3, 2)}
             for i, (nom, qty, amount) in enumerate(lines)
         ]
         return document

@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from fakes.fake_1c_server import GUID_ROMASHKA, Fake1CServer
+from fakes.fake_1c_server import GUID_ROMASHKA, Fake1CServer, default_dataset
 from perimeter_bridge1c.analytics import AnalyticsTools
 from perimeter_bridge1c.mapping import load_mapping
 from perimeter_bridge1c.odata import ODataClient
@@ -45,18 +45,20 @@ def test_abc_respects_period():
 def test_profit_by_brand():
     with Fake1CServer() as srv:
         out = str(make(srv).profit_by_brand())
-        # Гамма: выручка 90000+30000+15000+99000=234000, себестоимость 159500
+        # Источник — строки реализаций (регистра «ВыручкаИСебестоимостьПродаж»
+        # в реальной БП 3.0 нет, проверено 31.07). Ноутбук и Монитор — «Гамма»,
+        # услуги без бренда. Себестоимость в фикстуре 2/3 от суммы без НДС.
         assert "Гамма" in out
-        assert "234 000.00" in out and "159 500.00" in out
-        assert "ИТОГО" in out
-        # маржа = 74 500 -> 31.8%
-        assert "74 500.00" in out
+        assert "240 000.00" in out and "160 000.00" in out
+        assert "без бренда" in out and "27 500.00" in out
+        assert "ИТОГО | выручка 267 500.00" in out
 
 
 def test_profit_by_brand_period_filter():
     with Fake1CServer() as srv:
         out = str(make(srv).profit_by_brand(date_from="2026-07-01T00:00:00", date_to="2026-07-31T23:59:59"))
-        assert "135 000.00" in out  # 90000+30000+15000, июньская запись исключена
+        # Июль без НДС: 112 500 минус возврат 5 000 = 107 500
+        assert "ИТОГО | выручка 107 500.00" in out and "267 500.00" not in out
 
 
 def test_receivables_aging():
@@ -151,11 +153,10 @@ def test_cash_flow_respects_period():
 def test_pnl_report():
     with Fake1CServer() as srv:
         out = str(make(srv).pnl_report())
-        # Июнь: выручка 99 000, себестоимость 67 000 -> 32 000
-        assert "2026-06 | 99 000.00 | 67 000.00 | 32 000.00" in out
-        # Июль: 90 000+30 000+15 000 = 135 000, себестоимость 61+21+10.5 = 92 500
-        assert "2026-07 | 135 000.00 | 92 500.00 | 42 500.00" in out
-        assert "ИТОГО | 234 000.00 | 159 500.00 | 74 500.00" in out
+        # Всё без НДС, себестоимость в фикстуре 2/3 от суммы без НДС.
+        assert "2026-06 | 82 500.00 | 55 000.00 | 27 500.00" in out
+        assert "2026-07 | 107 500.00 | 71 666.67 | 35 833.33" in out
+        assert "ИТОГО | 267 500.00 | 178 333.33 | 89 166.67" in out
 
 
 def test_pnl_declares_what_is_not_included():
@@ -244,7 +245,7 @@ def test_digest_keeps_what_the_model_needs():
         assert "140 000.00" in aging.digest            # ИТОГО
         assert "Расчёт на 2026-07-31" in aging.digest  # оговорка
         pnl = a.pnl_report()
-        assert "за всё время" in pnl.digest and "74 500.00" in pnl.digest
+        assert "за всё время" in pnl.digest and "89 166.67" in pnl.digest
         assert "чистая прибыль здесь" in pnl.digest
         act = a.reconciliation_act(GUID_ROMASHKA)
         assert "Сальдо на конец периода: 132 000.00" in act.digest
@@ -332,13 +333,21 @@ def test_missing_vat_field_is_declared_not_hidden():
         assert "252 000.00" in out      # тогда суммы честно с НДС
 
 
-def test_pnl_shows_the_gap_with_documents():
-    """Регистр и документы расходятся законно — но молчать об этом нельзя."""
+def test_pnl_agrees_with_the_other_reports():
+    """Один источник — одна выручка. Раньше ОПиУ давал 234 000 против 267 500.
+
+    Расхождение шло от регистра «ВыручкаИСебестоимостьПродаж», которого в
+    реальной БП 3.0 не существует (проверено на живой базе 31.07).
+    """
     with Fake1CServer() as srv:
-        out = str(make(srv).pnl_report())
-        assert "Источник: регистр выручки и себестоимости" in out
-        assert "Выручка по документам за тот же период — 267 500.00" in out
-        assert "Расхождение с документами 33 500.00" in out
+        a = make(srv)
+        out = str(a.pnl_report())
+        assert "Источник: строки проведённых реализаций" in out
+        assert "Выручка по шапкам документов — 267 500.00" in out
+        assert "Расхождение со строками" not in out      # источник один
+        assert "ИТОГО | 267 500.00" in out
+        assert "выручка 267 500.00 руб." in str(a.abc_analysis("counterparty"))
+        assert "ИТОГО | 267 500.00" in str(a.sales_dynamics())
 
 
 def test_document_based_reports_agree_with_each_other():
@@ -412,3 +421,28 @@ def test_column_header_does_not_eat_the_row_budget():
         rep = make(srv).receivables_aging(as_of="2026-07-31T00:00:00")
         assert "контрагент | 0-30" in rep.digest
         assert "Ромашка" in rep.digest and "Василёк" in rep.digest
+
+
+def test_missing_cost_is_declared_not_shown_as_full_margin():
+    """Себестоимость в БП считается при проведении/закрытии месяца.
+
+    Пока она не заполнена, маржа равна выручке — показывать это как прибыль
+    нельзя, поэтому отчёт предупреждает.
+    """
+    ds = default_dataset()
+    for doc in ds["Document_РеализацияТоваровУслуг"]:
+        for row in doc.get("Товары", []):
+            row["Себестоимость"] = 0
+    with Fake1CServer(dataset=ds) as srv:
+        out = str(make(srv).profit_by_brand())
+        assert "себестоимость в строках документов не заполнена" in out
+        assert "завышена" in out
+
+
+def test_mapping_has_no_unverified_entity_names():
+    """Имена сверены с живой БП 3.0.111 — догадок в маппинге остаться не должно."""
+    from pathlib import Path
+    text = Path("bridge-1c/perimeter_bridge1c/mappings/bp30.yaml").read_text(encoding="utf-8")
+    todos = [l.strip() for l in text.splitlines()
+             if "TODO(verify)" in l and not l.strip().startswith("#")]
+    assert not todos, f"остались непроверенные имена: {todos}"
