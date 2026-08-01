@@ -1,0 +1,17 @@
+[Unit]
+Description=Периметр — канал до 1С (обратный проброс шлюза робота)
+After=network.target
+
+[Service]
+Type=simple
+# Шлюз слушает loopback на этой машине; проброс делает его доступным как
+# 127.0.0.1:8092 на машине с 1С. Оба конца остаются на loopback — правило №0
+# соблюдено, наружу порт не открывается.
+ExecStart=/usr/bin/ssh -N -T -o StrictHostKeyChecking=no -o ExitOnForwardFailure=yes \
+  -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
+  -i /etc/perimeter/ssh_key -R 8092:127.0.0.1:8092 USER@ХОСТ-С-1С
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

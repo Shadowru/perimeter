@@ -1,0 +1,14 @@
+[Unit]
+Description=Периметр — рабочий режим, подключение к живой 1С через робота
+After=network.target perimeter-tunnel.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/perimeter
+ExecStart=/opt/perimeter/.venv/bin/python /opt/perimeter/run_perimeter.py
+Restart=on-failure
+RestartSec=10
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

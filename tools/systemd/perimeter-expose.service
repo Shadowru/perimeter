@@ -1,0 +1,17 @@
+[Unit]
+Description=Периметр — временный внешний доступ к демо (только на время показа)
+After=perimeter-demo.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/perimeter
+Environment=PERIMETER_DEMO_USER=demo
+# Пароль — только через окружение, никогда в файле юнита в репозитории.
+# Не задан — demo_expose.py сгенерирует его сам и напечатает при старте.
+#Environment=PERIMETER_DEMO_PASSWORD=
+ExecStart=/opt/perimeter/.venv/bin/python /opt/perimeter/tools/demo_expose.py --port 8080 --target 8091
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
