@@ -79,7 +79,22 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:17px;line-height:1.55;
-  background-image:radial-gradient(ellipse 90% 60% at 50% -10%,rgba(255,180,84,.05),transparent)}
+  background-image:
+    radial-gradient(ellipse 90% 60% at 50% -10%,rgba(255,180,84,.055),transparent),
+    radial-gradient(ellipse 140% 100% at 50% 60%,transparent 60%,rgba(0,0,0,.35)),
+    linear-gradient(rgba(141,151,140,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(141,151,140,.045) 1px,transparent 1px);
+  background-size:auto,auto,48px 48px,48px 48px;
+  background-attachment:fixed}
+
+/* рамка-периметр по краю вьюпорта */
+.vframe{position:fixed;inset:10px;border:1px dashed rgba(255,180,84,.13);border-radius:6px;pointer-events:none;z-index:50}
+.vframe i{position:absolute;width:14px;height:14px;border:1.5px solid rgba(255,180,84,.5)}
+.vframe i:nth-child(1){top:-1px;left:-1px;border-right:none;border-bottom:none}
+.vframe i:nth-child(2){top:-1px;right:-1px;border-left:none;border-bottom:none}
+.vframe i:nth-child(3){bottom:-1px;left:-1px;border-right:none;border-top:none}
+.vframe i:nth-child(4){bottom:-1px;right:-1px;border-left:none;border-top:none}
+@media (max-width:700px){.vframe{inset:6px}}
 a{color:var(--amber)}
 a:focus-visible,button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .wrap{max-width:1100px;margin:0 auto;padding:0 24px}
@@ -274,6 +289,7 @@ footer a{color:var(--soft)}
 </style>
 </head>
 <body>
+<div class="vframe" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 <noscript><div><img src="https://mc.yandex.ru/watch/111624890" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
 
 <header>
