@@ -184,6 +184,33 @@ h2{font-weight:650;font-size:clamp(23px,2.8vw,30px);margin:8px 0 8px;line-height
 .caps p{font-size:14px;color:var(--soft)}
 .caps b{color:var(--text)}
 
+/* чипы вердиктов */
+.verdicts{margin-top:16px;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.verdicts li{border:1px solid var(--line);border-radius:4px;background:var(--panel2);padding:11px 14px;font-size:13.5px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.verdicts b{font-family:var(--mono);font-weight:700}
+.verdicts span:last-child{color:var(--soft)}
+.vled{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 5px 1px currentColor;align-self:center}
+
+/* превью отчёта */
+.report-wrap{margin-top:26px;display:grid;grid-template-columns:minmax(0,540px) 1fr;gap:26px;align-items:center}
+.report{background:#f2f0e8;color:#20261f;border-radius:3px;padding:20px 22px 16px;position:relative;
+  box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:13.5px}
+.report-head{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;color:#5c6157;border-bottom:1.5px solid #20261f;padding-bottom:8px;margin-bottom:6px;display:flex;justify-content:space-between;gap:10px}
+.report-row{display:flex;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid #d8d5c8}
+.report-row i{font-style:normal;color:#3e7a48;font-weight:700}
+.report-row span{flex:1;min-width:0}
+.report-row b{font-weight:600;color:#4c5348;font-size:12.5px;white-space:nowrap}
+.report-foot{font-family:var(--mono);font-size:11px;color:#5c6157;padding-top:9px}
+.report-stamp{position:absolute;right:16px;bottom:34px;font-family:var(--mono);font-size:10px;line-height:1.5;letter-spacing:.06em;color:#8f2a22;border:1.5px solid #8f2a22;border-radius:3px;padding:5px 8px;transform:rotate(-6deg);opacity:.85}
+.report-cap{font-size:14.5px;color:var(--soft);max-width:34ch}
+@media (max-width:900px){.report-wrap{grid-template-columns:1fr}.report-row b{white-space:normal}}
+
+/* иконки карточек */
+.cicon-outline circle{fill:none;stroke:var(--soft)}
+.cicon{width:24px;height:24px;stroke:var(--soft);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.cicon circle{fill:var(--soft);stroke:none}
+.card--out .cicon{opacity:.6}
+
 /* контраст-полоска */
 .contrast{margin-top:22px;display:grid;grid-template-columns:2fr 3fr;border:1px solid var(--line);border-radius:4px;overflow:hidden}
 .contrast>div{padding:16px 20px;font-size:14.5px}
@@ -291,24 +318,28 @@ footer a{color:var(--soft)}
     <p class="lead">Агенты перестали быть чат-ботами: они вызывают API, проводят транзакции, меняют данные. LLM-firewall фильтрует <i>текст</i>. Регулятор требует контроля <i>действий</i>.</p>
     <div class="cards">
       <div class="card">
+        <svg class="cicon" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" fill="none"/><path d="M8.5 12l2.5 2.5 4.5-5" fill="none"/></svg>
         <span class="norm-ref">Приказ ФСТЭК № 117 · пп. 60–61</span>
         <h3>Защита ИС при использовании ИИ</h3>
         <p>Контроль допустимых тематик запросов, реагирование на недостоверные ответы, запрет передачи данных разработчику модели — «в том числе для улучшения модели».</p>
         <span class="date">в силе с 01.03.2026</span>
       </div>
       <div class="card">
+        <svg class="cicon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" fill="none"/><circle cx="9" cy="6" r="1.8"/><circle cx="15" cy="12" r="1.8"/><circle cx="7" cy="18" r="1.8"/></svg>
         <span class="norm-ref">Методика ФСТЭК · п. 3.18</span>
         <h3>Меры для систем ИИ</h3>
         <p>Регистрация запросов и ответов, фильтрация входа и выхода, квотирование, целостность конфигурации агентов, «ограничение и контроль функциональности системы ИИ».</p>
         <span class="date">от 12.04.2026</span>
       </div>
       <div class="card">
+        <svg class="cicon cicon-outline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none"/><path d="M4 12h16M12 4c2.5 2.3 2.5 13.7 0 16M12 4c-2.5 2.3-2.5 13.7 0 16" fill="none"/></svg>
         <span class="norm-ref">Закон РК № 230-VIII</span>
         <h3>ИИ-системы в Казахстане</h3>
         <p>Классификация по рискам, маркировка сгенерированного контента, право граждан на объяснение решений ИИ, запрет эксплуатации как санкция.</p>
         <span class="date">в силе с 18.01.2026</span>
       </div>
       <div class="card card--out">
+        <svg class="cicon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2" fill="none"/><path d="M8 8h8M8 12h8M8 16h5" fill="none"/></svg>
         <span class="norm-ref">Закон об ИИ РФ · ФЗ № 1271570-8</span>
         <h3>Сертификация высокорисковых систем</h3>
         <p>Четыре категории риска, обязательная сертификация ФСТЭК/ФСБ для систем, принимающих автономные решения. Подзаконные акты — на подходе.</p>
@@ -322,41 +353,37 @@ footer a{color:var(--soft)}
   <div class="wrap"><div class="panel">
     <div class="panel-head"><span class="tag"><span class="led led-amber" aria-hidden="true"></span>Как работает</span></div>
     <h2>Три шага между намерением модели и её действием</h2>
-    <div class="diagram" role="img" aria-label="Схема: намерение агента проходит через периметр политик, получает вердикт, всё пишется в аудит-журнал">
-    <svg viewBox="0 0 920 330" xmlns="http://www.w3.org/2000/svg">
+    <div class="diagram" role="img" aria-label="Схема: намерение агента проходит проверку политики в периметре; исполняется только разрешённое; каждый вердикт уходит в аудит-журнал">
+    <svg viewBox="0 0 920 236" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <marker id="arw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#8d978c"/></marker>
       </defs>
-      <rect class="dg-box" x="24" y="112" width="158" height="82"/>
-      <text class="dg-tt" x="40" y="140">ИИ-агент</text>
-      <text class="dg-ts" x="40" y="160">намерение:</text>
-      <text class="dg-t" x="40" y="178">transfer_funds()</text>
-      <line class="dg-ln" x1="182" y1="153" x2="242" y2="153" marker-end="url(#arw)"/>
-      <rect class="dg-zone" x="248" y="52" width="236" height="204"/>
-      <rect class="dg-zone2" x="256" y="60" width="220" height="188"/>
-      <text class="dg-seal" x="264" y="82">AGENTPERIMETER</text>
-      <text class="dg-tt" x="264" y="118">Проверка политики</text>
-      <text class="dg-ts" x="264" y="142">манифест · Rego · Cedar</text>
-      <text class="dg-ts" x="264" y="162">до исполнения</text>
-      <text class="dg-t" x="264" y="192">fail-closed:</text>
-      <text class="dg-ts" x="264" y="210">не разрешено — запрещено</text>
-      <line class="dg-ln v-allow-s" x1="484" y1="120" x2="560" y2="84" marker-end="url(#arw)"/>
-      <line class="dg-ln v-tr-s" x1="484" y1="140" x2="560" y2="140" marker-end="url(#arw)"/>
-      <line class="dg-ln v-esc-s" x1="484" y1="168" x2="560" y2="196" marker-end="url(#arw)"/>
-      <line class="dg-ln v-deny-s" x1="484" y1="188" x2="560" y2="252" marker-end="url(#arw)"/>
-      <text class="dg-t v-allow-f" x="572" y="82">allow</text>
-      <text class="dg-ts" x="572" y="98">действие исполняется</text>
-      <text class="dg-t v-tr-f" x="572" y="138">transform</text>
-      <text class="dg-ts" x="572" y="154">исполняется с маскированием ПДн</text>
-      <text class="dg-t v-esc-f" x="572" y="194">escalate</text>
-      <text class="dg-ts" x="572" y="210">ждёт подтверждения человека</text>
-      <text class="dg-t v-deny-f" x="572" y="250">deny</text>
-      <text class="dg-ts" x="572" y="266">не исполняется — структурно</text>
-      <line class="dg-ln" x1="366" y1="256" x2="366" y2="284" marker-end="url(#arw)"/>
-      <rect class="dg-box" x="248" y="288" width="420" height="34"/>
-      <text class="dg-t" x="264" y="310">аудит-журнал · SHA-256 hash-chain → SIEM</text>
+      <rect class="dg-box" x="32" y="46" width="200" height="76" rx="3"/>
+      <text class="dg-tt" x="52" y="78">ИИ-агент</text>
+      <text class="dg-ts" x="52" y="100">намерение: tool call</text>
+      <line class="dg-ln" x1="232" y1="84" x2="322" y2="84" marker-end="url(#arw)"/>
+      <rect class="dg-zone" x="330" y="34" width="260" height="100" rx="3"/>
+      <rect class="dg-zone2" x="338" y="42" width="244" height="84" rx="2"/>
+      <text class="dg-seal" x="356" y="68">AGENTPERIMETER</text>
+      <text class="dg-tt" x="356" y="92">Проверка политики</text>
+      <text class="dg-ts" x="356" y="112">fail-closed · до исполнения</text>
+      <line class="dg-ln" x1="590" y1="84" x2="680" y2="84" marker-end="url(#arw)"/>
+      <text class="dg-ts" x="596" y="72">только</text>
+      <text class="dg-ts" x="596" y="106">разрешённое</text>
+      <rect class="dg-box" x="688" y="46" width="200" height="76" rx="3"/>
+      <text class="dg-tt" x="708" y="78">Действие</text>
+      <text class="dg-ts" x="708" y="100">инструмент · API · 1С</text>
+      <line class="dg-ln" x1="460" y1="134" x2="460" y2="168" marker-end="url(#arw)"/>
+      <rect class="dg-box" x="32" y="176" width="856" height="36" rx="3"/>
+      <text class="dg-t" x="52" y="199">каждый вердикт → аудит-журнал · SHA-256 hash-chain → SIEM</text>
     </svg>
     </div>
+    <ul class="verdicts" aria-label="Возможные вердикты политики">
+      <li><span class="vled" style="color:var(--v-allow)"></span><b style="color:var(--v-allow)">allow</b><span>исполняется</span></li>
+      <li><span class="vled" style="color:var(--v-transform)"></span><b style="color:var(--v-transform)">transform</b><span>исполняется с маскированием ПДн</span></li>
+      <li><span class="vled" style="color:var(--v-escalate)"></span><b style="color:var(--v-escalate)">escalate</b><span>ждёт подтверждения человека</span></li>
+      <li><span class="vled" style="color:var(--v-deny)"></span><b style="color:var(--v-deny)">deny</b><span>не исполняется — структурно</span></li>
+    </ul>
     <div class="caps">
       <p><b>Перехват до исполнения.</b> Каждый tool call и обращение к модели идёт через детерминированный код политик, а не через промпт-увещевания.</p>
       <p><b>Вердикт.</b> Политики — версионируемые подписанные манифесты. Необратимые действия — только через человека.</p>
@@ -382,6 +409,18 @@ footer a{color:var(--soft)}
       <tr><td>Закон РК № 230-VIII</td><td>Маркировка сгенерированного контента (KK/RU), предохранители запрещённых применений, объяснение решений по запросу гражданина</td><td class="st">пакет для РК</td></tr>
       <tr><td>БДУ ФСТЭК · угрозы ИИ</td><td>Модель угроз по 13 официальным способам реализации — от DoS запросами до подмены системного промпта агента</td><td class="st">карта рисков</td></tr>
     </table></div>
+    <div class="report-wrap">
+      <div class="report" aria-label="Фрагмент отчёта соответствия, формируемого из аудит-журнала">
+        <div class="report-head">ОТЧЁТ СООТВЕТСТВИЯ · ПРИКАЗ ФСТЭК № 117<span>стр. 1 из 6</span></div>
+        <div class="report-row"><i>✓</i><span>п. 61«б» · допустимые тематики</span><b>1 247 проверок · контроль активен</b></div>
+        <div class="report-row"><i>✓</i><span>п. 60 · egress к разработчику модели</span><b>17 блокировок</b></div>
+        <div class="report-row"><i>✓</i><span>методика 3.18 · регистрация запросов и ответов</span><b>100% событий в журнале</b></div>
+        <div class="report-row"><i>✓</i><span>п. 61«г» · недостоверные ответы</span><b>9 эскалаций человеку</b></div>
+        <div class="report-foot">целостность журнала: подтверждена · SHA-256 hash-chain</div>
+        <div class="report-stamp">ИЗ АУДИТ-ЖУРНАЛА<br>ОДНОЙ КОМАНДОЙ</div>
+      </div>
+      <p class="report-cap">Так выглядит результат: отчёт для аттестации формируется из журнала, а не из слов. Каждая строка воспроизводима.</p>
+    </div>
   </div></div>
 </section>
 
@@ -390,29 +429,28 @@ footer a{color:var(--soft)}
     <div class="panel-head"><span class="tag"><span class="led led-on" aria-hidden="true"></span>Живое демо · открытый код</span></div>
     <h2>«Периметр» для 1С — наш агент под этим контролем</h2>
     <p class="lead">Мы не только продаём governance — мы держим в периметре собственного агента. «Периметр» — бесплатный локальный ИИ-ассистент по данным 1С:Предприятие. Скачайте, поставьте у себя — и посмотрите, как выглядит агент, построенный по правилам приказа № 117, изнутри.</p>
-    <div class="diagram" role="img" aria-label="Схема: 1С и Периметр внутри контура компании, интернет отрезан воздушным зазором">
-    <svg viewBox="0 0 920 190" xmlns="http://www.w3.org/2000/svg">
+    <div class="diagram" role="img" aria-label="Схема: 1С и Периметр внутри контура компании; интернет отрезан воздушным зазором">
+    <svg viewBox="0 0 920 176" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <marker id="arw2" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#8d978c"/></marker>
+        <marker id="arwA" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#8d978c"/></marker>
+        <marker id="arwB" viewBox="0 0 8 8" refX="1" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M8 0 L0 4 L8 8 z" fill="#8d978c"/></marker>
       </defs>
-      <rect class="dg-zone" x="24" y="26" width="576" height="140"/>
-      <text class="dg-seal" x="40" y="50">КОНТУР КОМПАНИИ</text>
-      <rect class="dg-box" x="56" y="72" width="180" height="66"/>
-      <text class="dg-tt" x="72" y="100">1С:Предприятие 8.3</text>
-      <text class="dg-ts" x="72" y="122">без доработки конфигураций</text>
-      <line class="dg-ln" x1="236" y1="98" x2="304" y2="98" marker-end="url(#arw2)"/>
-      <line class="dg-ln" x1="304" y1="116" x2="236" y2="116" marker-end="url(#arw2)"/>
-      <text class="dg-ts" x="252" y="90">OData</text>
-      <rect class="dg-box" x="308" y="72" width="252" height="66"/>
-      <text class="dg-tt" x="324" y="100">«Периметр» — LLM локально</text>
-      <text class="dg-ts" x="324" y="122">веса на вашем сервере · GPU не нужен</text>
-      <line class="dg-ln dg-dash" x1="600" y1="96" x2="700" y2="96"/>
-      <circle cx="656" cy="96" r="15" style="fill:var(--inset);stroke:var(--v-deny);stroke-width:2.2"/>
-      <line x1="646" y1="106" x2="666" y2="86" style="stroke:var(--v-deny);stroke-width:2.2"/>
-      <text class="dg-t v-deny-f" x="620" y="136">воздушный зазор</text>
-      <rect class="dg-box dg-dash" x="716" y="66" width="180" height="60" stroke-dasharray="5 4"/>
-      <text class="dg-tt" x="732" y="92">интернет</text>
-      <text class="dg-ts" x="732" y="112">облака · внешние API</text>
+      <rect class="dg-zone" x="32" y="26" width="556" height="124" rx="3"/>
+      <text class="dg-seal" x="52" y="52">КОНТУР КОМПАНИИ</text>
+      <rect class="dg-box" x="64" y="68" width="200" height="60" rx="3"/>
+      <text class="dg-tt" x="84" y="94">1С:Предприятие</text>
+      <text class="dg-ts" x="84" y="114">стандартный OData</text>
+      <line class="dg-ln" x1="264" y1="98" x2="352" y2="98" marker-start="url(#arwB)" marker-end="url(#arwA)"/>
+      <rect class="dg-box" x="356" y="68" width="200" height="60" rx="3"/>
+      <text class="dg-tt" x="376" y="94">«Периметр» · LLM</text>
+      <text class="dg-ts" x="376" y="114">веса на вашем сервере</text>
+      <line class="dg-ln dg-dash" x1="588" y1="98" x2="688" y2="98"/>
+      <circle cx="638" cy="98" r="14" style="fill:var(--inset);stroke:var(--v-deny);stroke-width:2"/>
+      <line x1="629" y1="107" x2="647" y2="89" style="stroke:var(--v-deny);stroke-width:2"/>
+      <text class="dg-ts" x="596" y="136" style="fill:var(--v-deny)">воздушный зазор</text>
+      <rect class="dg-box dg-dash" x="692" y="68" width="196" height="60" rx="3"/>
+      <text class="dg-tt" x="712" y="94">интернет</text>
+      <text class="dg-ts" x="712" y="114">облака · внешние API</text>
     </svg>
     </div>
     <div class="p1c">
