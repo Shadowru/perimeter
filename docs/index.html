@@ -85,18 +85,20 @@ a:focus-visible,button:focus-visible{outline:3px solid var(--seal);outline-offse
 .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
 
 /* ---- шапка ---- */
-header{border-bottom:1px solid var(--line);background:var(--paper)}
+header{border-bottom:1px solid var(--line);background:var(--paper);position:sticky;top:0;z-index:20}
 .nav{display:flex;align-items:baseline;gap:28px;padding:18px 0;flex-wrap:wrap}
 .mark{font-family:var(--serif);font-size:22px;letter-spacing:.01em;text-decoration:none;color:var(--ink);white-space:nowrap}
 .mark b{border:1.5px solid var(--ink);padding:1px 7px 2px;font-weight:600}
 .nav nav{display:flex;gap:20px;flex-wrap:wrap;font-size:15px}
 .nav nav a{color:var(--ink-soft);text-decoration:none}
 .nav nav a:hover{color:var(--seal)}
-.nav .cta-mini{margin-left:auto;font-size:15px;color:var(--paper-raised);background:var(--seal);border:1px solid var(--seal-dark);padding:7px 14px;text-decoration:none}
+.nav .tg-mini{margin-left:auto;font-size:15px;color:var(--ink);text-decoration:none;border:1px solid var(--ink);padding:7px 14px}
+.nav .tg-mini:hover{background:var(--paper-raised)}
+.nav .cta-mini{font-size:15px;color:var(--paper-raised);background:var(--seal);border:1px solid var(--seal-dark);padding:7px 14px;text-decoration:none}
 .nav .cta-mini:hover{background:var(--seal-dark)}
 
 /* ---- hero ---- */
-.hero{padding:64px 0 56px;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:48px;align-items:start}
+.hero{padding:48px 0 44px;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:48px;align-items:start}
 .hero h1{font-family:var(--serif);font-weight:600;font-size:clamp(30px,4.2vw,44px);line-height:1.16;letter-spacing:-.01em}
 .hero h1 em{font-style:normal;color:var(--seal)}
 .hero .sub{margin-top:20px;color:var(--ink-soft);max-width:44ch}
@@ -112,7 +114,7 @@ header{border-bottom:1px solid var(--line);background:var(--paper)}
 /* ---- живой журнал ---- */
 .term{background:var(--term-bg);color:var(--term-text);font-family:var(--mono);font-size:13px;line-height:1.75;border:1px solid var(--ink);box-shadow:6px 6px 0 rgba(28,35,32,.12)}
 .term-bar{display:flex;justify-content:space-between;gap:12px;padding:8px 14px;border-bottom:1px solid #2a3226;color:#8d9884;font-size:12px}
-.term-body{padding:14px 16px 18px;height:340px;overflow:hidden;position:relative}
+.term-body{padding:14px 16px 18px;height:300px;overflow:hidden;position:relative}
 .term-body::after{content:"";position:absolute;inset:auto 0 0 0;height:36px;background:linear-gradient(transparent,var(--term-bg))}
 .tl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tl .t{color:#6d7a66}
@@ -128,7 +130,7 @@ header{border-bottom:1px solid var(--line);background:var(--paper)}
 @media (prefers-reduced-motion:reduce){.term-cursor{animation:none}}
 
 /* ---- секции ---- */
-section{padding:56px 0;border-top:1px solid var(--line-faint)}
+section{padding:42px 0;border-top:1px solid var(--line-faint)}
 .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:var(--seal);text-transform:uppercase}
 h2{font-family:var(--serif);font-weight:600;font-size:clamp(24px,3vw,32px);margin:10px 0 8px;line-height:1.2}
 .lead{color:var(--ink-soft);max-width:62ch}
@@ -159,18 +161,11 @@ h2{font-family:var(--serif);font-weight:600;font-size:clamp(24px,3vw,32px);margi
 .ctable td:first-child{font-weight:650;white-space:nowrap}
 .ctable .st{font-family:var(--mono);font-size:12px;color:var(--seal);white-space:nowrap}
 
-/* отличия */
-.diff{margin-top:28px;display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line)}
-.diff>div{padding:24px 22px}
-.diff .them{border-right:1px dashed var(--line);background:transparent}
-.diff .us{background:var(--paper-raised)}
-.diff h3{font-size:15px;font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase;margin-bottom:14px}
-.diff .them h3{color:var(--ink-soft)}
-.diff .us h3{color:var(--seal)}
-.diff ul{list-style:none}
-.diff li{font-size:14.5px;padding:7px 0;border-top:1px solid var(--line-faint)}
-.diff li:first-of-type{border-top:none}
-.diff .them li{color:var(--ink-soft)}
+/* контраст-полоска */
+.contrast{margin-top:24px;display:grid;grid-template-columns:2fr 3fr;border:1px solid var(--line)}
+.contrast>div{padding:16px 20px;font-size:14.5px}
+.contrast .them-side{color:var(--ink-soft);border-right:1px dashed var(--line)}
+.contrast .us-side{background:var(--paper-raised)}
 
 /* периметр для 1С */
 .p1c{margin-top:28px;display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line)}
@@ -185,15 +180,8 @@ h2{font-family:var(--serif);font-weight:600;font-size:clamp(24px,3vw,32px);margi
 .p1c-rules .norm-ref{font-family:var(--mono);font-size:11.5px;color:var(--seal);white-space:nowrap;margin-left:6px}
 @media (max-width:900px){.p1c{grid-template-columns:1fr}.p1c-what{border-right:none;border-bottom:1px solid var(--line-faint)}}
 
-/* сегменты */
-.segs{margin-top:28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
-.seg{border:1px solid var(--line);background:var(--paper-raised);padding:20px}
-.seg h3{font-size:16.5px;margin-bottom:8px}
-.seg p{font-size:14.5px;color:var(--ink-soft)}
-.seg .norm-ref{font-family:var(--mono);font-size:12px;color:var(--seal);display:block;margin-bottom:8px}
-
 /* CTA-финал */
-.final{border:1.5px solid var(--ink);background:var(--paper-raised);margin:64px 0;padding:44px 40px;position:relative}
+.final{border:1.5px solid var(--ink);background:var(--paper-raised);margin:44px 0;padding:44px 40px;position:relative}
 .final::before{content:"";position:absolute;inset:7px;border:1px solid var(--line-faint);pointer-events:none}
 .final h2{margin-top:0}
 .final .lead{margin-top:10px}
@@ -211,8 +199,8 @@ footer a{color:var(--ink-soft)}
 
 @media (max-width:900px){
   .hero{grid-template-columns:1fr;gap:36px}
-  .diff{grid-template-columns:1fr}
-  .diff .them{border-right:none;border-bottom:1px dashed var(--line)}
+  .contrast{grid-template-columns:1fr}
+  .contrast .them-side{border-right:none;border-bottom:1px dashed var(--line)}
   .final-grid{grid-template-columns:1fr}
   .final{padding:32px 22px}
 }
@@ -231,6 +219,7 @@ footer a{color:var(--ink-soft)}
       <a href="#perimeter-1c">Периметр для 1С</a>
       <a href="#pilot">Пилот</a>
     </nav>
+    <a class="tg-mini" href="https://t.me/AgentPerimeter" data-goal="contact_tg">Telegram</a>
     <a class="cta-mini" href="#pilot" data-goal="cta_header">Запросить пилот</a>
   </div>
 </header>
@@ -308,6 +297,10 @@ footer a{color:var(--ink-soft)}
         <p>Каждый вердикт — в защищённый от подмены журнал: hash-цепочка SHA-256, Merkle-доказательства, подпись ГОСТ Р 34.10-2012, экспорт в SIEM. Отчёт соответствия для аттестации формируется из журнала одной командой.</p>
       </div>
     </div>
+    <div class="contrast">
+      <div class="them-side">LLM-firewall фильтрует <i>текст</i> — вероятностно, по сигнатурам.</div>
+      <div class="us-side"><b>AgentPerimeter контролирует действия</b>: запрещённое структурно невозможно. Любой фреймворк, любая LLM — GigaChat, YandexGPT, on-prem. Kill switch на весь флот.</div>
+    </div>
   </div>
 </section>
 
@@ -327,32 +320,6 @@ footer a{color:var(--ink-soft)}
   </div>
 </section>
 
-<section>
-  <div class="wrap">
-    <span class="eyebrow">Отличие</span>
-    <h2>Почему не «ещё один LLM-firewall»</h2>
-    <div class="diff">
-      <div class="them">
-        <h3>Фильтр текста</h3>
-        <ul>
-          <li>Смотрит на промпты и ответы</li>
-          <li>Ловит инъекции по сигнатурам — вероятностно</li>
-          <li>Привязан к платформе своего вендора</li>
-          <li>Не видит, что агент делает между запросами</li>
-        </ul>
-      </div>
-      <div class="us">
-        <h3>Контроль действий</h3>
-        <ul>
-          <li>Перехватывает каждый вызов инструмента до исполнения</li>
-          <li>Запрещённое структурно невозможно — fail-closed</li>
-          <li>Работает с любым фреймворком и любой LLM: GigaChat, YandexGPT, on-prem</li>
-          <li>Kill switch: мгновенная остановка агента или всего флота</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</section>
 
 <section id="perimeter-1c">
   <div class="wrap">
@@ -385,29 +352,6 @@ footer a{color:var(--ink-soft)}
   </div>
 </section>
 
-<section>
-  <div class="wrap">
-    <span class="eyebrow">Для кого</span>
-    <h2>Первыми приходят те, у кого дедлайн уже наступил</h2>
-    <div class="segs">
-      <div class="seg">
-        <span class="norm-ref">операторы ГИС · приказ № 117</span>
-        <h3>Госсектор</h3>
-        <p>Требования действуют с 1 марта 2026. Закрываем технические меры методики; оценка угроз по БДУ и ТЗ на меры защиты — в составе аудита. Аттестацию ведёт партнёр-лицензиат ФСТЭК.</p>
-      </div>
-      <div class="seg">
-        <span class="norm-ref">ГОСТ Р 57580 · 683-П</span>
-        <h3>Банки и страховые</h3>
-        <p>Агенты в кредитном конвейере и поддержке. Лимиты, обязательное подтверждение транзакций человеком, отчёты для риск-комитета и аудита по 57580.2.</p>
-      </div>
-      <div class="seg">
-        <span class="norm-ref">187-ФЗ · КИИ</span>
-        <h3>Промышленность и телеком</h3>
-        <p>Агенты рядом с технологическими системами: жёсткий allow-list действий, изоляция исполнения, kill switch по деградации.</p>
-      </div>
-    </div>
-  </div>
-</section>
 
 <div class="wrap">
   <div class="final" id="pilot">
