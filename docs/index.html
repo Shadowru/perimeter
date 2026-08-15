@@ -131,8 +131,9 @@ header{position:sticky;top:0;z-index:20;background:rgba(16,21,17,.92);backdrop-f
 .hero>div{min-width:0}
 .statusline{font-family:var(--mono);font-size:12.5px;letter-spacing:.1em;color:var(--soft);margin-bottom:22px}
 .statusline b{color:var(--v-allow);font-weight:400}
-.hero h1{font-weight:650;font-size:clamp(30px,4.4vw,46px);line-height:1.12;letter-spacing:-.015em;text-wrap:balance}
+.hero h1{font-weight:700;font-size:clamp(30px,4.4vw,46px);line-height:1.12;letter-spacing:-.015em;text-wrap:balance}
 .hero h1 em{font-style:normal;color:var(--amber)}
+.hero h1 .framed{white-space:nowrap;border:2px solid var(--amber-dim);padding:0 .18em .04em;margin:0 .02em}
 .hero .sub{margin-top:20px;color:var(--soft);max-width:46ch}
 .hero .sub b{color:var(--text);font-weight:600}
 .hero-ctas{margin-top:30px;display:flex;gap:14px;flex-wrap:wrap}
@@ -179,7 +180,7 @@ h2{font-weight:650;font-size:clamp(23px,2.8vw,30px);margin:8px 0 8px;line-height
 .card{border:1px solid var(--line);background:var(--panel2);border-radius:4px;padding:18px 18px 16px;display:flex;flex-direction:column;gap:8px}
 .card .norm-ref{font-family:var(--mono);font-size:11.5px;color:var(--amber);letter-spacing:.04em}
 .card h3{font-size:16.5px;font-weight:650;line-height:1.3;color:var(--text)}
-.card p{font-size:14px;color:var(--soft)}
+.card p{font-size:14.5px;color:var(--soft)}
 .card .date{margin-top:auto;padding-top:10px;font-family:var(--mono);font-size:12px;color:var(--text)}
 .card--out{border-style:dashed;background:transparent}
 
@@ -198,7 +199,7 @@ h2{font-weight:650;font-size:clamp(23px,2.8vw,30px);margin:8px 0 8px;line-height
 .v-allow-s{stroke:var(--v-allow)}.v-deny-s{stroke:var(--v-deny)}.v-esc-s{stroke:var(--v-escalate)}.v-tr-s{stroke:var(--v-transform)}
 .v-allow-f{fill:var(--v-allow)}.v-deny-f{fill:var(--v-deny)}.v-esc-f{fill:var(--v-escalate)}.v-tr-f{fill:var(--v-transform)}
 .caps{margin-top:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
-.caps p{font-size:14px;color:var(--soft)}
+.caps p{font-size:14.5px;color:var(--soft)}
 .caps b{color:var(--text)}
 
 /* чипы вердиктов */
@@ -294,6 +295,7 @@ footer a{color:var(--soft)}
   .nav .cta-mini{display:none}
   .nav .tg-mini{margin-left:auto}
   .statusline{font-size:10.5px;letter-spacing:.06em}
+  .sl-x{display:none}
   .term{font-size:12px}
   .term-body{height:260px}
   .hero{padding:36px 0 36px}
@@ -321,8 +323,8 @@ footer a{color:var(--soft)}
 <main>
 <div class="wrap hero">
   <div>
-    <p class="statusline"><span class="led led-on led-pulse" aria-hidden="true"></span>КОНТУР: <b>ПОД ЗАЩИТОЙ</b> · FAIL-CLOSED · АУДИТ SHA-256 · ON-PREM</p>
-    <h1>ИИ-агенты действуют.<br>Мы решаем, <em>что им можно</em>.</h1>
+    <p class="statusline"><span class="led led-on led-pulse" aria-hidden="true"></span>КОНТУР: <b>ПОД ЗАЩИТОЙ</b> · FAIL-CLOSED · АУДИТ SHA-256<span class="sl-x"> · ON-PREM</span></p>
+    <h1>ИИ-агенты действуют.<br>Мы решаем, <em class="framed">что им можно</em>.</h1>
     <p class="sub">AgentPerimeter — governance-слой для ИИ-агентов: каждый вызов инструмента перехватывается <b>до исполнения</b> и проходит проверку политик. Действия, запрещённые политикой, не «маловероятны» — они структурно невозможны.</p>
     <div class="hero-ctas">
       <a class="btn btn-key" href="#pilot" data-goal="cta_hero">Запросить пилот</a>
@@ -341,7 +343,7 @@ footer a{color:var(--soft)}
 
 <section id="why">
   <div class="wrap"><div class="panel">
-    <div class="panel-head"><span class="tag"><span class="led led-amber" aria-hidden="true"></span>Регуляторные дедлайны</span></div>
+    <div class="panel-head"><span class="tag">Регуляторные дедлайны</span></div>
     <h2>Требования уже действуют. Классические СЗИ их не закрывают.</h2>
     <p class="lead">Агенты перестали быть чат-ботами: они вызывают API, проводят транзакции, меняют данные. LLM-firewall фильтрует <i>текст</i>. Регулятор требует контроля <i>действий</i>.</p>
     <div class="cards">
@@ -379,7 +381,7 @@ footer a{color:var(--soft)}
 
 <section id="how">
   <div class="wrap"><div class="panel">
-    <div class="panel-head"><span class="tag"><span class="led led-amber" aria-hidden="true"></span>Как работает</span></div>
+    <div class="panel-head"><span class="tag">Как работает</span></div>
     <h2>Три шага между намерением модели и её действием</h2>
     <div class="diagram" role="img" aria-label="Схема: намерение агента проходит проверку политики в периметре; исполняется только разрешённое; каждый вердикт уходит в аудит-журнал">
     <svg viewBox="0 0 920 236" xmlns="http://www.w3.org/2000/svg">
@@ -426,7 +428,7 @@ footer a{color:var(--soft)}
 
 <section id="compliance">
   <div class="wrap"><div class="panel">
-    <div class="panel-head"><span class="tag"><span class="led led-amber" aria-hidden="true"></span>Комплаенс из коробки</span></div>
+    <div class="panel-head"><span class="tag">Комплаенс из коробки</span></div>
     <h2>Готовые пакеты политик под нормативку</h2>
     <p class="lead">Маппинги сверены с официальными текстами — приказом № 117 (публикация pravo.gov.ru), методикой ФСТЭК от 12.04.2026 и каталогом угроз ИИ БДУ ФСТЭК.</p>
     <div class="ctable"><table>
@@ -454,7 +456,7 @@ footer a{color:var(--soft)}
 
 <section id="perimeter-1c">
   <div class="wrap"><div class="panel">
-    <div class="panel-head"><span class="tag"><span class="led led-on" aria-hidden="true"></span>Живое демо · открытый код</span></div>
+    <div class="panel-head"><span class="tag">Живое демо · открытый код</span></div>
     <h2>«Периметр» для 1С — наш агент под этим контролем</h2>
     <p class="lead">Мы не только продаём governance — мы держим в периметре собственного агента. «Периметр» — бесплатный локальный ИИ-ассистент по данным 1С:Предприятие. Скачайте, поставьте у себя — и посмотрите, как выглядит агент, построенный по правилам приказа № 117, изнутри.</p>
     <div class="diagram" role="img" aria-label="Схема: 1С и Периметр внутри контура компании; интернет отрезан воздушным зазором">
