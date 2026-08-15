@@ -1,21 +1,21 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#F7F8F6">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<title>Периметр — свой ИИ-помощник для 1С. Данные не уходят из офиса</title>
-<meta name="description" content="Спросите у своей 1С: «кто нам должен?», «что не проведено?», «подготовь счёт» — и получите ответ со ссылками на документы. Работает на вашем сервере, данные не уходят в интернет. Бесплатно, открытый код.">
-<meta name="keywords" content="ИИ для бухгалтера, нейросеть для 1С, помощник бухгалтера, дебиторская задолженность, сверка с контрагентом, управленческая отчётность 1С, ИИ без облака, 152-ФЗ">
+<meta name="theme-color" content="#eef0ed">
+<title>ВПериметре — governance для ИИ-агентов и локальный ИИ-ассистент для 1С. Приказ ФСТЭК № 117, ГОСТ Р 57580</title>
+<meta name="description" content="AgentPerimeter: каждый вызов инструмента ИИ-агентом проходит проверку политик до исполнения — приказ ФСТЭК № 117, ГОСТ Р 57580, закон РК об ИИ. Плюс «Периметр» — бесплатный локальный ИИ-ассистент для 1С без внешних API: данные не уходят из офиса.">
+<meta name="keywords" content="безопасность ИИ агентов, приказ ФСТЭК 117 ИИ, защита LLM, governance ИИ, ГОСТ 57580 ИИ, аудит ИИ систем, ИИ для бухгалтера, нейросеть для 1С, ИИ без облака, 152-ФЗ">
 <link rel="canonical" href="https://впериметре.рф/">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231E6B4F'/%3E%3Cpath d='M9 17l5 5 9-11' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23eef0ed'/%3E%3Crect x='6' y='6' width='20' height='20' fill='none' stroke='%238f2a22' stroke-width='3'/%3E%3Crect x='13' y='13' width='6' height='6' fill='%231c2320'/%3E%3C/svg%3E">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Периметр">
+<meta property="og:site_name" content="ВПериметре">
 <meta property="og:locale" content="ru_RU">
 <meta property="og:url" content="https://xn--b1agaanysjdt.xn--p1ai/">
-<meta property="og:title" content="Периметр — свой ИИ-помощник для 1С">
-<meta property="og:description" content="Спросите у своей 1С: «кто нам должен?», «что не проведено?» — ответ со ссылками на документы. Данные не уходят из офиса. Бесплатно, открытый код.">
+<meta property="og:title" content="ВПериметре — governance для ИИ-агентов + бесплатный локальный ИИ для 1С">
+<meta property="og:description" content="Каждый вызов инструмента ИИ-агентом проходит проверку политик до исполнения. Приказ ФСТЭК № 117, ГОСТ Р 57580, закон РК. Плюс открытый ИИ-ассистент для 1С без внешних API.">
 <meta property="og:image" content="https://xn--b1agaanysjdt.xn--p1ai/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -39,37 +39,8 @@
   "featureList": [
     "Поиск документов 1С по контрагенту, периоду, статусу проведения",
     "Сверка отгрузок и оплат, дебиторская задолженность по контрагентам",
-    "ABC-анализ клиентов и номенклатуры по выручке",
-    "Себестоимость и маржа по брендам за период",
-    "Отчёт о прибылях и убытках: выручка, себестоимость, валовая прибыль",
-    "Движение денежных средств по расчётному счёту помесячно",
-    "Дебиторская и кредиторская задолженность по срокам с указанием документов",
-    "Акт сверки взаиморасчётов с контрагентом",
-    "Динамика продаж по месяцам и средний чек",
-    "Себестоимость проданного по товарам с маржой; ABC по товарам с количеством",
-    "Таблицы отчётов формирует программа, а не нейросеть; ответ сверяется с выгрузкой из 1С",
     "Черновики документов только после подтверждения человека",
     "Работа без интернета: данные не покидают сервер компании"
-  ]
-}
-</script>
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {"@type": "Question", "name": "Наши данные точно никуда не уходят?",
-     "acceptedAnswer": {"@type": "Answer", "text": "Да. «Периметр» и его нейросеть работают прямо на сервере вашей компании. Программа технически не умеет отправлять данные в интернет: это проверяется автоматическими тестами, а каждый шаг помощника записывается в журнал, который может проверить ваш ИТ-специалист."}},
-    {"@type": "Question", "name": "Нужен ли программист 1С, чтобы это заработало?",
-     "acceptedAnswer": {"@type": "Answer", "text": "Нет. Доработки конфигурации не нужны. Подключиться можно двумя способами: штатной публикацией базы, которую включает системный администратор, либо вообще без публикации — тогда 1С сама обращается к помощнику; этот способ рассчитан на случаи, когда публиковать базу нельзя. Имена полей для «Бухгалтерии 3.0» сверены с живой базой. «Управление торговлей 11» и «ЗУП 3.1» подготовлены, но на живых базах пока не проверялись — это делается на пилоте. Если своего ИТ-специалиста нет — напишите нам, поможем с установкой."}},
-    {"@type": "Question", "name": "Может ли помощник испортить данные в 1С?",
-     "acceptedAnswer": {"@type": "Answer", "text": "Нет. Помощник умеет только читать данные и создавать черновики документов — и то лишь после вашего явного разрешения. Провести документ он не может в принципе: проведение всегда остаётся за человеком в 1С."}},
-    {"@type": "Question", "name": "Можно ли получать управленческие отчёты простым вопросом?",
-     "acceptedAnswer": {"@type": "Answer", "text": "Да. Готовы ABC-анализ по клиентам и по товарам, себестоимость и маржа по брендам, отчёт о прибылях и убытках, движение денег по расчётному счёту, дебиторка и кредиторка по срокам, акт сверки с контрагентом, динамика продаж и средний чек. Считает не нейросеть, а сама программа — точным расчётом по документам базы; модель только выбирает нужный отчёт и объясняет результат словами, а таблицу вы получаете от программы напрямую. Каждый отчёт называет период и документы-источники, поэтому любую строку можно проверить в базе."}},
-    {"@type": "Question", "name": "Сколько это стоит?",
-     "acceptedAnswer": {"@type": "Answer", "text": "Сама программа бесплатна: код открыт (лицензия MIT), нейросеть с открытыми весами. Затраты — сервер и работы по установке. Видеокарта не нужна, достаточно 16 ГБ оперативной памяти и 15 ГБ на диске: столько занимает рабочая модель — российская GigaChat 3.1 от Сбера с открытой лицензией. С установкой можем помочь — напишите на proteyrus@gmail.com."}},
-    {"@type": "Question", "name": "Быстро ли отвечает?",
-     "acceptedAnswer": {"@type": "Answer", "text": "Быстро: наш замер на компьютере с 16 ГБ памяти — вопрос «найди непроведённые реализации за июль по контрагенту» отрабатывается за 31 секунду вместе с поиском контрагента и документов, сверка отгрузок и оплат — за 34 секунды. Это полный цикл: помощник обращается к 1С, получает данные и формирует ответ со ссылками на документы. Скорость на вашем железе замеряем на пилоте и фиксируем в акте."}}
   ]
 }
 </script>
@@ -80,526 +51,453 @@
         m[i].l=1*new Date();
         for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
         k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=111117992', 'ym');
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=111624890', 'ym');
 
-    ym(111117992, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+    ym(111624890, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
 </script>
-<noscript><div><img src="https://mc.yandex.ru/watch/111117992" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
 <!-- /Yandex.Metrika counter -->
 <style>
-  :root {
-    --bg: #F7F8F6;
-    --card: #FFFFFF;
-    --line: #E3E6E0;
-    --ink: #1E2A38;
-    --dim: #5B6B7A;
-    --green: #1E6B4F;
-    --green-soft: #E7F2EC;
-    --amber-soft: #FBF3E1;
-    --amber-ink: #8A6A1F;
-    --chat-me: #DCEEE4;
-    --mono: ui-monospace, "SF Mono", "Menlo", "Consolas", monospace;
-    --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
-    color-scheme: light;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
-  body {
-    font-family: var(--sans); background: var(--bg); color: var(--ink); line-height: 1.6;
-    -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
-    /* Страховка от горизонтального переполнения: любое широкое содержимое
-       (таблица, длинный номер документа) не должно уводить страницу вбок —
-       иначе боковые поля визуально исчезают. */
-    overflow-x: hidden;
-    overflow-wrap: break-word;
-  }
-  img, table, pre, svg { max-width: 100%; }
-  ::selection { background: rgba(30,107,79,.18); }
-  .wrap {
-    max-width: 1020px; margin: 0 auto;
-    padding-left: max(20px, env(safe-area-inset-left));
-    padding-right: max(20px, env(safe-area-inset-right));
-  }
-  a { color: var(--green); }
-  a:focus-visible, button:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+:root{
+  --paper:#eef0ed;
+  --paper-raised:#f7f8f6;
+  --ink:#1c2320;
+  --ink-soft:#4c554f;
+  --line:#1c2320;
+  --line-faint:#c9cec9;
+  --seal:#8f2a22;
+  --seal-dark:#701f19;
+  --term-bg:#12160f;
+  --term-text:#c9d0c2;
+  --v-deny:#e05c50;
+  --v-escalate:#d99a2b;
+  --v-transform:#6da3d8;
+  --v-allow:#7fae82;
+  --v-warn:#b9b06a;
+  --mono:ui-monospace,'Cascadia Code','JetBrains Mono',Consolas,'Liberation Mono',monospace;
+  --serif:Georgia,'Times New Roman',serif;
+  --sans:-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.55}
+a{color:var(--seal)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--seal);outline-offset:2px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
 
-  header { background: var(--card); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
-  .header-in { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; gap: 10px; flex-wrap: wrap; }
-  .brand { font-weight: 800; font-size: 1.05rem; letter-spacing: .01em; display: flex; align-items: center; gap: 9px; }
-  .brand .mark { width: 26px; height: 26px; border-radius: 7px; background: var(--green); display: inline-flex; align-items: center; justify-content: center; flex: none; }
-  .brand .mark svg { width: 15px; height: 15px; }
-  nav a { font-size: .86rem; color: var(--dim); text-decoration: none; margin-left: 6px; padding: 10px 8px; display: inline-block; }
-  nav a:hover { color: var(--ink); }
+/* ---- шапка ---- */
+header{border-bottom:1px solid var(--line);background:var(--paper)}
+.nav{display:flex;align-items:baseline;gap:28px;padding:18px 0;flex-wrap:wrap}
+.mark{font-family:var(--serif);font-size:22px;letter-spacing:.01em;text-decoration:none;color:var(--ink);white-space:nowrap}
+.mark b{border:1.5px solid var(--ink);padding:1px 7px 2px;font-weight:600}
+.nav nav{display:flex;gap:20px;flex-wrap:wrap;font-size:15px}
+.nav nav a{color:var(--ink-soft);text-decoration:none}
+.nav nav a:hover{color:var(--seal)}
+.nav .cta-mini{margin-left:auto;font-size:15px;color:var(--paper-raised);background:var(--seal);border:1px solid var(--seal-dark);padding:7px 14px;text-decoration:none}
+.nav .cta-mini:hover{background:var(--seal-dark)}
 
-  .hero { display: grid; grid-template-columns: 1.06fr .94fr; gap: 44px; align-items: center; padding: 58px 0 30px; }
-  h1 { font-size: clamp(1.9rem, 4.6vw, 2.9rem); font-weight: 800; line-height: 1.12; letter-spacing: -.015em; }
-  h1 em { font-style: normal; color: var(--green); }
-  .lead { color: var(--dim); font-size: 1.06rem; margin: 18px 0 26px; max-width: 46ch; }
-  .cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
-  .btn {
-    display: inline-block; font-size: .95rem; font-weight: 600; text-decoration: none;
-    padding: 14px 24px; border-radius: 10px; border: 1.5px solid transparent;
-  }
-  .btn-primary { background: var(--green); color: #fff; box-shadow: 0 6px 18px rgba(30,107,79,.22); }
-  .btn-primary:hover { background: #17553E; }
-  .btn-ghost { border-color: var(--line); color: var(--ink); background: var(--card); }
-  .btn-ghost:hover { border-color: var(--green); color: var(--green); }
-  .under-cta { font-size: .84rem; color: var(--dim); margin-top: 14px; }
+/* ---- hero ---- */
+.hero{padding:64px 0 56px;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:48px;align-items:start}
+.hero h1{font-family:var(--serif);font-weight:600;font-size:clamp(30px,4.2vw,44px);line-height:1.16;letter-spacing:-.01em}
+.hero h1 em{font-style:normal;color:var(--seal)}
+.hero .sub{margin-top:20px;color:var(--ink-soft);max-width:44ch}
+.hero .sub b{color:var(--ink)}
+.hero-ctas{margin-top:30px;display:flex;gap:14px;flex-wrap:wrap}
+.btn{display:inline-block;padding:13px 22px;font-size:16px;text-decoration:none;border:1px solid var(--ink);cursor:pointer;font-family:var(--sans)}
+.btn-seal{background:var(--seal);border-color:var(--seal-dark);color:#fdfbf7}
+.btn-seal:hover{background:var(--seal-dark)}
+.btn-ghost{background:transparent;color:var(--ink)}
+.btn-ghost:hover{background:var(--paper-raised)}
+.stamp{margin-top:26px;display:inline-block;font-family:var(--mono);font-size:12.5px;color:var(--seal);border:1.5px solid var(--seal);padding:6px 10px;transform:rotate(-1.2deg);letter-spacing:.04em}
 
-  /* чат (сигнатура) */
-  .chat {
-    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
-    box-shadow: 0 18px 44px rgba(30,42,56,.10); overflow: hidden;
-  }
-  .chat-bar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
-  .chat-bar .dot { width: 9px; height: 9px; border-radius: 50%; background: #35B36F; flex: none; }
-  .chat-bar b { font-size: .9rem; }
-  .chat-bar span { font-size: .78rem; color: var(--dim); }
-  .chat-body { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-  .msg { max-width: 88%; padding: 10px 14px; border-radius: 14px; font-size: .9rem; line-height: 1.5; }
-  .msg.me { background: var(--chat-me); align-self: flex-end; border-bottom-right-radius: 4px; }
-  .msg.bot { background: var(--bg); border: 1px solid var(--line); align-self: flex-start; border-bottom-left-radius: 4px; }
-  .msg .doc { font-family: var(--mono); font-size: .8rem; color: var(--green); }
-  .msg .warn { display: block; font-size: .78rem; color: var(--amber-ink); background: var(--amber-soft); border-radius: 8px; padding: 6px 9px; margin-top: 8px; }
+/* ---- живой журнал ---- */
+.term{background:var(--term-bg);color:var(--term-text);font-family:var(--mono);font-size:13px;line-height:1.75;border:1px solid var(--ink);box-shadow:6px 6px 0 rgba(28,35,32,.12)}
+.term-bar{display:flex;justify-content:space-between;gap:12px;padding:8px 14px;border-bottom:1px solid #2a3226;color:#8d9884;font-size:12px}
+.term-body{padding:14px 16px 18px;height:340px;overflow:hidden;position:relative}
+.term-body::after{content:"";position:absolute;inset:auto 0 0 0;height:36px;background:linear-gradient(transparent,var(--term-bg))}
+.tl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl .t{color:#6d7a66}
+.tl .v{font-weight:700}
+.tl .deny{color:var(--v-deny)}
+.tl .escalate{color:var(--v-escalate)}
+.tl .transform{color:var(--v-transform)}
+.tl .allow{color:var(--v-allow)}
+.tl .warn{color:var(--v-warn)}
+.tl .norm{color:#8d9884}
+.term-cursor{display:inline-block;width:8px;height:15px;background:var(--term-text);vertical-align:-2px;animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.term-cursor{animation:none}}
 
-  section { padding: 46px 0 10px; }
-  .kicker { font-size: .8rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--green); margin-bottom: 10px; }
-  h2 { font-size: clamp(1.4rem, 3vw, 1.8rem); font-weight: 800; letter-spacing: -.01em; margin-bottom: 10px; }
-  .sub { color: var(--dim); max-width: 62ch; margin-bottom: 26px; }
+/* ---- секции ---- */
+section{padding:56px 0;border-top:1px solid var(--line-faint)}
+.eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:var(--seal);text-transform:uppercase}
+h2{font-family:var(--serif);font-weight:600;font-size:clamp(24px,3vw,32px);margin:10px 0 8px;line-height:1.2}
+.lead{color:var(--ink-soft);max-width:62ch}
 
-  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  /* min-width:0 обязателен: у элементов grid по умолчанию min-width:auto, и
-     широкая таблица внутри распирает колонку — страница уезжает вбок,
-     а боковые поля визуально пропадают (замечено на мобильных). */
-  .cards > *, .checks > *, .grid2 > * { min-width: 0; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
-  .card h3 { font-size: 1rem; margin-bottom: 8px; }
-  .card p { font-size: .9rem; color: var(--dim); }
-  .card .q { display: block; font-size: .84rem; color: var(--ink); background: var(--green-soft); border-radius: 9px; padding: 8px 11px; margin-bottom: 12px; font-weight: 600; }
+/* нормативные карточки */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;margin-top:30px}
+.card{border:1px solid var(--line);background:var(--paper-raised);padding:20px 20px 18px;display:flex;flex-direction:column;gap:8px}
+.card .norm-ref{font-family:var(--mono);font-size:12px;color:var(--seal);letter-spacing:.03em}
+.card h3{font-size:17px;font-weight:650;line-height:1.3}
+.card p{font-size:14.5px;color:var(--ink-soft)}
+.card .date{margin-top:auto;padding-top:10px;font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+.card--out{border-style:dashed;background:transparent}
 
-  .check { display: flex; gap: 12px; align-items: flex-start; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
-  .check svg { flex: none; margin-top: 3px; }
-  .check b { display: block; margin-bottom: 3px; }
-  .check p { font-size: .9rem; color: var(--dim); }
-  .checks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+/* шаги */
+.steps{margin-top:30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;counter-reset:step}
+.step{border:1px solid var(--line);background:var(--paper-raised);padding:22px 20px}
+.step::before{counter-increment:step;content:counter(step);font-family:var(--serif);font-size:34px;line-height:1;color:var(--seal);display:block;margin-bottom:10px}
+.step h3{font-size:17px;margin-bottom:8px}
+.step p{font-size:14.5px;color:var(--ink-soft)}
+.step code{font-family:var(--mono);font-size:12.5px;background:var(--paper);border:1px solid var(--line-faint);padding:1px 5px}
 
-  .steps { counter-reset: step; display: grid; gap: 14px; }
-  .stepp { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px 20px 66px; position: relative; }
-  .stepp::before {
-    counter-increment: step; content: counter(step);
-    position: absolute; left: 20px; top: 20px; width: 30px; height: 30px; border-radius: 50%;
-    background: var(--green-soft); color: var(--green); font-weight: 800; font-size: .95rem;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .stepp h3 { font-size: 1rem; margin-bottom: 5px; }
-  .stepp p { font-size: .9rem; color: var(--dim); }
+/* комплаенс-таблица */
+.ctable{margin-top:28px;border:1px solid var(--line);overflow-x:auto;background:var(--paper-raised)}
+.ctable table{width:100%;border-collapse:collapse;min-width:640px}
+.ctable th,.ctable td{padding:13px 16px;text-align:left;font-size:14.5px;border-bottom:1px solid var(--line-faint);vertical-align:top}
+.ctable th{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft)}
+.ctable tr:last-child td{border-bottom:none}
+.ctable td:first-child{font-weight:650;white-space:nowrap}
+.ctable .st{font-family:var(--mono);font-size:12px;color:var(--seal);white-space:nowrap}
 
-  .helpbox {
-    background: var(--green-soft); border: 1px solid #CBE3D6; border-radius: 14px;
-    padding: 22px; display: flex; gap: 18px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 18px;
-  }
-  .helpbox b { display: block; font-size: 1.02rem; margin-bottom: 4px; }
-  .helpbox p { font-size: .9rem; color: var(--dim); max-width: 52ch; }
+/* отличия */
+.diff{margin-top:28px;display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line)}
+.diff>div{padding:24px 22px}
+.diff .them{border-right:1px dashed var(--line);background:transparent}
+.diff .us{background:var(--paper-raised)}
+.diff h3{font-size:15px;font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase;margin-bottom:14px}
+.diff .them h3{color:var(--ink-soft)}
+.diff .us h3{color:var(--seal)}
+.diff ul{list-style:none}
+.diff li{font-size:14.5px;padding:7px 0;border-top:1px solid var(--line-faint)}
+.diff li:first-of-type{border-top:none}
+.diff .them li{color:var(--ink-soft)}
 
-  /* --- карточки управленческих отчётов --- */
-  .report { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
-  .report-q {
-    display: flex; align-items: flex-start; gap: 8px; padding: 14px 18px;
-    border-bottom: 1px solid var(--line); background: var(--green-soft);
-    font-weight: 600; font-size: .92rem;
-  }
-  .report-q::before { content: "?"; color: var(--green); font-weight: 800; flex: none; }
-  .report-scroll { overflow-x: auto; }
-  .report table { width: 100%; border-collapse: collapse; font-size: .88rem; }
-  .report th {
-    text-align: left; font-weight: 600; font-size: .74rem; letter-spacing: .06em;
-    text-transform: uppercase; color: var(--dim); padding: 10px 14px;
-    border-bottom: 1px solid var(--line); white-space: nowrap;
-  }
-  .report td { padding: 11px 14px; border-bottom: 1px solid var(--line); }
-  .report tbody tr:last-child td { border-bottom: none; }
-  .report tr.total td { font-weight: 700; background: #FAFBFA; }
-  .report .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .report .src { font-size: .8rem; color: var(--dim); }
-  .report .num.neg { color: #B3261E; }
-  .report-note {
-    margin: 12px 2px 0; font-size: .86rem; line-height: 1.5; color: var(--dim);
-  }
-  .badge {
-    display: inline-block; min-width: 22px; text-align: center; border-radius: 6px;
-    font-weight: 800; font-size: .78rem; padding: 2px 7px; color: #fff;
-  }
-  .badge.a { background: var(--green); }
-  .badge.b { background: #B8891F; }
-  .badge.c { background: #8A97A3; }
-  .bar { height: 6px; border-radius: 3px; background: var(--green); display: block; min-width: 3px; }
-  .bar-wrap { background: var(--green-soft); border-radius: 3px; width: 90px; }
+/* периметр для 1С */
+.p1c{margin-top:28px;display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line)}
+.p1c>div{padding:24px 22px}
+.p1c-what{background:var(--paper-raised);border-right:1px solid var(--line-faint)}
+.p1c h3{font-size:15px;font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:14px}
+.p1c ul{list-style:none}
+.p1c li{font-size:14.5px;padding:8px 0;border-top:1px solid var(--line-faint)}
+.p1c li:first-of-type{border-top:none}
+.p1c-what li{font-style:italic;color:var(--ink-soft)}
+.p1c-note{margin-top:12px;font-size:13.5px;color:var(--ink-soft)}
+.p1c-rules .norm-ref{font-family:var(--mono);font-size:11.5px;color:var(--seal);white-space:nowrap;margin-left:6px}
+@media (max-width:900px){.p1c{grid-template-columns:1fr}.p1c-what{border-right:none;border-bottom:1px solid var(--line-faint)}}
 
-  .faq details { background: var(--card); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 10px; }
-  .faq summary { cursor: pointer; font-weight: 600; padding: 15px 18px; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
-  .faq summary::-webkit-details-marker { display: none; }
-  .faq summary::after { content: "+"; color: var(--green); font-weight: 800; }
-  .faq details[open] summary::after { content: "–"; }
-  .faq details p { padding: 0 18px 15px; font-size: .92rem; color: var(--dim); }
+/* сегменты */
+.segs{margin-top:28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.seg{border:1px solid var(--line);background:var(--paper-raised);padding:20px}
+.seg h3{font-size:16.5px;margin-bottom:8px}
+.seg p{font-size:14.5px;color:var(--ink-soft)}
+.seg .norm-ref{font-family:var(--mono);font-size:12px;color:var(--seal);display:block;margin-bottom:8px}
 
-  .tech { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
-  .tech ul { margin: 10px 0 14px 18px; font-size: .88rem; color: var(--dim); }
-  .tech li { margin-bottom: 5px; }
-  .tech .mono, .mono { font-family: var(--mono); font-size: .84em; }
+/* CTA-финал */
+.final{border:1.5px solid var(--ink);background:var(--paper-raised);margin:64px 0;padding:44px 40px;position:relative}
+.final::before{content:"";position:absolute;inset:7px;border:1px solid var(--line-faint);pointer-events:none}
+.final h2{margin-top:0}
+.final .lead{margin-top:10px}
+.final-grid{display:grid;grid-template-columns:1fr 1fr;gap:36px;margin-top:26px}
+.final label{display:block;font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin:14px 0 5px}
+.final input,.final textarea{width:100%;border:1px solid var(--line);background:#fff;padding:10px 12px;font:inherit;font-size:15px;color:var(--ink)}
+.final textarea{min-height:74px;resize:vertical}
+.contact-list{list-style:none;font-size:15.5px}
+.contact-list li{padding:10px 0;border-bottom:1px solid var(--line-faint)}
+.contact-list b{font-family:var(--mono);font-size:13px;color:var(--ink-soft);display:block;letter-spacing:.04em}
 
-  footer { border-top: 1px solid var(--line); margin-top: 44px; padding: 26px 0 max(40px, env(safe-area-inset-bottom)); font-size: .84rem; color: var(--dim); }
-  footer a { color: var(--dim); }
+footer{border-top:1px solid var(--line);padding:26px 0 40px;font-size:13.5px;color:var(--ink-soft)}
+footer .wrap{display:flex;gap:24px;flex-wrap:wrap;justify-content:space-between}
+footer a{color:var(--ink-soft)}
 
-  @media (max-width: 860px) {
-    .hero { grid-template-columns: 1fr; gap: 30px; padding-top: 36px; }
-    .cards, .checks { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 640px) {
-    /* Поля по бокам заметнее: на телефоне контент не должен липнуть к краям */
-    .wrap {
-      padding-left: max(20px, env(safe-area-inset-left));
-      padding-right: max(20px, env(safe-area-inset-right));
-    }
-    /* Внутренние отступы всех карточек — единые, чтобы текст нигде не липнул */
-    .card, .stepp, .helpbox, .check, .tech, .report-q { padding: 16px; }
-    .stepp { padding-left: 54px; }
-    .term-body, .chat-body { padding: 12px 13px; }
-    .faq summary { padding: 14px 16px; }
-    .faq details p { padding: 0 16px 14px; }
-    pre.code { padding: 14px; font-size: .78rem; }
-    section { padding: 34px 0 6px; }
-    .hero { padding: 30px 0 24px; }
-    h1 { font-size: clamp(1.7rem, 7vw, 2.1rem); }
-    .lead { font-size: 1rem; margin: 14px 0 20px; }
-    .cta-row .btn, .helpbox .btn { width: 100%; text-align: center; }
-    nav { display: flex; flex-wrap: wrap; gap: 2px; }
-    nav a { margin-left: 0; padding: 8px 10px 8px 0; font-size: .82rem; }
-    .panel-body, .card, .stepp, .helpbox { padding: 16px; }
-    .stepp { padding-left: 56px; }
-    .report-q { padding: 12px 14px; }
-    .report th, .report td { padding: 9px 10px; }
-    .report table { font-size: .82rem; }
-    .msg { max-width: 94%; }
-    .chat-body { padding: 12px; }
-    footer { padding-bottom: max(32px, env(safe-area-inset-bottom)); }
-  }
+@media (max-width:900px){
+  .hero{grid-template-columns:1fr;gap:36px}
+  .diff{grid-template-columns:1fr}
+  .diff .them{border-right:none;border-bottom:1px dashed var(--line)}
+  .final-grid{grid-template-columns:1fr}
+  .final{padding:32px 22px}
+}
 </style>
 </head>
 <body>
+<noscript><div><img src="https://mc.yandex.ru/watch/111624890" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
 
 <header>
-  <div class="wrap header-in">
-    <div class="brand"><span class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M4 13l6 6L20 5" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Периметр</div>
-    <nav>
-      <a href="#can">Что умеет</a><a href="#reports">Отчёты</a><a href="#safe">Безопасность</a><a href="#install">Установка</a><a href="#faq">Вопросы</a><a href="mailto:proteyrus@gmail.com?subject=Периметр">Написать нам</a>
+  <div class="wrap nav">
+    <a class="mark" href="#">В<b>ПЕРИМЕТРЕ</b></a>
+    <nav aria-label="Разделы">
+      <a href="#why">Почему сейчас</a>
+      <a href="#how">Как работает</a>
+      <a href="#compliance">Комплаенс</a>
+      <a href="#perimeter-1c">Периметр для 1С</a>
+      <a href="#pilot">Пилот</a>
     </nav>
+    <a class="cta-mini" href="#pilot" data-goal="cta_header">Запросить пилот</a>
   </div>
 </header>
 
 <main>
-  <div class="wrap hero">
-    <div>
-      <h1>Свой ИИ‑помощник для 1С. <em>Данные не уходят из офиса.</em></h1>
-      <p class="lead">Спросите как у коллеги: «кто нам должен?», «какие реализации не проведены?», «подготовь счёт как в прошлый раз» — и получите ответ со ссылками на документы. Всё работает на вашем сервере, без облаков.</p>
-      <div class="cta-row">
-        <a class="btn btn-primary" href="mailto:proteyrus@gmail.com?subject=Периметр — хочу попробовать">Написать нам — поможем установить</a>
-        <a class="btn btn-ghost" href="https://github.com/Shadowru/perimeter">Код открыт — GitHub</a>
-      </div>
-      <p class="under-cta">Программа бесплатная, с открытым кодом. Платите только за своё железо.</p>
+<div class="wrap hero">
+  <div>
+    <h1>ИИ-агенты действуют.<br>Мы решаем, <em>что им можно</em>.</h1>
+    <p class="sub">AgentPerimeter — governance-слой для ИИ-агентов: каждый вызов инструмента перехватывается <b>до исполнения</b> и проходит проверку политик. Действия, запрещённые политикой, не «маловероятны» — они структурно невозможны.</p>
+    <div class="hero-ctas">
+      <a class="btn btn-seal" href="#pilot" data-goal="cta_hero">Запросить пилот</a>
+      <a class="btn btn-ghost" href="#compliance" data-goal="cta_mapping">Маппинг на приказ № 117</a>
     </div>
-    <div class="chat" role="img" aria-label="Пример диалога: вопрос о должниках и ответ со ссылкой на документ">
-      <div class="chat-bar"><span class="dot"></span><b>Периметр</b><span>подключён к вашей 1С · офлайн</span></div>
-      <div class="chat-body">
-        <div class="msg me">Кто нам должен и сколько?</div>
-        <div class="msg bot">Должны двое, всего <b>192 000,00 ₽</b>.<br>ООО «Ромашка» — 132 000,00 ₽ <span class="doc">(№РТ‑0001 от 03.07.2026, №РТ‑0005 от 25.06.2026)</span><br>ООО «Василёк» — 60 000,00 ₽ <span class="doc">(№РТ‑0006 от 15.05.2026, №РТ‑0004 от 21.07.2026)</span></div>
-        <div class="msg me">Сделай ABC‑анализ по клиентам</div>
-        <div class="msg bot">A: ООО «Ромашка» — <b>252 000,00 ₽</b> (77,1%)<br>A: ООО «Василёк» — 75 000,00 ₽ (22,9%)<br><span class="doc">расчёт по проведённым реализациям</span></div>
-        <div class="msg me">Подготовь Ромашке счёт как в июне</div>
-        <div class="msg bot">Готов черновик счёта на 99 000,00 ₽ по образцу <span class="doc">№СЧ‑0101 от 20.06.2026</span>.<span class="warn">Черновик создаётся только с вашего разрешения. Проведение — всегда за вами в 1С.</span></div>
+    <span class="stamp">FAIL-CLOSED · АУДИТ SHA-256 · ON-PREM</span>
+  </div>
+  <div class="term" aria-label="Живой аудит-журнал: примеры вердиктов политик">
+    <div class="term-bar"><span>audit.jsonl — вердикты политик</span><span>hash-chain: ok</span></div>
+    <div class="term-body" id="term"><noscript>
+      <div class="tl"><span class="t">10:24:03</span> agent-hr output → <span class="v transform">transform</span> fstec117_pdn_redacted <span class="norm">· 117 п.60</span></div>
+      <div class="tl"><span class="t">10:24:11</span> agent-credit transfer_funds → <span class="v escalate">escalate</span> bank57580_tx_approval <span class="norm">· ГОСТ 57580</span></div>
+      <div class="tl"><span class="t">10:24:15</span> agent-hr http_request → <span class="v deny">deny</span> fstec117_egress_telemetry <span class="norm">· 117 п.60</span></div>
+    </noscript></div>
+  </div>
+</div>
+
+<section id="why">
+  <div class="wrap">
+    <span class="eyebrow">Регуляторные дедлайны</span>
+    <h2>Требования уже действуют. Классические СЗИ их не закрывают.</h2>
+    <p class="lead">Агенты перестали быть чат-ботами: они вызывают API, проводят транзакции, меняют данные. LLM-firewall фильтрует <i>текст</i>. Регулятор требует контроля <i>действий</i>.</p>
+    <div class="cards">
+      <div class="card">
+        <span class="norm-ref">Приказ ФСТЭК № 117 · пп. 60–61</span>
+        <h3>Защита ИС при использовании ИИ</h3>
+        <p>Контроль допустимых тематик запросов, реагирование на недостоверные ответы, запрет передачи данных разработчику модели — «в том числе для улучшения модели».</p>
+        <span class="date">в силе с 01.03.2026</span>
+      </div>
+      <div class="card">
+        <span class="norm-ref">Методика ФСТЭК · п. 3.18</span>
+        <h3>Меры для систем ИИ</h3>
+        <p>Регистрация запросов и ответов, фильтрация входа и выхода, квотирование, целостность конфигурации агентов, «ограничение и контроль функциональности системы ИИ».</p>
+        <span class="date">от 12.04.2026</span>
+      </div>
+      <div class="card">
+        <span class="norm-ref">Закон РК № 230-VIII</span>
+        <h3>ИИ-системы в Казахстане</h3>
+        <p>Классификация по рискам, маркировка сгенерированного контента, право граждан на объяснение решений ИИ, запрет эксплуатации как санкция.</p>
+        <span class="date">в силе с 18.01.2026</span>
+      </div>
+      <div class="card card--out">
+        <span class="norm-ref">Закон об ИИ РФ · ФЗ № 1271570-8</span>
+        <h3>Сертификация высокорисковых систем</h3>
+        <p>Четыре категории риска, обязательная сертификация ФСТЭК/ФСБ для систем, принимающих автономные решения. Подзаконные акты — на подходе.</p>
+        <span class="date">с 01.09.2026</span>
       </div>
     </div>
   </div>
+</section>
 
-  <section id="can">
-    <div class="wrap">
-      <div class="kicker">Что умеет</div>
-      <h2>Рутина за минуты, а не за вечер</h2>
-      <p class="sub">Помощник работает с типовой «Бухгалтерией 3.0» — ничего дорабатывать не нужно. «Управление торговлей 11» и «ЗУП 3.1» подготовлены, но на живых базах ещё не проверены: это делается на пилоте.</p>
-      <div class="cards">
-        <div class="card">
-          <span class="q">«Найди все непроведённые реализации за июль по Ромашке»</span>
-          <h3>Находит документы</h3>
-          <p>Реализации, поступления, счета, оплаты — по контрагенту, периоду, статусу. В ответе всегда номер и дата документа.</p>
-        </div>
-        <div class="card">
-          <span class="q">«Что мы отгрузили, но нам не оплатили?»</span>
-          <h3>Сверки и дебиторка</h3>
-          <p>Сопоставит отгрузки с оплатами и покажет, кто должен и сколько — с документами, по которым можно проверить каждую цифру.</p>
-        </div>
-        <div class="card">
-          <span class="q">«Сводка за месяц для директора»</span>
-          <h3>Отчёт без выгрузок в Excel</h3>
-          <p>Управленческая сводка простым вопросом: отгрузки, оплаты, долги. Директор получает ответ сразу, а не «завтра пришлю таблицу».</p>
-        </div>
+<section id="how">
+  <div class="wrap">
+    <span class="eyebrow">Как работает</span>
+    <h2>Три шага между намерением модели и её действием</h2>
+    <div class="steps">
+      <div class="step">
+        <h3>Перехват до исполнения</h3>
+        <p>Каждый tool call, обращение к модели и делегирование проходит через детерминированный код политик — до того, как намерение модели уйдёт «на провод». Fail-closed: что не разрешено явно, то запрещено. Любой стек: LangGraph, AutoGen, CrewAI, свои фреймворки.</p>
+      </div>
+      <div class="step">
+        <h3>Вердикт политики</h3>
+        <p><code>deny</code> — блок, <code>transform</code> — маскирование ПДн и реквизитов, <code>escalate</code> — подтверждение человеком для необратимых действий, <code>warn</code> — пометка недостоверного ответа. Политики — версионируемые подписанные манифесты, а не промпт-заклинания.</p>
+      </div>
+      <div class="step">
+        <h3>Юридически значимый аудит</h3>
+        <p>Каждый вердикт — в защищённый от подмены журнал: hash-цепочка SHA-256, Merkle-доказательства, подпись ГОСТ Р 34.10-2012, экспорт в SIEM. Отчёт соответствия для аттестации формируется из журнала одной командой.</p>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section id="reports">
-    <div class="wrap">
-      <div class="kicker">Директору</div>
-      <h2>Управленческие отчёты — вопросом, а не выгрузкой</h2>
-      <p class="sub">Отчёты, ради которых обычно собирают выгрузки в Excel и ждут неделю. Здесь их считает сам «Периметр» — не нейросеть на глазок, а точный расчёт по вашим документам; модель только выбирает нужный отчёт и объясняет результат словами.</p>
-      <div class="grid2">
+<section id="compliance">
+  <div class="wrap">
+    <span class="eyebrow">Комплаенс из коробки</span>
+    <h2>Готовые пакеты политик под нормативку</h2>
+    <p class="lead">Маппинги сверены с официальными текстами — приказом № 117 (публикация pravo.gov.ru), методикой ФСТЭК от 12.04.2026 и каталогом угроз ИИ БДУ ФСТЭК.</p>
+    <div class="ctable"><table>
+      <tr><th>Рамка</th><th>Что закрывает пакет</th><th></th></tr>
+      <tr><td>Приказ № 117 + методика</td><td>Фильтрация запросов и ответов, допустимые тематики (п. 61б), недостоверные ответы (п. 61в–г), квотирование, контроль функциональности системы ИИ, регистрация событий</td><td class="st">8 политик</td></tr>
+      <tr><td>152-ФЗ</td><td>Маскирование российских ПДн — СНИЛС, ИНН, паспорт, телефон — до передачи в модель и в ответах</td><td class="st">redact / deny</td></tr>
+      <tr><td>ГОСТ Р 57580 · 683-П</td><td>Агент как управляемый субъект доступа: реквизиты под маской, транзакции только через человека, evidence для аудита по 57580.2</td><td class="st">банковский профиль</td></tr>
+      <tr><td>Закон РК № 230-VIII</td><td>Маркировка сгенерированного контента (KK/RU), предохранители запрещённых применений, объяснение решений по запросу гражданина</td><td class="st">пакет для РК</td></tr>
+      <tr><td>БДУ ФСТЭК · угрозы ИИ</td><td>Модель угроз по 13 официальным способам реализации — от DoS запросами до подмены системного промпта агента</td><td class="st">карта рисков</td></tr>
+    </table></div>
+  </div>
+</section>
 
-        <div class="report">
-          <div class="report-q">Сделай ABC‑анализ по клиентам</div>
-          <div class="report-scroll"><table>
-            <thead><tr><th>Группа</th><th>Клиент</th><th class="num">Выручка</th><th class="num">Доля</th></tr></thead>
-            <tbody>
-              <tr><td><span class="badge a">A</span></td><td>ООО «Ромашка»</td><td class="num">252 000,00 ₽</td><td class="num">77,1%</td></tr>
-              <tr><td><span class="badge a">A</span></td><td>ООО «Василёк»</td><td class="num">75 000,00 ₽</td><td class="num">22,9%</td></tr>
-              <tr class="total"><td colspan="2">Итого за всё время</td><td class="num">327 000,00 ₽</td><td class="num">100%</td></tr>
-            </tbody>
-          </table></div>
-        </div>
-
-        <div class="report">
-          <div class="report-q">Дай себестоимость и маржу по брендам за июль</div>
-          <div class="report-scroll"><table>
-            <thead><tr><th>Бренд</th><th class="num">Выручка</th><th class="num">Себестоимость</th><th class="num">Маржа</th></tr></thead>
-            <tbody>
-              <tr><td>Гамма</td><td class="num">135 000,00 ₽</td><td class="num">92 500,00 ₽</td><td class="num">42 500,00 ₽ · 31,5%</td></tr>
-              <tr class="total"><td>Итого</td><td class="num">135 000,00 ₽</td><td class="num">92 500,00 ₽</td><td class="num">42 500,00 ₽ · 31,5%</td></tr>
-            </tbody>
-          </table></div>
-        </div>
-
-        <div class="report">
-          <div class="report-q">Кто нам должен и как давно?</div>
-          <div class="report-scroll"><table>
-            <thead><tr><th>Контрагент</th><th class="num">Долг</th><th>Документ‑основание</th><th class="num">Возраст</th></tr></thead>
-            <tbody>
-              <tr><td>ООО «Ромашка»</td><td class="num">120 000,00 ₽</td><td class="src">реализация №РТ‑0001 от 03.07.2026</td><td class="num">27 дней</td></tr>
-              <tr><td>ООО «Ромашка»</td><td class="num">12 000,00 ₽</td><td class="src">реализация №РТ‑0005 от 25.06.2026</td><td class="num">35 дней</td></tr>
-              <tr><td>ООО «Василёк»</td><td class="num">60 000,00 ₽</td><td class="src">№РТ‑0006 от 15.05.2026, №РТ‑0004 от 21.07.2026</td><td class="num">76 и 9 дней</td></tr>
-              <tr class="total"><td>Итого дебиторка</td><td class="num">192 000,00 ₽</td><td class="src">на 31.07.2026</td><td class="num">—</td></tr>
-            </tbody>
-          </table></div>
-        </div>
-
-        <div class="report">
-          <div class="report-q">Какие товары приносят больше всего выручки?</div>
-          <div class="report-scroll"><table>
-            <thead><tr><th>Товар</th><th class="num">Выручка</th><th>Доля</th></tr></thead>
-            <tbody>
-              <tr><td>Ноутбук ProBook 14</td><td class="num">189 000,00 ₽</td>
-                  <td><span class="bar-wrap"><span class="bar" style="width:58%"></span></span> 57,8%</td></tr>
-              <tr><td>Монитор 27"</td><td class="num">105 000,00 ₽</td>
-                  <td><span class="bar-wrap"><span class="bar" style="width:32%"></span></span> 32,1%</td></tr>
-              <tr><td>Услуги консультационные</td><td class="num">33 000,00 ₽</td>
-                  <td><span class="bar-wrap"><span class="bar" style="width:10%"></span></span> 10,1%</td></tr>
-            </tbody>
-          </table></div>
-        </div>
-
-
-        <div class="report">
-          <div class="report-q">Покажи прибыли и убытки по месяцам</div>
-          <div class="report-scroll"><table>
-            <thead><tr><th>Месяц</th><th class="num">Выручка</th><th class="num">Себестоимость</th><th class="num">Валовая прибыль</th></tr></thead>
-            <tbody>
-              <tr><td>Июнь 2026</td><td class="num">99 000,00 ₽</td><td class="num">67 000,00 ₽</td><td class="num">32 000,00 ₽ · 32,3%</td></tr>
-              <tr><td>Июль 2026</td><td class="num">135 000,00 ₽</td><td class="num">92 500,00 ₽</td><td class="num">42 500,00 ₽ · 31,5%</td></tr>
-              <tr class="total"><td>Итого</td><td class="num">234 000,00 ₽</td><td class="num">159 500,00 ₽</td><td class="num">74 500,00 ₽ · 31,8%</td></tr>
-            </tbody>
-          </table></div>
-          <p class="report-note">Отчёт сам оговаривает, что это валовая прибыль: расходы по счетам 26 и 44 в подключённых данных отсутствуют, поэтому чистую прибыль он не выводит и не досочиняет.</p>
-        </div>
-
-        <div class="report">
-          <div class="report-q">Что с деньгами на счёте за последние месяцы?</div>
-          <div class="report-scroll"><table>
-            <thead><tr><th>Месяц</th><th class="num">Поступило</th><th class="num">Списано</th><th class="num">Чистый поток</th></tr></thead>
-            <tbody>
-              <tr><td>Июнь 2026</td><td class="num">0,00 ₽</td><td class="num">150 000,00 ₽</td><td class="num neg">−150 000,00 ₽</td></tr>
-              <tr><td>Июль 2026</td><td class="num">135 000,00 ₽</td><td class="num">50 000,00 ₽</td><td class="num">+85 000,00 ₽</td></tr>
-              <tr class="total"><td>Итого</td><td class="num">135 000,00 ₽</td><td class="num">200 000,00 ₽</td><td class="num neg">−65 000,00 ₽</td></tr>
-            </tbody>
-          </table></div>
-        </div>
-
-        <div class="report">
-          <div class="report-q">Сколько мы должны поставщикам?</div>
-          <div class="report-scroll"><table>
-            <thead><tr><th>Поставщик</th><th class="num">Долг</th><th>Документ‑основание</th><th class="num">Возраст</th></tr></thead>
-            <tbody>
-              <tr><td>АО «ТехноСервис»</td><td class="num">100 000,00 ₽</td><td class="src">поступление №ПТ‑0001 от 05.07.2026</td><td class="num">25 дней</td></tr>
-              <tr><td>ООО «Василёк»</td><td class="num">40 000,00 ₽</td><td class="src">поступление №ПТ‑0002 от 10.03.2026</td><td class="num">142 дня</td></tr>
-              <tr class="total"><td>Итого кредиторка</td><td class="num">140 000,00 ₽</td><td class="src">на 31.07.2026</td><td class="num">—</td></tr>
-            </tbody>
-          </table></div>
-        </div>
-
-        <div class="report">
-          <div class="report-q">Сделай акт сверки с Ромашкой</div>
-          <div class="report-scroll"><table>
-            <thead><tr><th>Дата</th><th>Документ</th><th class="num">Сумма</th><th class="num">Сальдо</th></tr></thead>
-            <tbody>
-              <tr><td colspan="3">Сальдо на начало</td><td class="num">0,00 ₽</td></tr>
-              <tr><td>28.05.2026</td><td class="src">отгрузка №РТ‑0007</td><td class="num">33 000,00 ₽</td><td class="num">33 000,00 ₽</td></tr>
-              <tr><td>25.06.2026</td><td class="src">отгрузка №РТ‑0005</td><td class="num">99 000,00 ₽</td><td class="num">132 000,00 ₽</td></tr>
-              <tr><td>03.07.2026</td><td class="src">отгрузка №РТ‑0001</td><td class="num">120 000,00 ₽</td><td class="num">252 000,00 ₽</td></tr>
-              <tr><td>07.07.2026</td><td class="src">оплата №ПС‑0001</td><td class="num">120 000,00 ₽</td><td class="num">132 000,00 ₽</td></tr>
-              <tr class="total"><td colspan="3">Сальдо на конец — долг контрагента</td><td class="num">132 000,00 ₽</td></tr>
-            </tbody>
-          </table></div>
-        </div>
-
-        <div class="report">
-          <div class="report-q">Как идут продажи и какой средний чек?</div>
-          <div class="report-scroll"><table>
-            <thead><tr><th>Месяц</th><th class="num">Выручка</th><th class="num">Отгрузок</th><th class="num">Средний чек</th><th class="num">К прошлому</th></tr></thead>
-            <tbody>
-              <tr><td>Май 2026</td><td class="num">93 000,00 ₽</td><td class="num">2</td><td class="num">46 500,00 ₽</td><td class="num">—</td></tr>
-              <tr><td>Июнь 2026</td><td class="num">99 000,00 ₽</td><td class="num">1</td><td class="num">99 000,00 ₽</td><td class="num">+6,5%</td></tr>
-              <tr><td>Июль 2026</td><td class="num">135 000,00 ₽</td><td class="num">2</td><td class="num">67 500,00 ₽</td><td class="num">+36,4%</td></tr>
-              <tr class="total"><td>Итого</td><td class="num">327 000,00 ₽</td><td class="num">5</td><td class="num">65 400,00 ₽</td><td class="num">—</td></tr>
-            </tbody>
-          </table></div>
-        </div>
-
-      </div>
-      <p class="footnote">Ответы выше — из нашего тестового прогона на демонстрационной базе; на ваших данных цифры будут ваши. Каждый отчёт подписывает период, за который построен, и перечисляет документы-источники, чтобы любую строку можно было проверить в 1С.</p>
-    </div>
-  </section>
-
-  <section id="safe">
-    <div class="wrap">
-      <div class="kicker">Безопасность</div>
-      <h2>Почему это безопасно</h2>
-      <p class="sub">Главное отличие от облачных нейросетей: «Периметру» не нужен интернет. Ваша база, ваши цифры и вопросы остаются на вашем сервере.</p>
-      <div class="checks">
-        <div class="check">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="#1E6B4F"/><path d="M7 12.5l3.2 3.2L17 9" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <div><b>Данные остаются в офисе</b><p>Программа технически не умеет отправлять их в интернет — это проверяется автоматическими тестами при каждом изменении кода.</p></div>
-        </div>
-        <div class="check">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="#1E6B4F"/><path d="M7 12.5l3.2 3.2L17 9" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <div><b>Ничего не испортит в 1С</b><p>Помощник читает данные и может создать черновик — только с вашего разрешения. Проведение документов всегда остаётся за человеком.</p></div>
-        </div>
-        <div class="check">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="#1E6B4F"/><path d="M7 12.5l3.2 3.2L17 9" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <div><b>Каждый шаг записан</b><p>Журнал всех действий помощника нельзя подделать или стереть — ваш ИТ‑специалист может проверить его в любой момент.</p></div>
-        </div>
-        <div class="check">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="#1E6B4F"/><path d="M7 12.5l3.2 3.2L17 9" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <div><b>Проверено на живой 1С</b><p>Имена всех полей сверены с настоящей «Бухгалтерией предприятия» 3.0.111, а не выведены из документации: помощник опросил состав метаданных изнутри базы. Отчёты собраны на её реальных данных, и суммы сошлись с прямым запросом к базе.</p></div>
-        </div>
-        <div class="check">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="#1E6B4F"/><path d="M7 12.5l3.2 3.2L17 9" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <div><b>Не выдумывает цифры</b><p>Таблицу отчёта вы получаете ровно такой, какой её посчитала программа: нейросеть её не переписывает и даже не видит её строк — ей достаются только итог и период, чтобы объяснить результат словами. А то, что она всё-таки написала, «Периметр» перед выдачей сверяет с выгрузкой из 1С: расхождение — и вы увидите предупреждение вместо красивой, но неверной цифры.</p></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="install">
-    <div class="wrap">
-      <div class="kicker">Установка</div>
-      <h2>Три шага — и помощник работает</h2>
-      <div class="steps">
-        <div class="stepp">
-          <h3>Понадобится один сервер</h3>
-          <p>Видеокарта не нужна. Достаточно <b style="color:var(--ink)">16 ГБ оперативной памяти</b> и 15 ГБ свободного места на диске — столько занимает модель. Это обычный офисный компьютер, а не сервер. Нужна максимальная глубина ответов на сложных аналитических вопросах — можно поставить модель на 744 млрд параметров, но ей потребуется машина от 128 ГБ памяти; для повседневной работы с документами это не нужно. Пришлите характеристики своего сервера — посчитаем, что получится именно у вас.</p>
-        </div>
-        <div class="stepp">
-          <h3>Ваш ИТ‑специалист ставит программу по инструкции</h3>
-          <p>Обычно это один день: установка, подключение к 1С и загрузка нейросети. Подключение — на выбор: штатная публикация базы либо режим без публикации, когда 1С обращается к помощнику сама (нужен там, где служба безопасности запрещает публиковать базу). Доработки конфигурации не требуются ни в том, ни в другом случае; для специалиста есть подробная документация.</p>
-        </div>
-        <div class="stepp">
-          <h3>Бухгалтерия просто пишет вопросы</h3>
-          <p>Работа идёт в браузере, как в привычном мессенджере. Никаких команд и настроек — спрашиваете словами, получаете ответы с документами.</p>
-        </div>
-      </div>
-      <div class="helpbox">
-        <div>
-          <b>Инструкции выглядят сложно? Это нормально.</b>
-          <p>Если нет своего ИТ‑специалиста или что-то в установке непонятно — напишите нам. Поможем поставить, подключить вашу 1С и проверить безопасность.</p>
-        </div>
-        <a class="btn btn-primary" href="mailto:proteyrus@gmail.com?subject=Периметр — помощь с установкой">Получить помощь с установкой</a>
-      </div>
-    </div>
-  </section>
-
-  <section id="price">
-    <div class="wrap">
-      <div class="kicker">Стоимость</div>
-      <h2>Программа бесплатная — без оговорок</h2>
-      <p class="sub">Код открыт (лицензия MIT), нейросеть — с открытыми весами (Apache-2.0). Ваши затраты — сервер и работы по установке. Скорость приводим по собственному замеру, а не по обещаниям: на компьютере с 16 ГБ памяти вопрос «найди непроведённые реализации за июль по Ромашке» отрабатывается за 31 секунду, сверка отгрузок и оплат — за 34. Это полный цикл вместе с обращением к 1С.</p>
-    </div>
-  </section>
-
-  <section id="faq">
-    <div class="wrap">
-      <div class="kicker">Вопросы</div>
-      <h2>Частые вопросы</h2>
-      <div class="faq">
-        <details>
-          <summary>Наши данные точно никуда не уходят?</summary>
-          <p>Да. «Периметр» и его нейросеть работают прямо на сервере вашей компании. Программа технически не умеет отправлять данные в интернет — это проверяется автоматическими тестами, а каждый шаг помощника записывается в журнал, который может проверить ваш ИТ‑специалист.</p>
-        </details>
-        <details>
-          <summary>Нужен ли программист 1С, чтобы это заработало?</summary>
-          <p>Нет. Доработки конфигурации не нужны, и подключиться можно двумя способами: штатной публикацией базы, которую включает системный администратор, либо <b>вообще без публикации</b> — тогда 1С сама обращается к помощнику. Второй способ выручает, когда служба ИБ против публикации или у вас базовая версия платформы, которая публиковаться не умеет. Имена полей для «Бухгалтерии 3.0» сверены с живой базой; «УТ 11» и «ЗУП 3.1» подготовлены и проверяются на пилоте. Нет своего специалиста — <a href="mailto:proteyrus@gmail.com?subject=Периметр — помощь с установкой">напишите нам</a>, поможем.</p>
-        </details>
-        <details>
-          <summary>Может ли помощник испортить данные в 1С?</summary>
-          <p>Нет. Он умеет только читать данные и создавать черновики документов — и то лишь после вашего явного разрешения. Провести документ он не может в принципе: проведение всегда остаётся за человеком в 1С.</p>
-        </details>
-        <details>
-          <summary>Можно ли получать управленческие отчёты простым вопросом?</summary>
-          <p>Да. Готовы ABC‑анализ по клиентам и по товарам, себестоимость и маржа по брендам, отчёт о прибылях и убытках, движение денег по расчётному счёту, дебиторка и кредиторка по срокам, акт сверки с контрагентом, динамика продаж и средний чек. Важная деталь: <b>считает не нейросеть, а сам «Периметр»</b> — точным расчётом по вашим документам; модель лишь выбирает нужный отчёт и объясняет результат словами, а саму таблицу вы получаете от программы напрямую. Поэтому цифрам можно доверять так же, как выгрузке из 1С, и каждую строку легко проверить: отчёт называет документы-источники и период.</p>
-        </details>
-        <details>
-          <summary>Сколько это стоит?</summary>
-          <p>Сама программа бесплатна: код открыт (MIT), нейросеть с открытыми весами (Apache-2.0). Затраты — компьютер или сервер (16 ГБ памяти, 15 ГБ на диске, без видеокарты) и работы по установке. С установкой <a href="mailto:proteyrus@gmail.com?subject=Периметр — помощь с установкой">можем помочь</a>.</p>
-        </details>
-        <details>
-          <summary>Быстро ли отвечает?</summary>
-          <p>Все цифры ниже — из нашего замера, а не расчётные. На компьютере с 16 ГБ памяти: «найди непроведённые реализации за июль по контрагенту» — <b>31 секунда</b>, сверка отгрузок и оплат — <b>34 секунды</b>. Это полный цикл: помощник находит контрагента, поднимает документы в 1С и формирует ответ со ссылками. Скорость на вашем железе замеряем на пилоте и фиксируем в акте.</p>
-        </details>
-      </div>
-    </div>
-  </section>
-
-  <section id="tech">
-    <div class="wrap">
-      <div class="tech">
-        <div class="kicker">Для вашего ИТ‑специалиста</div>
-        <h2 style="font-size:1.15rem">Технические факты</h2>
+<section>
+  <div class="wrap">
+    <span class="eyebrow">Отличие</span>
+    <h2>Почему не «ещё один LLM-firewall»</h2>
+    <div class="diff">
+      <div class="them">
+        <h3>Фильтр текста</h3>
         <ul>
-          <li>Локальный инференс GLM‑5.2 (744B MoE, веса MIT) через движок colibri — эксперты стримятся с диска, GPU опционален; интерфейс OpenAI‑совместимый.</li>
-          <li>Два канала к 1С: стандартный OData платформы 8.3 либо обратное подключение внешней обработкой (публикация базы не нужна). Конфигурация не дорабатывается ни в одном из вариантов; имена метаданных настраиваются и сверяются с базой. Обратное подключение проверено на живой «Бухгалтерии предприятия» 3.0.111: обработка запускается открытием в сеансе 1С и работает, пока сеанс открыт.</li>
-          <li>Воздушный зазор контролируется трижды: статический скан кода, тестовый прогон без сети (netns), рантайм‑страж соединений. Аудит — append‑only JSONL.</li>
-          <li>Зависимости вендорены, runtime‑pip отсутствует. Код — MIT.</li>
-          <li>Рекомендуемая модель — <b>GigaChat 3.1 10B-A1.8B</b> (MIT, Сбер, 6,0 ГБ) на вендореном llama.cpp: 10,8 ГБ памяти по нашему замеру, все сценарии проходит за 8–32 с. Альтернативы: Qwen3-30B-A3B-Instruct (Apache-2.0, 20,8 ГБ памяти) и GLM-5.2 (744B MoE, движок colibri) для машин от 128 ГБ. Бэкенд и модель выбираются конфигурацией, ядро агента не меняется.</li>
-          <li><b>Проверено на живой модели</b> (стенд 8 ядер / 32 ГБ): полный агентский сценарий с четырьмя инструментами — 31 с, сверка — 34 с, вызовы инструментов в строгом формате. Сравнение обеих моделей, методика и то, что осталось непроверенным — <a href="https://github.com/Shadowru/perimeter/blob/main/docs/hardware.md">docs/hardware.md</a>.</li>
+          <li>Смотрит на промпты и ответы</li>
+          <li>Ловит инъекции по сигнатурам — вероятностно</li>
+          <li>Привязан к платформе своего вендора</li>
+          <li>Не видит, что агент делает между запросами</li>
         </ul>
-        <a class="btn btn-ghost" href="https://github.com/Shadowru/perimeter">Репозиторий и документация</a>
-        <a class="btn btn-ghost" href="https://github.com/Shadowru/perimeter/blob/main/docs/research.md" style="margin-left:8px">Техническое обоснование</a>
+      </div>
+      <div class="us">
+        <h3>Контроль действий</h3>
+        <ul>
+          <li>Перехватывает каждый вызов инструмента до исполнения</li>
+          <li>Запрещённое структурно невозможно — fail-closed</li>
+          <li>Работает с любым фреймворком и любой LLM: GigaChat, YandexGPT, on-prem</li>
+          <li>Kill switch: мгновенная остановка агента или всего флота</li>
+        </ul>
       </div>
     </div>
-  </section>
+  </div>
+</section>
+
+<section id="perimeter-1c">
+  <div class="wrap">
+    <span class="eyebrow">Живое демо · открытый код</span>
+    <h2>«Периметр» для 1С — наш агент под этим контролем</h2>
+    <p class="lead">Мы не только продаём governance — мы держим в периметре собственного агента. «Периметр» — бесплатный локальный ИИ-ассистент по данным 1С:Предприятие. Скачайте, поставьте у себя — и посмотрите, как выглядит агент, построенный по правилам приказа № 117, изнутри.</p>
+    <div class="p1c">
+      <div class="p1c-what">
+        <h3>Что умеет</h3>
+        <ul>
+          <li>«Найди все непроведённые реализации за июль по контрагенту X»</li>
+          <li>«Сверка: что отгрузили ООО „Ромашка", но не получили оплату»</li>
+          <li>«Подготовь черновик счёта на основании прошлого заказа»</li>
+        </ul>
+        <p class="p1c-note">Ответы всегда со ссылками на документы. Интеграция с 1С 8.3 по стандартному OData, интернет нужен только при установке.</p>
+      </div>
+      <div class="p1c-rules">
+        <h3>Правила, зашитые в код</h3>
+        <ul>
+          <li><b>Воздушный зазор.</b> Никаких внешних API: правило закреплено конфигом, рантайм-защитой и CI-проверкой в сети без интернета <span class="norm-ref">117 п.60</span></li>
+          <li><b>Человек подтверждает.</b> Агент не изменяет данные в 1С: только черновики, проведение — вручную <span class="norm-ref">117 п.61г</span></li>
+          <li><b>Всё в журнале.</b> Каждое действие — в append-only аудит-лог <span class="norm-ref">методика 3.18</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="hero-ctas" style="margin-top:24px">
+      <a class="btn btn-ghost" href="https://github.com/Shadowru/perimeter" data-goal="perimeter_1c_github">Код и установка на GitHub</a>
+      <span class="stamp" style="margin-top:0;align-self:center">БЕСПЛАТНО · MIT · РАБОТАЕТ БЕЗ ИНТЕРНЕТА</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="eyebrow">Для кого</span>
+    <h2>Первыми приходят те, у кого дедлайн уже наступил</h2>
+    <div class="segs">
+      <div class="seg">
+        <span class="norm-ref">операторы ГИС · приказ № 117</span>
+        <h3>Госсектор</h3>
+        <p>Требования действуют с 1 марта 2026. Закрываем технические меры методики; оценка угроз по БДУ и ТЗ на меры защиты — в составе аудита. Аттестацию ведёт партнёр-лицензиат ФСТЭК.</p>
+      </div>
+      <div class="seg">
+        <span class="norm-ref">ГОСТ Р 57580 · 683-П</span>
+        <h3>Банки и страховые</h3>
+        <p>Агенты в кредитном конвейере и поддержке. Лимиты, обязательное подтверждение транзакций человеком, отчёты для риск-комитета и аудита по 57580.2.</p>
+      </div>
+      <div class="seg">
+        <span class="norm-ref">187-ФЗ · КИИ</span>
+        <h3>Промышленность и телеком</h3>
+        <p>Агенты рядом с технологическими системами: жёсткий allow-list действий, изоляция исполнения, kill switch по деградации.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <div class="final" id="pilot">
+    <span class="eyebrow">Пилот</span>
+    <h2>Один сценарий. Ваш контур. Две недели.</h2>
+    <p class="lead">Подключаем один агентский сценарий, показываем живой аудит-журнал и отчёт соответствия по приказу № 117 на ваших данных. Данные не покидают периметр.</p>
+    <div class="final-grid">
+      <form id="lead-form" action="#">
+        <label for="f-name">Как к вам обращаться</label>
+        <input id="f-name" name="name" autocomplete="name" required>
+        <label for="f-company">Компания</label>
+        <input id="f-company" name="company" autocomplete="organization" required>
+        <label for="f-contact">Email или Telegram</label>
+        <input id="f-contact" name="contact" required>
+        <label for="f-agents">Какие агенты уже в проде или в планах?</label>
+        <textarea id="f-agents" name="agents"></textarea>
+        <div style="margin-top:18px">
+          <button class="btn btn-seal" type="submit" data-goal="lead_submit">Отправить заявку</button>
+        </div>
+      </form>
+      <div>
+        <ul class="contact-list">
+          <li><b>Telegram</b><a href="https://t.me/CONTACT_PLACEHOLDER" data-goal="contact_tg">t.me/CONTACT_PLACEHOLDER</a></li>
+          <li><b>Email</b><a href="mailto:proteyrus@gmail.com" data-goal="contact_email">proteyrus@gmail.com</a></li>
+          <li><b>Документы</b>Маппинг на приказ № 117 и модель угроз по БДУ — вышлем по запросу</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
 </main>
 
 <footer>
   <div class="wrap">
-    Периметр · впериметре.рф · контакты: <a href="mailto:proteyrus@gmail.com?subject=Периметр">proteyrus@gmail.com</a><br>
-    Код — MIT · движок colibri — Apache‑2.0 · веса GLM‑5.2 — MIT (zai‑org) · проверено на типовой БП 3.0<br>
-    Аналитика лендинга — Яндекс.Метрика. В самой программе — никакой телеметрии: данные клиентов не покидают их серверы.
+    <span>© 2026 AgentPerimeter · впериметре.рф</span>
+    <span><a href="https://agentperimeter.ru">agentperimeter.ru</a> · сделано в периметре</span>
   </div>
 </footer>
 
+<script>
+/* ---- живой журнал ---- */
+(function(){
+  var lines=[
+    ["agent-hr","output","transform","fstec117_pdn_redacted","117 п.60"],
+    ["agent-hr","input","allow","fstec117_quota_ok","методика 3.18"],
+    ["agent-credit","transfer_funds","escalate","bank57580_tx_approval","ГОСТ 57580"],
+    ["agent-hr","http_request","deny","fstec117_egress_telemetry","117 п.60"],
+    ["agent-docs","input","deny","fstec117_inj_override_ru","методика 3.18"],
+    ["agent-kz","output","transform","kz230_content_labeled","РК 230-VIII"],
+    ["agent-hr","output","warn","fstec117_unreliable_answer_collected","117 п.61в"],
+    ["agent-credit","transfer_funds","deny","bank57580_tx_over_limit","ГОСТ 57580"],
+    ["agent-docs","input","allow","fstec117_topic_ok","117 п.61б"],
+    ["agent-hr","exec_shell","deny","fstec117_tool_dangerous","117 п.61"],
+    ["agent-docs","output","transform","bank57580_requisites_redacted","банк. тайна"],
+    ["agent-kz","analyze_video","deny","kz230_emotion_detection","РК 230-VIII"]
+  ];
+  var term=document.getElementById('term');
+  if(!term)return;
+  var i=0,t0=Date.now();
+  var reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function ts(){var d=new Date(t0+i*7000);function p(n){return (n<10?'0':'')+n}
+    return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())}
+  function add(){
+    var L=lines[i%lines.length];
+    var div=document.createElement('div');div.className='tl';
+    div.innerHTML='<span class="t">'+ts()+'</span> '+L[0]+' '+L[1]+' → <span class="v '+L[2]+'">'+L[2]+'</span> '+L[3]+' <span class="norm">· '+L[4]+'</span>';
+    var cur=term.querySelector('.term-cursor');if(cur)cur.remove();
+    term.appendChild(div);
+    var c=document.createElement('span');c.className='term-cursor';term.appendChild(c);
+    while(term.children.length>18)term.removeChild(term.firstChild);
+    i++;
+  }
+  if(reduced){for(var k=0;k<12;k++)add();}
+  else{for(var k0=0;k0<5;k0++)add();setInterval(add,1600);}
+})();
+
+/* ---- цели Яндекс.Метрики (счётчик подключён в head) ---- */
+function goal(name){if(window.ym)ym(111624890,'reachGoal',name)}
+document.querySelectorAll('[data-goal]').forEach(function(el){
+  el.addEventListener('click',function(){goal(el.getAttribute('data-goal'))});
+});
+
+/* ---- форма: без бэкенда собирает письмо; при появлении бэкенда заменить на fetch ---- */
+document.getElementById('lead-form').addEventListener('submit',function(ev){
+  ev.preventDefault();
+  var f=ev.target;
+  goal('lead_submit');
+  var body='Имя: '+f.name.value+'\nКомпания: '+f.company.value+'\nКонтакт: '+f.contact.value+'\nАгенты: '+f.agents.value;
+  location.href='mailto:proteyrus@gmail.com?subject='+encodeURIComponent('Заявка на пилот AgentPerimeter — '+f.company.value)+'&body='+encodeURIComponent(body);
+});
+</script>
 </body>
 </html>
