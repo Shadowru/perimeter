@@ -78,6 +78,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
+html,body{overflow-x:clip}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:17px;line-height:1.55;
   background-image:
     radial-gradient(ellipse 90% 60% at 50% -10%,rgba(255,180,84,.055),transparent),
@@ -95,6 +96,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:17
 .vframe i:nth-child(3){bottom:-1px;left:-1px;border-right:none;border-top:none}
 .vframe i:nth-child(4){bottom:-1px;right:-1px;border-left:none;border-top:none}
 @media (max-width:700px){.vframe{inset:6px}}
+@media (max-width:760px){
+  .nav{gap:12px;padding:10px 0}
+  .nav nav{display:none}
+  .nav .tg-mini{margin-left:auto}
+  .statusline{font-size:10.5px;letter-spacing:.06em}
+  .term{font-size:12px}
+  .term-body{height:260px}
+  .hero{padding:36px 0 36px}
+}
 a{color:var(--amber)}
 a:focus-visible,button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .wrap{max-width:1100px;margin:0 auto;padding:0 24px}
@@ -127,6 +137,7 @@ header{position:sticky;top:0;z-index:20;background:rgba(16,21,17,.92);backdrop-f
 
 /* ---- hero: пульт ---- */
 .hero{padding:56px 0 48px;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:44px;align-items:center}
+.hero>div{min-width:0}
 .statusline{font-family:var(--mono);font-size:12.5px;letter-spacing:.1em;color:var(--soft);margin-bottom:22px}
 .statusline b{color:var(--v-allow);font-weight:400}
 .hero h1{font-weight:650;font-size:clamp(30px,4.4vw,46px);line-height:1.12;letter-spacing:-.015em;text-wrap:balance}
