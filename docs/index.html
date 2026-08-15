@@ -144,14 +144,6 @@ h2{font-family:var(--serif);font-weight:600;font-size:clamp(24px,3vw,32px);margi
 .card .date{margin-top:auto;padding-top:10px;font-family:var(--mono);font-size:12.5px;color:var(--ink)}
 .card--out{border-style:dashed;background:transparent}
 
-/* шаги */
-.steps{margin-top:30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;counter-reset:step}
-.step{border:1px solid var(--line);background:var(--paper-raised);padding:22px 20px}
-.step::before{counter-increment:step;content:counter(step);font-family:var(--serif);font-size:34px;line-height:1;color:var(--seal);display:block;margin-bottom:10px}
-.step h3{font-size:17px;margin-bottom:8px}
-.step p{font-size:14.5px;color:var(--ink-soft)}
-.step code{font-family:var(--mono);font-size:12.5px;background:var(--paper);border:1px solid var(--line-faint);padding:1px 5px}
-
 /* комплаенс-таблица */
 .ctable{margin-top:28px;border:1px solid var(--line);overflow-x:auto;background:var(--paper-raised)}
 .ctable table{width:100%;border-collapse:collapse;min-width:640px}
@@ -160,6 +152,24 @@ h2{font-family:var(--serif);font-weight:600;font-size:clamp(24px,3vw,32px);margi
 .ctable tr:last-child td{border-bottom:none}
 .ctable td:first-child{font-weight:650;white-space:nowrap}
 .ctable .st{font-family:var(--mono);font-size:12px;color:var(--seal);white-space:nowrap}
+
+/* диаграммы */
+.diagram{margin-top:26px;overflow-x:auto;border:1px solid var(--line);background:var(--paper-raised)}
+.diagram svg{display:block;min-width:760px;width:100%;height:auto}
+.dg-box{fill:var(--paper);stroke:var(--ink);stroke-width:1.2}
+.dg-zone{fill:none;stroke:var(--seal);stroke-width:2}
+.dg-zone2{fill:var(--paper);stroke:var(--line-faint);stroke-width:1}
+.dg-t{font-family:var(--mono);font-size:13px;fill:var(--ink)}
+.dg-ts{font-family:var(--mono);font-size:11.5px;fill:var(--ink-soft)}
+.dg-tt{font-family:var(--sans);font-size:14px;font-weight:600;fill:var(--ink)}
+.dg-seal{font-family:var(--mono);font-size:12px;letter-spacing:.08em;fill:var(--seal)}
+.dg-ln{stroke:var(--ink);stroke-width:1.4;fill:none}
+.dg-dash{stroke-dasharray:5 4}
+.v-allow-s{stroke:var(--v-allow)}.v-deny-s{stroke:var(--v-deny)}.v-esc-s{stroke:var(--v-escalate)}.v-tr-s{stroke:var(--v-transform)}
+.v-allow-f{fill:var(--v-allow)}.v-deny-f{fill:var(--v-deny)}.v-esc-f{fill:var(--v-escalate)}.v-tr-f{fill:var(--v-transform)}
+.caps{margin-top:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.caps p{font-size:14px;color:var(--ink-soft)}
+.caps b{color:var(--ink)}
 
 /* контраст-полоска */
 .contrast{margin-top:24px;display:grid;grid-template-columns:2fr 3fr;border:1px solid var(--line)}
@@ -283,19 +293,49 @@ footer a{color:var(--ink-soft)}
   <div class="wrap">
     <span class="eyebrow">Как работает</span>
     <h2>Три шага между намерением модели и её действием</h2>
-    <div class="steps">
-      <div class="step">
-        <h3>Перехват до исполнения</h3>
-        <p>Каждый tool call, обращение к модели и делегирование проходит через детерминированный код политик — до того, как намерение модели уйдёт «на провод». Fail-closed: что не разрешено явно, то запрещено. Любой стек: LangGraph, AutoGen, CrewAI, свои фреймворки.</p>
-      </div>
-      <div class="step">
-        <h3>Вердикт политики</h3>
-        <p><code>deny</code> — блок, <code>transform</code> — маскирование ПДн и реквизитов, <code>escalate</code> — подтверждение человеком для необратимых действий, <code>warn</code> — пометка недостоверного ответа. Политики — версионируемые подписанные манифесты, а не промпт-заклинания.</p>
-      </div>
-      <div class="step">
-        <h3>Юридически значимый аудит</h3>
-        <p>Каждый вердикт — в защищённый от подмены журнал: hash-цепочка SHA-256, Merkle-доказательства, подпись ГОСТ Р 34.10-2012, экспорт в SIEM. Отчёт соответствия для аттестации формируется из журнала одной командой.</p>
-      </div>
+    <div class="diagram" role="img" aria-label="Схема: намерение агента проходит через периметр политик, получает вердикт, всё пишется в аудит-журнал">
+    <svg viewBox="0 0 920 330" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#1c2320"/></marker>
+      </defs>
+      <!-- агент -->
+      <rect class="dg-box" x="24" y="112" width="158" height="82"/>
+      <text class="dg-tt" x="40" y="140">ИИ-агент</text>
+      <text class="dg-ts" x="40" y="160">намерение:</text>
+      <text class="dg-t" x="40" y="178">transfer_funds()</text>
+      <line class="dg-ln" x1="182" y1="153" x2="242" y2="153" marker-end="url(#arw)"/>
+      <!-- периметр -->
+      <rect class="dg-zone" x="248" y="52" width="236" height="204"/>
+      <rect class="dg-zone2" x="256" y="60" width="220" height="188"/>
+      <text class="dg-seal" x="264" y="82">AGENTPERIMETER</text>
+      <text class="dg-tt" x="264" y="118">Проверка политики</text>
+      <text class="dg-ts" x="264" y="142">манифест · Rego · Cedar</text>
+      <text class="dg-ts" x="264" y="162">до исполнения</text>
+      <text class="dg-t" x="264" y="192">fail-closed:</text>
+      <text class="dg-ts" x="264" y="210">не разрешено — запрещено</text>
+      <!-- вердикты -->
+      <line class="dg-ln v-allow-s" x1="484" y1="120" x2="560" y2="84" marker-end="url(#arw)"/>
+      <line class="dg-ln v-tr-s" x1="484" y1="140" x2="560" y2="140" marker-end="url(#arw)"/>
+      <line class="dg-ln v-esc-s" x1="484" y1="168" x2="560" y2="196" marker-end="url(#arw)"/>
+      <line class="dg-ln v-deny-s" x1="484" y1="188" x2="560" y2="252" marker-end="url(#arw)"/>
+      <text class="dg-t v-allow-f" x="572" y="82">allow</text>
+      <text class="dg-ts" x="572" y="98">действие исполняется</text>
+      <text class="dg-t v-tr-f" x="572" y="138">transform</text>
+      <text class="dg-ts" x="572" y="154">исполняется с маскированием ПДн</text>
+      <text class="dg-t v-esc-f" x="572" y="194">escalate</text>
+      <text class="dg-ts" x="572" y="210">ждёт подтверждения человека</text>
+      <text class="dg-t v-deny-f" x="572" y="250">deny</text>
+      <text class="dg-ts" x="572" y="266">не исполняется — структурно</text>
+      <!-- аудит -->
+      <line class="dg-ln" x1="366" y1="256" x2="366" y2="284" marker-end="url(#arw)"/>
+      <rect class="dg-box" x="248" y="288" width="420" height="34"/>
+      <text class="dg-t" x="264" y="310">аудит-журнал · SHA-256 hash-chain → SIEM</text>
+    </svg>
+    </div>
+    <div class="caps">
+      <p><b>Перехват до исполнения.</b> Каждый tool call и обращение к модели идёт через детерминированный код политик, а не через промпт-увещевания.</p>
+      <p><b>Вердикт.</b> Политики — версионируемые подписанные манифесты. Необратимые действия — только через человека.</p>
+      <p><b>Доказуемый аудит.</b> Каждый вердикт — в защищённый от подмены журнал; отчёт для аттестации по 117-му — одной командой.</p>
     </div>
     <div class="contrast">
       <div class="them-side">LLM-firewall фильтрует <i>текст</i> — вероятностно, по сигнатурам.</div>
@@ -326,6 +366,31 @@ footer a{color:var(--ink-soft)}
     <span class="eyebrow">Живое демо · открытый код</span>
     <h2>«Периметр» для 1С — наш агент под этим контролем</h2>
     <p class="lead">Мы не только продаём governance — мы держим в периметре собственного агента. «Периметр» — бесплатный локальный ИИ-ассистент по данным 1С:Предприятие. Скачайте, поставьте у себя — и посмотрите, как выглядит агент, построенный по правилам приказа № 117, изнутри.</p>
+    <div class="diagram" role="img" aria-label="Схема: 1С и Периметр внутри контура компании, интернет отрезан воздушным зазором">
+    <svg viewBox="0 0 920 190" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arw2" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#1c2320"/></marker>
+      </defs>
+      <rect class="dg-zone" x="24" y="26" width="576" height="140"/>
+      <text class="dg-seal" x="40" y="50">КОНТУР КОМПАНИИ</text>
+      <rect class="dg-box" x="56" y="72" width="180" height="66"/>
+      <text class="dg-tt" x="72" y="100">1С:Предприятие 8.3</text>
+      <text class="dg-ts" x="72" y="122">без доработки конфигураций</text>
+      <line class="dg-ln" x1="236" y1="98" x2="304" y2="98" marker-end="url(#arw2)"/>
+      <line class="dg-ln" x1="304" y1="116" x2="236" y2="116" marker-end="url(#arw2)"/>
+      <text class="dg-ts" x="252" y="90">OData</text>
+      <rect class="dg-box" x="308" y="72" width="252" height="66"/>
+      <text class="dg-tt" x="324" y="100">«Периметр» — LLM локально</text>
+      <text class="dg-ts" x="324" y="122">веса на вашем сервере · GPU не нужен</text>
+      <line class="dg-ln dg-dash" x1="600" y1="96" x2="700" y2="96"/>
+      <circle cx="656" cy="96" r="15" style="fill:var(--paper-raised);stroke:var(--v-deny);stroke-width:2.2"/>
+      <line x1="646" y1="106" x2="666" y2="86" style="stroke:var(--v-deny);stroke-width:2.2"/>
+      <text class="dg-t v-deny-f" x="620" y="136">воздушный зазор</text>
+      <rect class="dg-box dg-dash" x="716" y="66" width="180" height="60" stroke-dasharray="5 4"/>
+      <text class="dg-tt" x="732" y="92">интернет</text>
+      <text class="dg-ts" x="732" y="112">облака · внешние API</text>
+    </svg>
+    </div>
     <div class="p1c">
       <div class="p1c-what">
         <h3>Что умеет</h3>
