@@ -274,6 +274,8 @@ h2{font-weight:650;font-size:clamp(23px,2.8vw,30px);margin:8px 0 8px;line-height
 .contact-list li{padding:11px 0;border-bottom:1px solid var(--line)}
 .contact-list b{font-family:var(--mono);font-size:11.5px;color:var(--soft);display:block;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
 .contact-list span{color:var(--soft)}
+.lead-done-note{margin-top:16px;padding:14px 16px;border:1px solid var(--amber-dim);border-radius:4px;background:var(--panel2);font-size:14.5px}
+.lead-done-note b{color:var(--amber)}
 
 footer{border-top:1px solid var(--line);padding:24px 0 40px;font-size:13.5px;color:var(--soft)}
 footer .wrap{display:flex;gap:24px;flex-wrap:wrap;justify-content:space-between}
@@ -527,6 +529,13 @@ footer a{color:var(--soft)}
         <div style="margin-top:18px">
           <button class="btn btn-key" type="submit" data-goal="lead_submit">Отправить заявку</button>
         </div>
+        <div id="lead-done" hidden>
+          <p class="lead-done-note">Заявка сформирована и <b>скопирована в буфер обмена</b>. Отправьте её удобным способом — просто вставьте текст:</p>
+          <div class="hero-ctas" style="margin-top:14px">
+            <a class="btn btn-key" id="lead-tg" href="https://t.me/AgentPerimeter" target="_blank" rel="noopener">Открыть Telegram</a>
+            <a class="btn btn-ghost" id="lead-mail" href="#">Отправить письмом</a>
+          </div>
+        </div>
       </form>
       <div>
         <ul class="contact-list">
@@ -595,9 +604,16 @@ document.getElementById('lead-form').addEventListener('submit',function(ev){
   ev.preventDefault();
   var f=ev.target;
   goal('lead_submit');
-  var body='Имя: '+f.name.value+'\nКомпания: '+f.company.value+'\nКонтакт: '+f.contact.value+'\nАгенты: '+f.agents.value;
-  location.href='mailto:support@agentperimeter.ru?subject='+encodeURIComponent('Заявка на пилот AgentPerimeter — '+f.company.value)+'&body='+encodeURIComponent(body);
+  var body='Заявка на пилот AgentPerimeter\nИмя: '+f.name.value+'\nКомпания: '+f.company.value+'\nКонтакт: '+f.contact.value+'\nАгенты: '+f.agents.value;
+  var mailHref='mailto:support@agentperimeter.ru?subject='+encodeURIComponent('Заявка на пилот AgentPerimeter — '+f.company.value)+'&body='+encodeURIComponent(body);
+  document.getElementById('lead-mail').setAttribute('href',mailHref);
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(body).catch(function(){});}
+  document.getElementById('lead-done').hidden=false;
+  f.querySelector('button[type=submit]').disabled=true;
+  document.getElementById('lead-done').scrollIntoView({block:'nearest'});
 });
+document.getElementById('lead-tg').addEventListener('click',function(){goal('contact_tg')});
+document.getElementById('lead-mail').addEventListener('click',function(){goal('contact_email')});
 </script>
 </body>
 </html>
