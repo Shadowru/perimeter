@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101511">
+<title>Приказ ФСТЭК № 117: разбор требований к ИИ — кто подпадает, какие документы, майнд-карта</title>
+<meta name="description" content="Разбор приказа ФСТЭК № 117 и методики от 12.04.2026 по официальным текстам: кто подпадает, требования к ИИ (пп. 60–61), какие документы готовить, отличия от приказа 17, майнд-карта. Обновлено 03.09.2026.">
+<meta name="keywords" content="117 приказ фстэк, приказ фстэк 117 требования, 117 приказ ии, документы для 117 приказа, майнд-карта фстэк 117, кто подпадает под 117 приказ, отличия 117 от 17, методика фстэк 12.04.2026">
+<link rel="canonical" href="https://впериметре.рф/117.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23171d18'/%3E%3Crect x='6' y='6' width='20' height='20' fill='none' stroke='%23ffb454' stroke-width='3'/%3E%3Crect x='13' y='13' width='6' height='6' fill='%23d7ddd3'/%3E%3C/svg%3E">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="ВПериметре">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:url" content="https://xn--b1agaanysjdt.xn--p1ai/117.html">
+<meta property="og:title" content="Приказ ФСТЭК № 117: разбор требований к ИИ по официальным текстам">
+<meta property="og:description" content="Кто подпадает, пункты про ИИ (60–61), какие документы готовить, майнд-карта приказа. По официальной публикации и методике от 12.04.2026.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type":"Question","name":"Кто подпадает под приказ ФСТЭК № 117?","acceptedAnswer":{"@type":"Answer","text":"Операторы государственных информационных систем и иных информационных систем государственных органов, государственных унитарных предприятий и государственных учреждений. Действует с 1 марта 2026, заменил приказ № 17."}},
+    {"@type":"Question","name":"Что приказ № 117 требует для систем с ИИ?","acceptedAnswer":{"@type":"Answer","text":"Пункты 60–61: запрет передачи информации ограниченного доступа разработчику модели (в том числе для её улучшения), контроль допустимых тематик запросов и форматов ответов, статистические критерии выявления недостоверных ответов и реагирование ограничением области решений, исключение нерегламентированного влияния ИИ на ИС, применение доверенных технологий ИИ."}},
+    {"@type":"Question","name":"Какие документы готовить по ИИ для приказа № 117?","acceptedAnswer":{"@type":"Answer","text":"Формально методика говорит «требования к документированию не предъявляются», но для проверки и аттестации на практике нужны: оценка угроз по БДУ ФСТЭК, техническое задание на меры защиты, перечень допустимых тематик, критерии недостоверных ответов, allow-list доверенных технологий ИИ, журнал событий запросов и ответов."}}
+  ]
+}
+</script>
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=111624890', 'ym');
+    ym(111624890, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+</script>
+<style>
+:root{
+  --bg:#101511;--panel:#171d18;--panel2:#1d241e;--inset:#0b0f0c;
+  --line:#2c352d;--line2:#3a453b;--text:#d7ddd3;--soft:#8d978c;
+  --amber:#ffb454;--amber-dim:#8a6836;
+  --v-deny:#e05c50;--v-escalate:#d99a2b;--v-transform:#6da3d8;--v-allow:#7fae82;
+  --mono:ui-monospace,'Cascadia Code','JetBrains Mono',Consolas,monospace;
+  --sans:-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+html,body{overflow-x:clip}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:17px;line-height:1.6;
+  background-image:
+    radial-gradient(ellipse 90% 60% at 50% -10%,rgba(255,180,84,.055),transparent),
+    linear-gradient(rgba(141,151,140,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(141,151,140,.045) 1px,transparent 1px);
+  background-size:auto,48px 48px,48px 48px;background-attachment:fixed}
+a{color:var(--amber)}
+a:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.wrap{max-width:880px;margin:0 auto;padding:0 24px}
+header{position:sticky;top:0;z-index:20;background:rgba(16,21,17,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;gap:20px;padding:13px 0}
+.mark{font-family:var(--mono);font-size:16px;letter-spacing:.08em;text-decoration:none;color:var(--text);white-space:nowrap}
+.mark b{color:var(--amber);font-weight:600;border:1px solid var(--amber-dim);padding:2px 7px 3px;margin-left:2px}
+.nav .cta-mini{margin-left:auto;font-size:14px;color:#141109;background:var(--amber);padding:8px 14px;text-decoration:none;font-weight:600;white-space:nowrap}
+.tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--soft)}
+article{padding:44px 0 20px}
+h1{font-weight:700;font-size:clamp(26px,4vw,38px);line-height:1.15;letter-spacing:-.01em;margin:14px 0 16px;text-wrap:balance}
+h2{font-weight:650;font-size:clamp(21px,2.6vw,27px);margin:44px 0 12px;line-height:1.25;text-wrap:balance}
+h3{font-size:17px;margin:24px 0 8px}
+p{margin:12px 0;color:var(--text)}
+.muted{color:var(--soft)}
+blockquote{margin:16px 0;padding:14px 18px;border-left:3px solid var(--amber-dim);background:var(--panel);color:var(--text);font-size:15.5px}
+blockquote b{color:var(--amber)}
+ul,ol{margin:12px 0 12px 22px}
+li{margin:7px 0}
+.toc{margin:22px 0;padding:16px 20px;border:1px solid var(--line);border-radius:5px;background:var(--panel);font-size:15px}
+.toc a{display:inline-block;margin:3px 14px 3px 0;color:var(--soft);text-decoration:none}
+.toc a:hover{color:var(--amber)}
+.note{margin:16px 0;padding:13px 16px;border:1px solid var(--line2);border-radius:4px;background:var(--panel2);font-size:15px}
+.note b{color:var(--amber)}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--soft)}
+td:first-child{white-space:nowrap;font-family:var(--mono);font-size:13px;color:var(--amber)}
+.tablebox{border:1px solid var(--line);border-radius:4px;overflow-x:auto;background:var(--panel)}
+.tablebox table{margin:0;min-width:560px}
+.diagram{margin:20px 0;overflow-x:auto;border:1px solid var(--line);border-radius:4px;background:var(--inset)}
+.diagram svg{display:block;min-width:860px;width:100%;height:auto}
+.mm-c{fill:var(--panel2);stroke:var(--amber);stroke-width:1.6}
+.mm-b{fill:var(--panel2);stroke:var(--line2);stroke-width:1.1}
+.mm-l{stroke:var(--line2);stroke-width:1.2;fill:none}
+.mm-t{font-family:var(--sans);font-size:13.5px;font-weight:600;fill:var(--text)}
+.mm-s{font-family:var(--mono);font-size:11px;fill:var(--soft)}
+.mm-a{font-family:var(--mono);font-size:12px;letter-spacing:.06em;fill:var(--amber)}
+.check{list-style:none;margin:14px 0;counter-reset:doc}
+.check li{margin:0;padding:11px 0 11px 40px;border-bottom:1px solid var(--line);position:relative;font-size:15.5px}
+.check li::before{counter-increment:doc;content:counter(doc,decimal-leading-zero);position:absolute;left:0;top:12px;font-family:var(--mono);font-size:12px;color:var(--amber)}
+.check li b{color:var(--text)}
+.check li span{display:block;color:var(--soft);font-size:14px;margin-top:2px}
+.cta{border:1px solid var(--amber-dim);background:var(--panel);border-radius:6px;margin:40px 0;padding:26px 26px;position:relative}
+.cta::before{content:"";position:absolute;inset:7px;border:1px solid var(--line);border-radius:3px;pointer-events:none}
+.cta p{margin:8px 0 14px}
+.btn{display:inline-block;padding:13px 22px;font-size:15.5px;text-decoration:none;border:1px solid var(--line2);position:relative}
+.btn-key{background:var(--amber);border-color:var(--amber);color:#141109;font-weight:650;box-shadow:0 3px 0 var(--amber-dim)}
+.btn-ghost{background:var(--panel2);color:var(--text);margin-left:10px}
+footer{border-top:1px solid var(--line);margin-top:40px;padding:22px 0 40px;font-size:13.5px;color:var(--soft)}
+footer .wrap{display:flex;gap:20px;flex-wrap:wrap;justify-content:space-between}
+footer a{color:var(--soft)}
+@media (max-width:700px){.btn-ghost{margin-left:0;margin-top:10px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <a class="mark" href="/">В<b>ПЕРИМЕТРЕ</b></a>
+    <a class="cta-mini" href="/#pilot" data-goal="cta_header">Запросить пилот</a>
+  </div>
+</header>
+
+<article class="wrap">
+<span class="tag">Разбор по официальным текстам · обновлено 03.09.2026</span>
+<h1>Приказ ФСТЭК № 117: что он требует от систем с ИИ</h1>
+<p class="muted">Разбор по официальной публикации приказа (pravo.gov.ru, № 0001202506170011) и методическому документу ФСТЭК от 12.04.2026 — не по пересказам. Цитаты дословные; найдёте расхождение — <a href="https://t.me/AgentPerimeter">напишите</a>, сверим.</p>
+
+<nav class="toc" aria-label="Содержание">
+  <a href="#scope">Кто подпадает</a>
+  <a href="#vs17">Отличия от приказа 17</a>
+  <a href="#ai">Пункты про ИИ</a>
+  <a href="#metodika">Методика 3.18</a>
+  <a href="#mindmap">Майнд-карта</a>
+  <a href="#docs">Какие документы готовить</a>
+  <a href="#sep1">Что изменилось 1 сентября</a>
+</nav>
+
+<h2 id="scope">Кто подпадает и с какого момента</h2>
+<p>Приказ ФСТЭК России № 117 от 11.04.2025 (зарегистрирован Минюстом 16.06.2025, № 82619) действует с <b>1 марта 2026</b> и заменил приказ № 17. Область действия — из названия: государственные информационные системы и «иные информационные системы государственных органов, государственных унитарных предприятий, государственных учреждений».</p>
+<ul>
+  <li><b>Оператор ГИС</b> — подпадаете, включая случаи, когда оператором ГИС выступает подведомственная организация или орган местного самоуправления.</li>
+  <li><b>Госорган / ГУП / госучреждение с собственной ИС</b> (не ГИС) — подпадаете: «иные информационные системы» в названии — про вас.</li>
+  <li><b>Орган власти, но не субъект КИИ</b> — КИИ здесь ни при чём: критерий приказа — статус системы и её владельца, а не категорирование по 187-ФЗ.</li>
+  <li>Аттестация ГИС обязательна до начала обработки информации (п. 65); для иных ИС решение об аттестации принимает руководитель оператора.</li>
+</ul>
+<div class="note"><b>Переходных положений в приказе нет.</b> С какого момента должна соответствовать уже работающая система — вопрос трактовки. Рабочая страховка: зафиксировать текущее состояние и утверждённый план приведения в соответствие.</div>
+
+<h2 id="vs17">Главные отличия от приказа № 17</h2>
+<ul>
+  <li>Впервые — прямые требования к системам с <b>искусственным интеллектом</b> (пп. 34«т», 60, 61) и к защите от DoS-атак, контейнерам, мобильным устройствам.</li>
+  <li>Числовые показатели защищённости: К<sub>зи</sub> считается не реже раза в полгода, П<sub>зи</sub> (зрелость) — раза в два года, результаты направляются во ФСТЭК (пп. 31–32).</li>
+  <li>Жёсткие сроки устранения уязвимостей: критические — 24 часа, высокие — 7 дней (п. 38).</li>
+  <li>Мероприятия реализуются «с использованием методических документов ФСТЭК» (п. 68) — методика от 12.04.2026 фактически обязательна.</li>
+</ul>
+
+<h2 id="ai">Пункты про ИИ: 60 и 61 дословно</h2>
+
+<h3>П. 60 — запрет передачи разработчику модели</h3>
+<blockquote>«Не допускается передача лицу, разработавшему модель искусственного интеллекта, информации ограниченного доступа, содержащейся в информационных системах, <b>в том числе для улучшения функционирования модели</b>.»</blockquote>
+<p>Галочка «не обучаться на моих данных» у облачного провайдера — договорное обещание; приказ требует невозможности передачи. Практика: модель в контуре либо шлюз, технически блокирующий фидбек-эндпоинты и телеметрию SDK — с журналом того, что уходило наружу.</p>
+<p>Тот же пункт требует исключить «использование информационных систем не по их назначению за счёт воздействия на наборы данных, применяемые модели … и их параметры, процессы и сервисы по обработке данных и поиску решений» — это формула, покрывающая prompt injection шире любого сигнатурного фильтра.</p>
+
+<h3>П. 61 — четыре обязанности при работе пользователей с ИИ</h3>
+<p><b>а)</b> Режим строгих шаблонов: определить шаблоны запросов и ответов, контролировать соответствие.</p>
+<p><b>б)</b> Режим свободного текста:</p>
+<blockquote>«определены … <b>допустимые тематики</b> и обеспечен контроль соответствия запросов допустимым тематикам; определены форматы ответов … и обеспечен контроль соответствия ответов».</blockquote>
+<p><b>в)</b> Разработать «статистические критерии для выявления <b>недостоверных ответов</b>» и собирать такие ответы для анализа. Как строить критерии — регулятор не сказал: пороги уверенности и перекрёстные проверки выбирать и обосновывать оператору.</p>
+<p><b>г)</b> Реагировать на недостоверные ответы «посредством <b>ограничения области принимаемых решений</b>» — при сомнительном ответе система сужает полномочия: не исполняет действия автономно, отдаёт человеку.</p>
+<p>И финальное требование пункта: исключить «нерегламентированное влияние искусственного интеллекта на параметры модели … и на функционирование информационных систем», в состав ИС включать «доверенные технологии ИИ» (реестра доверенных пока не существует — см. <a href="#docs">раздел про документы</a>).</p>
+
+<h2 id="metodika">Методика от 12.04.2026: п. 3.18</h2>
+<p>Методический документ разворачивает приказ в перечень мер. Для среды эксплуатации ключевые:</p>
+<div class="tablebox"><table>
+<tr><th>Мера</th><th>Суть</th></tr>
+<tr><td>фильтрация I/O</td><td>Контроль (фильтрация) входных данных — запросов и выходных — ответов системы ИИ</td></tr>
+<tr><td>функциональность</td><td>«Ограничение и контроль функциональности системы ИИ» — какие действия системе разрешены; пересказы эту меру стабильно теряют</td></tr>
+<tr><td>квоты</td><td>Мониторинг и квотирование количества запросов</td></tr>
+<tr><td>регистрация</td><td>Регистрация событий безопасности, связанных с запросами к системе ИИ и её ответами</td></tr>
+<tr><td>целостность</td><td>Целостность параметров (весов) модели и конфигурации системы ИИ (в БДУ ФСТЭК подмена системного промпта агента — именованная угроза)</td></tr>
+<tr><td>изоляция, ИАФ/УПД</td><td>Изоляция системы ИИ, идентификация и управление доступом пользователей</td></tr>
+</table></div>
+<p class="muted">Усиления (по решению оператора): санитизация входных данных, тестирование на устойчивость к промпт-атакам, изолированный сегмент для системы ИИ, криптозащита целостности модели. Для среды разработки — отдельный перечень, включая прямой запрет формата pickle в пользу ONNX/protobuf.</p>
+
+<h2 id="mindmap">Майнд-карта приказа</h2>
+<div class="diagram" role="img" aria-label="Майнд-карта: структура требований приказа 117 к системам ИИ">
+<svg viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg">
+  <rect class="mm-c" x="20" y="272" width="150" height="76" rx="5"/>
+  <text class="mm-a" x="42" y="303">ПРИКАЗ № 117</text>
+  <text class="mm-s" x="42" y="323">ИИ в ГИС и ИС</text>
+  <text class="mm-s" x="42" y="338">с 01.03.2026</text>
+
+  <path class="mm-l" d="M170 290 C 230 290 230 60 290 60"/>
+  <rect class="mm-b" x="292" y="28" width="180" height="64" rx="4"/>
+  <text class="mm-t" x="308" y="52">Кто подпадает</text>
+  <text class="mm-s" x="308" y="70">ГИС · госорганы · ГУП</text>
+  <text class="mm-s" x="308" y="84">госучреждения</text>
+
+  <path class="mm-l" d="M170 296 C 230 296 230 168 290 168"/>
+  <rect class="mm-b" x="292" y="136" width="180" height="64" rx="4"/>
+  <text class="mm-t" x="308" y="160">П. 60 · Данные</text>
+  <text class="mm-s" x="308" y="178">запрет передачи вендору</text>
+  <text class="mm-s" x="308" y="192">«в т.ч. для улучшения»</text>
+
+  <path class="mm-l" d="M170 304 C 230 304 230 300 290 300"/>
+  <rect class="mm-b" x="292" y="252" width="180" height="96" rx="4"/>
+  <text class="mm-t" x="308" y="276">П. 61 · Диалог</text>
+  <text class="mm-s" x="308" y="294">а) шаблоны запросов</text>
+  <text class="mm-s" x="308" y="308">б) допустимые тематики</text>
+  <text class="mm-s" x="308" y="322">в) критерии недостоверных</text>
+  <text class="mm-s" x="308" y="336">г) сужение полномочий</text>
+
+  <path class="mm-l" d="M170 312 C 230 312 230 432 290 432"/>
+  <rect class="mm-b" x="292" y="400" width="180" height="64" rx="4"/>
+  <text class="mm-t" x="308" y="424">Методика 3.18</text>
+  <text class="mm-s" x="308" y="442">меры эксплуатации</text>
+  <text class="mm-s" x="308" y="456">и разработки</text>
+
+  <path class="mm-l" d="M170 320 C 230 320 230 548 290 548"/>
+  <rect class="mm-b" x="292" y="516" width="180" height="64" rx="4"/>
+  <text class="mm-t" x="308" y="540">БДУ · Угрозы ИИ</text>
+  <text class="mm-s" x="308" y="558">13 способов реализации</text>
+  <text class="mm-s" x="308" y="572">bdu.fstec.ru/threat/ai</text>
+
+  <path class="mm-l" d="M472 152 C 520 152 520 120 560 120"/>
+  <rect class="mm-b" x="562" y="96" width="196" height="48" rx="4"/>
+  <text class="mm-s" x="578" y="116">технический блок телеметрии</text>
+  <text class="mm-s" x="578" y="132">и фидбек-каналов SDK</text>
+
+  <path class="mm-l" d="M472 184 C 520 184 520 196 560 196"/>
+  <rect class="mm-b" x="562" y="172" width="196" height="48" rx="4"/>
+  <text class="mm-s" x="578" y="192">«использование не по назначению»</text>
+  <text class="mm-s" x="578" y="208">= формула против инъекций</text>
+
+  <path class="mm-l" d="M472 280 C 520 280 520 264 560 264"/>
+  <rect class="mm-b" x="562" y="240" width="196" height="48" rx="4"/>
+  <text class="mm-s" x="578" y="260">классификатор тематик</text>
+  <text class="mm-s" x="578" y="276">в контуре, не ключевые слова</text>
+
+  <path class="mm-l" d="M472 320 C 520 320 520 332 560 332"/>
+  <rect class="mm-b" x="562" y="308" width="196" height="48" rx="4"/>
+  <text class="mm-s" x="578" y="328">пороги уверенности +</text>
+  <text class="mm-s" x="578" y="344">эскалация человеку</text>
+
+  <path class="mm-l" d="M472 424 C 520 424 520 400 560 400"/>
+  <rect class="mm-b" x="562" y="376" width="196" height="48" rx="4"/>
+  <text class="mm-s" x="578" y="396">фильтрация I/O · квоты ·</text>
+  <text class="mm-s" x="578" y="412">регистрация запросов/ответов</text>
+
+  <path class="mm-l" d="M472 444 C 520 444 520 468 560 468"/>
+  <rect class="mm-b" x="562" y="444" width="196" height="48" rx="4"/>
+  <text class="mm-s" x="578" y="464">контроль функциональности ·</text>
+  <text class="mm-s" x="578" y="480">целостность конфигурации</text>
+
+  <path class="mm-l" d="M758 120 C 800 120 800 160 840 160"/>
+  <rect class="mm-b" x="842" y="120" width="140" height="80" rx="4"/>
+  <text class="mm-t" x="856" y="146">Дыры</text>
+  <text class="mm-s" x="856" y="164">нет реестра доверенных</text>
+  <text class="mm-s" x="856" y="178">нет методики сертификации</text>
+  <text class="mm-s" x="856" y="192">нет переходных положений</text>
+</svg>
+</div>
+
+<h2 id="docs">Какие документы готовить, если регулятор не сказал</h2>
+<p>Парадокс методики: «Требования к документированию: не предъявляются» — при этом делать оператор обязан, а на проверке доказывать чем-то нужно. Рабочий пакет, который закрывает и логику приказа, и вопросы проверяющего:</p>
+<ol class="check">
+  <li><b>Оценка угроз системы ИИ по БДУ ФСТЭК</b><span>прямая обязанность из методики; берите 13 СП из раздела угроз ИИ и отвечайте на каждый</span></li>
+  <li><b>Техническое задание на меры защиты системы ИИ</b><span>«по результатам оценки угроз должно быть разработано ТЗ» — тоже дословная обязанность</span></li>
+  <li><b>Перечень допустимых тематик запросов</b> (п. 61«б»)<span>утверждённый список + как контролируется в обе стороны</span></li>
+  <li><b>Критерии выявления недостоверных ответов</b> (п. 61«в»)<span>какие пороги/проверки, кем обоснованы, куда собираются недостоверные</span></li>
+  <li><b>Регламент реагирования на недостоверные ответы</b> (п. 61«г»)<span>как сужается область решений, когда подключается человек</span></li>
+  <li><b>Allow-list доверенных технологий ИИ</b> (п. 61)<span>реестра регулятора нет — ваш утверждённый перечень моделей/компонентов и есть защитимая позиция</span></li>
+  <li><b>Порядок контроля egress к разработчику модели</b> (п. 60)<span>чем технически блокируется передача, включая телеметрию</span></li>
+  <li><b>Журнал событий запросов и ответов ИИ</b><span>регистрация — прямая мера методики; журнал, который нельзя переписать задним числом, — лучшее доказательство остальных пунктов</span></li>
+  <li><b>План приведения в соответствие</b><span>переходных положений нет — фиксация состояния и сроков защищает при любой трактовке</span></li>
+  <li><b>Регламент расчёта К<sub>зи</sub>/П<sub>зи</sub></b> (пп. 31–32)<span>с направлением результатов во ФСТЭК — раз в полгода / два года</span></li>
+</ol>
+
+<h2 id="sep1">Что изменилось 1 сентября 2026</h2>
+<p>С 01.09.2026 вступил в силу рамочный закон об ИИ (ФЗ, принят летом 2026): четыре категории риска и обязательная сертификация ФСТЭК/ФСБ для высокорисковых систем — тех, что принимают автономные решения. Сам приказ № 117 с этой даты не менялся; но связка очевидна: журнал решений, контроль функциональности и критерии недостоверных ответов из 117-го — это ровно та фактура, которую потребует и сертификация по новому закону. Делая первое, вы заранее собираете доказательную базу для второго. Подзаконные акты — на подходе; следим и обновляем этот разбор.</p>
+
+<div class="cta" id="pilot">
+  <span class="tag">Выполнение — за две недели пилота</span>
+  <p>Мы собрали требования 117-го в исполняемые политики: тематики, недостоверные ответы, квоты, egress-контроль, журнал с хеш-цепочкой и отчёт для аттестации одной командой. Под этим контролем работает наш собственный агент для 1С.</p>
+  <a class="btn btn-key" href="/#pilot" data-goal="cta_hero">Запросить пилот</a>
+  <a class="btn btn-ghost" href="/" data-goal="cta_mapping">Как это устроено</a>
+</div>
+</article>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 AgentPerimeter · впериметре.рф</span>
+    <span><a href="https://t.me/AgentPerimeter">Telegram</a> · <a href="mailto:support@agentperimeter.ru">support@agentperimeter.ru</a></span>
+  </div>
+</footer>
+
+<script>
+function goal(name){if(window.ym)ym(111624890,'reachGoal',name)}
+document.querySelectorAll('[data-goal]').forEach(function(el){
+  el.addEventListener('click',function(){goal(el.getAttribute('data-goal'))});
+});
+</script>
+</body>
+</html>
